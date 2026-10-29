@@ -15,9 +15,9 @@ export type SceneNode =
       classes?: string[];
     };
 
-/** Drawing order, bottom to top. */
-export type Layer = 'frame' | 'wires' | 'elements' | 'junctions';
-export const LAYERS: readonly Layer[] = ['frame', 'wires', 'elements', 'junctions'];
+/** Drawing order, bottom to top; `overlay` holds editing aids (previews, handles). */
+export type Layer = 'frame' | 'wires' | 'elements' | 'junctions' | 'overlay';
+export const LAYERS: readonly Layer[] = ['frame', 'wires', 'elements', 'junctions', 'overlay'];
 
 /** A top-level drawable with a stable key (`frame`, `element:<id>`, `wire:<id>`, `junction:<id>`). */
 export interface SceneItem {

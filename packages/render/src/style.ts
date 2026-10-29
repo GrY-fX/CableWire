@@ -21,4 +21,13 @@ export const SCREEN_CSS = `
 .cw-item.cw-selected .cw-filled { fill: #1d6fe0; }
 .cw-item.cw-selected .cw-text { fill: #1d6fe0; }
 .cw-grid-dot { fill: #b8c0cc; }
+.cw-grid-major { fill: #8c96a3; }
+.cw-origin { fill: none; stroke: #2a9d8f; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.cw-terminal { fill: none; stroke: #d33; stroke-width: 0.2; }
+.cw-terminal-name { fill: #d33; font-family: sans-serif; dominant-baseline: central; }
+.cw-item.cw-selected .cw-terminal { stroke: #1d6fe0; stroke-width: 0.35; }
+.cw-preview { fill: none; stroke: #1d6fe0; stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.cw-preview-text { fill: #1d6fe0; font-family: ${FONT_FAMILY}, sans-serif; dominant-baseline: central; }
+.cw-handle { fill: #fff; stroke: #1d6fe0; stroke-width: 1; vector-effect: non-scaling-stroke; }
+.cw-marquee { fill: rgb(29 111 224 / 0.08); stroke: #1d6fe0; stroke-width: 1; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; }
 `;

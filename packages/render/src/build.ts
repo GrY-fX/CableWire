@@ -47,7 +47,7 @@ function computeScene(doc: ProjectDoc, sheetId: SheetId): Scene {
       items.push({
         key: `element:${element.id}`,
         layer: 'elements',
-        node: buildElement(element, symbol),
+        node: buildElementNode(element, symbol),
       });
     }
   }
@@ -110,7 +110,11 @@ export function primitivePath(p: Exclude<Primitive, { type: 'text' }>): SceneNod
   }
 }
 
-function buildElement(element: Element, symbol: SymbolDef): SceneNode {
+/** An element: rotated/mirrored graphics plus readable texts with placeholders filled. */
+export function buildElementNode(
+  element: Pick<Element, 'x' | 'y' | 'rotation' | 'mirrored' | 'info'>,
+  symbol: SymbolDef,
+): SceneNode {
   const { x, y, rotation, mirrored } = element;
   const shapes: SceneNode[] = [];
   const texts: SceneNode[] = [];
