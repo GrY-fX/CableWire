@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.qetz binary
+*.cwp binary
+*.cwpack binary
+*.png binary
+*.pdf binary
