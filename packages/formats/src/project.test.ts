@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { moveItems, createStore } from '@cablewire/core';
+import { createStore, setElementInfo } from '@cablewire/core';
 import type { ElementId } from '@cablewire/core';
 import { migrate } from './migrations/index.ts';
 import { parseProject, serializeProject } from './project.ts';
@@ -52,11 +52,11 @@ describe('project files', () => {
   it('changes only the lines of what was edited', () => {
     const store = createStore(sampleProject());
     const before = serializeProject(store.doc).split('\n');
-    store.run(moveItems, { elements: ['x3' as ElementId], dx: 5, dy: 0 });
+    store.run(setElementInfo, { id: 'x3' as ElementId, set: { label: 'X9' } });
     const after = serializeProject(store.doc).split('\n');
     expect(after).toHaveLength(before.length);
     const changed = after.filter((line, i) => line !== before[i]);
-    expect(changed).toEqual(['      "x": 45,']);
+    expect(changed).toEqual(['      "info": { "label": "X9" },']);
   });
 });
 

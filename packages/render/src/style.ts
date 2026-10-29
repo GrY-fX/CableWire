@@ -28,6 +28,8 @@ export const SCREEN_CSS = `
 .cw-item.cw-selected .cw-terminal { stroke: #1d6fe0; stroke-width: 0.35; }
 .cw-preview { fill: none; stroke: #1d6fe0; stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
 .cw-preview-text { fill: #1d6fe0; font-family: ${FONT_FAMILY}, sans-serif; dominant-baseline: central; }
+.cw-wire-preview { fill: none; stroke: #1d6fe0; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.cw-hot { fill: rgb(29 111 224 / 0.15); stroke: #1d6fe0; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .cw-ghost { opacity: 0.6; }
 .cw-ghost .cw-stroke { stroke: #1d6fe0; }
 .cw-ghost .cw-text { fill: #1d6fe0; }

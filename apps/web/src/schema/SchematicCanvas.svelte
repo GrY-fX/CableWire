@@ -73,9 +73,16 @@
     renderer.setView(viewBoxOf(view, area));
     renderer.setGrid(grid ? doc.settings.gridStep : undefined, undefined, 0.6 / view.scale + 0.05);
     const scene = buildScene(doc, editor.sheetId);
-    const overlay = buildSchematicOverlay({ ghost: editor.ghost, marquee: editor.marquee });
+    const overlay = buildSchematicOverlay({
+      pixel: 1 / view.scale,
+      ghost: editor.ghost,
+      marquee: editor.marquee,
+      preview: editor.preview,
+      hot: editor.hot?.point,
+      handles: editor.wireHandles.map((h) => h.point),
+    });
     renderer.render({ ...scene, items: [...scene.items, ...overlay] });
-    renderer.setState({ selected: editor.selection });
+    renderer.setState({ selected: editor.selection, highlighted: editor.highlight?.keys ?? [] });
     onview?.(view.scale);
   }
 
@@ -146,11 +153,16 @@
     void version;
     return editor.tool === 'place';
   });
+  const wiring = $derived.by(() => {
+    void version;
+    return editor.tool === 'wire';
+  });
 </script>
 
 <svg
   bind:this={svg}
   class:placing
+  class:wiring
   class:pan={spaceHeld}
   {onpointerdown}
   {onpointermove}
@@ -168,6 +180,9 @@
     background: var(--bg);
     touch-action: none;
     user-select: none;
+  }
+  svg.wiring {
+    cursor: crosshair;
   }
   svg.placing {
     cursor: copy;

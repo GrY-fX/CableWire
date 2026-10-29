@@ -1,8 +1,9 @@
 import { defineCommand, fail, ok } from '../command.ts';
 import type { ElementId, JunctionId, SheetId, SymbolId } from '../ids.ts';
 import { newId } from '../ids.ts';
-import { addRotation } from '../geometry.ts';
-import type { Element, Rotation } from '../model.ts';
+import { addRotation, endPosition } from '../geometry.ts';
+import type { Element, Point, ProjectDoc, Rotation, Wire, WireEnd } from '../model.ts';
+import { endDirection, routeOrthogonal } from '../route.ts';
 import { isJunctionEnd } from '../model.ts';
 import type { Op } from '../ops.ts';
 import { patch, put } from '../ops.ts';
@@ -38,8 +39,53 @@ export const placeElement = defineCommand<PlaceElementArgs>('Inserisci elemento'
 });
 
 /**
+ * Bends of a wire after one of its ends moved by (dx, dy), keeping it orthogonal and
+ * keeping its shape: only the bend next to the moved end shifts, along the axis that
+ * keeps the first segment straight ("rubber band"). A straight wire that would become
+ * diagonal gets a fresh orthogonal route.
+ */
+export function stretchWire(
+  doc: ProjectDoc,
+  wire: Wire,
+  movedEnd: 'from' | 'to',
+  dx: number,
+  dy: number,
+): Point[] | undefined {
+  const a = endPosition(doc, wire.from);
+  const b = endPosition(doc, wire.to);
+  if (!a || !b) return undefined;
+  const from = movedEnd === 'from' ? { x: a.x + dx, y: a.y + dy } : a;
+  const to = movedEnd === 'to' ? { x: b.x + dx, y: b.y + dy } : b;
+  if (wire.bends.length === 0) {
+    if (from.x === to.x || from.y === to.y) return undefined;
+    return routeOrthogonal(
+      from,
+      endDirection(doc, wire.from),
+      to,
+      endDirection(doc, wire.to),
+      doc.settings.gridStep,
+    );
+  }
+  const bends = wire.bends.map((p) => ({ ...p }));
+  // Work from the moved end: its old position, the adjacent bend, and the one after.
+  const order = movedEnd === 'from' ? bends : [...bends].reverse();
+  const end = movedEnd === 'from' ? a : b;
+  const near = order[0]!;
+  const next = order[1] ?? (movedEnd === 'from' ? b : a);
+  const verticalFirst =
+    end.x === near.x && end.y !== near.y
+      ? true
+      : end.y === near.y && end.x !== near.x
+        ? false
+        : near.y === next.y; // degenerate first segment: use the next one
+  if (verticalFirst) near.x += dx;
+  else near.y += dy;
+  return bends;
+}
+
+/**
  * Moves elements and junctions. Wires with both ends moved keep their shape;
- * wires with one moved end keep their bends (re-routing is the editor's job).
+ * wires with one moved end stretch (see stretchWire).
  */
 export const moveItems = defineCommand<{
   elements?: readonly ElementId[];
@@ -63,14 +109,19 @@ export const moveItems = defineCommand<{
     movedJunctions.add(id);
     ops.push(patch('junctions', id, { x: j.x + dx, y: j.y + dy }));
   }
+  const moved = (end: WireEnd) =>
+    isJunctionEnd(end) ? movedJunctions.has(end.junction) : movedElements.has(end.element);
   for (const wire of Object.values(doc.wires)) {
-    const moved = [wire.from, wire.to].every((end) =>
-      isJunctionEnd(end) ? movedJunctions.has(end.junction) : movedElements.has(end.element),
-    );
-    if (moved && wire.bends.length > 0) {
-      ops.push(
-        patch('wires', wire.id, { bends: wire.bends.map((p) => ({ x: p.x + dx, y: p.y + dy })) }),
-      );
+    const fromMoved = moved(wire.from);
+    const toMoved = moved(wire.to);
+    if (fromMoved && toMoved) {
+      if (wire.bends.length > 0) {
+        const bends = wire.bends.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+        ops.push(patch('wires', wire.id, { bends }));
+      }
+    } else if (fromMoved || toMoved) {
+      const bends = stretchWire(doc, wire, fromMoved ? 'from' : 'to', dx, dy);
+      if (bends) ops.push(patch('wires', wire.id, { bends }));
     }
   }
   return ok(ops);

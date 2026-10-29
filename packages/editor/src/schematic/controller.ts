@@ -1,6 +1,11 @@
 import {
+  addWire,
+  autoRoute,
   copyFragment,
+  endDirection,
+  endPosition,
   freshIds,
+  getPotentials,
   importSymbol,
   isEmptyFragment,
   mirrorElements,
@@ -8,12 +13,17 @@ import {
   newId,
   pasteFragment,
   placeElement,
+  reconnectWire,
   removeItems,
   rotateElements,
+  routeOrthogonal,
+  setWireBends,
+  simplifyPath,
 } from '@cablewire/core';
 import type {
   Bounds,
   Command,
+  Direction,
   ElementId,
   Fragment,
   JunctionId,
@@ -27,9 +37,35 @@ import type {
 } from '@cablewire/core';
 import { rectFromPoints } from '../hit.ts';
 import { snapPoint } from '../snap.ts';
-import { elementKey, hitSheet, itemsInside, junctionKey, parseItemKey, wireKey } from './hit.ts';
+import {
+  elementKey,
+  hitSheet,
+  itemsInside,
+  junctionKey,
+  parseItemKey,
+  wireKey,
+  wirePath,
+} from './hit.ts';
+import { anchorAt, resolveAnchor, sameAnchor, wiresAt } from './wiring.ts';
+import type { Anchor } from './wiring.ts';
 
-export type SchematicTool = 'select' | 'place';
+export type SchematicTool = 'select' | 'place' | 'wire';
+
+/** Editable points of the selected wire: middle of inner segments, and the two ends. */
+export interface WireHandle {
+  kind: 'segment' | 'end';
+  point: Point;
+  /** Segment index in the wire path, or which end. */
+  index: number;
+}
+
+/** The potential of the selected wire, for highlighting. */
+export interface Highlight {
+  /** Keys of wires and junctions on the current sheet. */
+  keys: string[];
+  wires: number;
+  sheets: number;
+}
 
 export interface Modifiers {
   shift?: boolean;
@@ -47,9 +83,17 @@ export interface Ghost {
 
 type Drag =
   | { kind: 'move'; origin: Point; applied: Point; keys: string[] }
-  | { kind: 'marquee'; origin: Point; additive: boolean };
+  | { kind: 'marquee'; origin: Point; additive: boolean }
+  | { kind: 'segment'; wire: WireId; index: number; base: Point[] }
+  | { kind: 'wire-end'; wire: WireId; end: 'from' | 'to' };
+
+const same = (a: Point, b: Point) => a.x === b.x && a.y === b.y;
 
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+function startDir(anchor: Anchor): Direction | undefined {
+  return anchor.kind === 'end' ? anchor.dir : undefined;
+}
 
 /**
  * State and behaviour of the schematic editor on one sheet. All edits go through
@@ -66,6 +110,10 @@ export class SchematicEditor {
   private currentTool: SchematicTool = 'select';
   private placing: Omit<Ghost, 'x' | 'y'> | undefined;
   private cursor: Point | undefined;
+  private rawCursor: Point | undefined;
+  /** Wire being drawn: where it starts and the points clicked so far. */
+  private wiring: { start: Anchor; clicks: Point[]; fromSelect: boolean } | undefined;
+  private wiringFromSelect = false;
   private drag: Drag | undefined;
   private marqueeRect: Bounds | undefined;
   private clipboard: { fragment: Fragment; sheet: SheetId; pasted: number } | undefined;
@@ -104,8 +152,89 @@ export class SchematicEditor {
   get canPaste(): boolean {
     return !!this.clipboard;
   }
+  get isWiring(): boolean {
+    return !!this.wiring;
+  }
   private get grid(): number {
     return this.doc.settings.gridStep;
+  }
+
+  /** Terminal, junction or wire point the cursor would connect to (wire tool and wire ends). */
+  get hot(): Anchor | undefined {
+    const wantsAnchor =
+      this.currentTool === 'wire' || this.drag?.kind === 'wire-end' || this.hoveringFreeTerminal();
+    return wantsAnchor && this.rawCursor
+      ? anchorAt(this.doc, this.sheet, this.rawCursor, this.tolerance)
+      : undefined;
+  }
+
+  /** Path being drawn or dragged, for the overlay. */
+  get preview(): Point[] | undefined {
+    const target = this.hot?.point ?? this.cursor;
+    if (this.wiring && target) {
+      const hot = this.hot;
+      return this.wiringPath(target, hot?.kind === 'end' ? hot.dir : undefined);
+    }
+    if (this.drag?.kind === 'wire-end' && target) {
+      const wire = this.doc.wires[this.drag.wire];
+      const fixed = wire && (this.drag.end === 'from' ? wire.to : wire.from);
+      const from = fixed && endPosition(this.doc, fixed);
+      return from ? [from, target] : undefined;
+    }
+    return undefined;
+  }
+
+  /** Handles of the single selected wire. */
+  get wireHandles(): WireHandle[] {
+    const wire = this.selectedWire();
+    const path = wire && wirePath(this.doc, wire);
+    if (!path || this.currentTool !== 'select') return [];
+    const handles: WireHandle[] = [];
+    for (let i = 1; i < path.length - 2; i++) {
+      const a = path[i]!;
+      const b = path[i + 1]!;
+      handles.push({
+        kind: 'segment',
+        index: i,
+        point: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+      });
+    }
+    handles.push({ kind: 'end', index: 0, point: path[0]! });
+    handles.push({ kind: 'end', index: 1, point: path.at(-1)! });
+    return handles;
+  }
+
+  /** Potential of the single selected wire. */
+  get highlight(): Highlight | undefined {
+    const wire = this.selectedWire();
+    if (!wire) return undefined;
+    const potentials = getPotentials(this.doc);
+    const p = potentials.potentialOfWire(wire.id);
+    if (p === undefined) return undefined;
+    const wires = potentials.wires(p).map((id) => this.doc.wires[id]!);
+    const keys = wires.filter((w) => w.sheetId === this.sheet).map((w) => wireKey(w.id));
+    for (const node of potentials.nodes(p)) {
+      const junction = node.startsWith('j:')
+        ? this.doc.junctions[node.slice(2) as JunctionId]
+        : undefined;
+      if (junction?.sheetId === this.sheet) keys.push(junctionKey(junction.id));
+    }
+    return { keys, wires: wires.length, sheets: new Set(wires.map((w) => w.sheetId)).size };
+  }
+
+  setTool(tool: 'select' | 'wire'): void {
+    this.cancelDrag();
+    this.wiring = undefined;
+    this.placing = undefined;
+    this.currentTool = tool;
+    this.emit();
+  }
+
+  /** Replaces the selected wire's bends with a fresh automatic route. */
+  rerouteSelectedWire(): void {
+    const wire = this.selectedWire();
+    const bends = wire && autoRoute(this.doc, wire.from, wire.to);
+    if (wire && bends) this.run(setWireBends, { id: wire.id, bends });
   }
 
   subscribe(listener: () => void): () => void {
@@ -152,8 +281,36 @@ export class SchematicEditor {
 
   pointerDown(raw: Point, mods: Modifiers = {}): void {
     this.cursor = snapPoint(raw, this.grid);
+    this.rawCursor = raw;
     if (this.currentTool === 'place') {
       this.place(this.cursor);
+      this.emit();
+      return;
+    }
+    if (this.currentTool === 'wire') {
+      this.wireDown(raw);
+      this.emit();
+      return;
+    }
+    // Handles of the selected wire come first.
+    const handle = this.wireHandles.find(
+      (h) => Math.hypot(raw.x - h.point.x, raw.y - h.point.y) <= this.tolerance,
+    );
+    const wire = this.selectedWire();
+    if (handle && wire) {
+      this.store.begin(handle.kind === 'segment' ? 'Sposta tratto' : 'Ricollega filo');
+      this.drag =
+        handle.kind === 'segment'
+          ? { kind: 'segment', wire: wire.id, index: handle.index, base: wire.bends }
+          : { kind: 'wire-end', wire: wire.id, end: handle.index === 0 ? 'from' : 'to' };
+      this.emit();
+      return;
+    }
+    // A click on a free terminal starts a wire, as with the wire tool.
+    if (!mods.shift && this.hoveringFreeTerminal()) {
+      this.currentTool = 'wire';
+      this.wiringFromSelect = true;
+      this.wireDown(raw);
       this.emit();
       return;
     }
@@ -177,8 +334,11 @@ export class SchematicEditor {
 
   pointerMove(raw: Point): void {
     this.cursor = snapPoint(raw, this.grid);
+    this.rawCursor = raw;
     const drag = this.drag;
-    if (drag?.kind === 'move') {
+    if (drag?.kind === 'segment') {
+      this.dragSegment(drag, this.cursor);
+    } else if (drag?.kind === 'move') {
       const delta = snapPoint({ x: raw.x - drag.origin.x, y: raw.y - drag.origin.y }, this.grid);
       const dx = delta.x - drag.applied.x;
       const dy = delta.y - drag.applied.y;
@@ -195,8 +355,10 @@ export class SchematicEditor {
   pointerUp(raw: Point): void {
     const drag = this.drag;
     this.drag = undefined;
-    if (drag?.kind === 'move') {
+    if (drag?.kind === 'move' || drag?.kind === 'segment') {
       this.store.commit();
+    } else if (drag?.kind === 'wire-end') {
+      this.reconnect(drag, anchorAt(this.doc, this.sheet, raw, this.tolerance));
     } else if (drag?.kind === 'marquee') {
       const inside = itemsInside(this.doc, this.sheet, rectFromPoints(drag.origin, raw));
       this.selected = new Set([...(drag.additive ? this.selected : []), ...inside]);
@@ -229,11 +391,19 @@ export class SchematicEditor {
     switch (key) {
       case 'Escape':
         if (this.drag) this.cancelDrag();
-        else if (this.currentTool === 'place') this.stopPlacing();
+        else if (this.wiring) this.endWiring();
+        else if (this.currentTool !== 'select') this.setTool('select');
         else this.select([]);
+        this.emit();
         return true;
       case 'Delete':
       case 'Backspace':
+        if (this.wiring) {
+          // Undo the last click of the wire being drawn.
+          this.wiring.clicks.pop();
+          this.emit();
+          return true;
+        }
         if (this.selected.size === 0) return false;
         this.run(removeItems, this.split(this.selected));
         return true;
@@ -251,7 +421,128 @@ export class SchematicEditor {
     }
     if (k === 'r') return this.rotate();
     if (k === 'm') return this.mirror();
+    if (k === 'w') {
+      this.setTool('wire');
+      return true;
+    }
+    if (k === 's') {
+      this.setTool('select');
+      return true;
+    }
     return false;
+  }
+
+  private wireDown(raw: Point): void {
+    const anchor = anchorAt(this.doc, this.sheet, raw, this.tolerance);
+    const wiring = this.wiring;
+    if (!wiring) {
+      if (anchor) this.wiring = { start: anchor, clicks: [], fromSelect: this.wiringFromSelect };
+      this.wiringFromSelect = false;
+      return;
+    }
+    if (anchor && !sameAnchor(anchor, wiring.start)) {
+      this.finishWire(anchor);
+      return;
+    }
+    // A click on empty space fixes a point the wire must pass through.
+    const p = snapPoint(raw, this.grid);
+    if (!same(p, wiring.clicks.at(-1) ?? wiring.start.point)) wiring.clicks.push(p);
+  }
+
+  /** Orthogonal path from the wire's start, through the clicked points, to `target`. */
+  private wiringPath(target: Point, targetDir: Direction | undefined): Point[] {
+    const { start, clicks } = this.wiring!;
+    const points = [start.point];
+    let last = start.point;
+    let lastDir = startDir(start);
+    for (const c of clicks) {
+      points.push(...routeOrthogonal(last, lastDir, c, undefined, this.grid), c);
+      last = c;
+      lastDir = undefined;
+    }
+    points.push(...routeOrthogonal(last, lastDir, target, targetDir, this.grid), target);
+    return simplifyPath(points);
+  }
+
+  private finishWire(target: Anchor): void {
+    const { start } = this.wiring!;
+    const path = this.preview!;
+    this.store.begin('Collega filo');
+    const from = resolveAnchor(this.store, this.sheet, start);
+    const to = from && resolveAnchor(this.store, this.sheet, target);
+    const ok =
+      !!from &&
+      !!to &&
+      this.run(addWire, {
+        id: newId<'wire'>() as WireId,
+        from,
+        to,
+        bends: path.slice(1, -1),
+      });
+    if (ok) this.store.commit();
+    else {
+      this.store.rollback();
+      this.lastError ??= 'Impossibile collegare qui il filo.';
+    }
+    this.endWiring();
+  }
+
+  /** Ends the wire being drawn; back to Select if it was started from a free terminal. */
+  private endWiring(): void {
+    if (this.wiring?.fromSelect) this.currentTool = 'select';
+    this.wiring = undefined;
+  }
+
+  private dragSegment(drag: Extract<Drag, { kind: 'segment' }>, p: Point): void {
+    const wire = this.doc.wires[drag.wire];
+    const path = wire && wirePath(this.doc, wire);
+    if (!path) return;
+    // Path index i is bend i-1: segment i runs between bends i-1 and i.
+    const bends = drag.base.map((b) => ({ ...b }));
+    const a = bends[drag.index - 1]!;
+    const b = bends[drag.index]!;
+    if (a.y === b.y) a.y = b.y = p.y;
+    else a.x = b.x = p.x;
+    this.run(setWireBends, { id: drag.wire, bends });
+  }
+
+  private reconnect(drag: Extract<Drag, { kind: 'wire-end' }>, anchor: Anchor | undefined): void {
+    const wire = this.doc.wires[drag.wire];
+    if (!wire || anchor?.kind !== 'end') {
+      this.store.rollback();
+      return;
+    }
+    const fixed = drag.end === 'from' ? wire.to : wire.from;
+    const fixedPoint = endPosition(this.doc, fixed);
+    const bends = fixedPoint
+      ? routeOrthogonal(
+          fixedPoint,
+          endDirection(this.doc, fixed),
+          anchor.point,
+          anchor.dir,
+          this.grid,
+        )
+      : [];
+    const ok = this.run(reconnectWire, {
+      id: wire.id,
+      end: drag.end,
+      target: anchor.end,
+      bends: drag.end === 'from' ? [...bends].reverse() : bends,
+    });
+    if (ok) this.store.commit();
+    else this.store.rollback();
+  }
+
+  private selectedWire() {
+    if (this.selected.size !== 1) return undefined;
+    const k = parseItemKey([...this.selected][0]!);
+    return k?.kind === 'wire' ? this.doc.wires[k.id as WireId] : undefined;
+  }
+
+  private hoveringFreeTerminal(): boolean {
+    if (this.currentTool !== 'select' || !this.rawCursor || this.drag) return false;
+    const a = anchorAt(this.doc, this.sheet, this.rawCursor, this.tolerance / 1.5);
+    return a?.kind === 'end' && 'element' in a.end && wiresAt(this.doc, a.end) === 0;
   }
 
   rotate(): boolean {

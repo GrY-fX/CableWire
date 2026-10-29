@@ -82,14 +82,22 @@
       undo: store.undoLabel,
       redo: store.redoLabel,
       canPaste: editor.canPaste,
+      wiring: editor.isWiring,
+      highlight: editor.highlight,
     };
   });
   const hint = $derived(
     view.tool === 'place'
       ? `Clic per posare «${view.ghost?.symbol.name ?? ''}» · R ruota · M specchia · Esc per finire.`
-      : view.count
-        ? `${view.count} selezionati · trascina per spostare · R ruota · M specchia · Canc elimina · Ctrl+C/V copia.`
-        : 'Scegli un simbolo dalla libreria per inserirlo · trascina su area vuota per selezionare.',
+      : view.tool === 'wire'
+        ? view.wiring
+          ? 'Clic su un terminale o un filo per finire · clic nel vuoto fissa una piega · Backspace la toglie · Esc annulla.'
+          : 'Clic su un terminale, una giunzione o un filo per iniziare · Esc per tornare a Seleziona.'
+        : view.highlight
+          ? `Potenziale: ${view.highlight.wires} fili su ${view.highlight.sheets} ${view.highlight.sheets === 1 ? 'foglio' : 'fogli'} · trascina le maniglie per spostare i tratti o ricollegare i capi.`
+          : view.count
+            ? `${view.count} selezionati · trascina per spostare · R ruota · M specchia · Canc elimina · Ctrl+C/V copia.`
+            : 'Scegli un simbolo dalla libreria · W o clic su un terminale libero per un filo · trascina su area vuota per selezionare.',
   );
 
   // Symbol changed in the library while the project has another version (E4).
@@ -195,10 +203,16 @@
             : 'Salvato nel browser'}
       </span>
       <span class="sep"></span>
-      <button class:active={view.tool === 'select'} onclick={() => editor.stopPlacing()}
-        >⬚ Seleziona</button
+      <button
+        class:active={view.tool === 'select'}
+        title="Seleziona (S)"
+        onclick={() => editor.setTool('select')}>⬚ Seleziona</button
       >
-      <button disabled title="Arriva nel passo 5b">⌐ Filo</button>
+      <button
+        class:active={view.tool === 'wire'}
+        title="Filo (W)"
+        onclick={() => editor.setTool('wire')}>⌐ Filo</button
+      >
       <span class="sep"></span>
       <button
         title={view.undo ? `Annulla: ${view.undo} (Ctrl+Z)` : 'Annulla'}

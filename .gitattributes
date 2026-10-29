@@ -1,6 +1,9 @@
 * text=auto eol=lf
-*.qetz binary
-*.cwp binary
+# .cwp and .cwsym are JSON text (diffable); .cwpack will be a zip.
+*.cwp text diff
+*.cwsym text diff
 *.cwpack binary
+*.qetz binary
 *.png binary
 *.pdf binary
+*.woff binary

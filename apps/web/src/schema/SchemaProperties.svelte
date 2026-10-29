@@ -1,6 +1,12 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { setElementInfo, setWireProps, updateProjectMeta, updateSheet } from '@cablewire/core';
+  import {
+    setElementInfo,
+    setPotentialNumber,
+    setWireProps,
+    updateProjectMeta,
+    updateSheet,
+  } from '@cablewire/core';
   import type { ElementId, SheetSize, WireId } from '@cablewire/core';
   import { parseItemKey } from '@cablewire/editor';
   import type { SchematicEditor } from '@cablewire/editor';
@@ -20,6 +26,7 @@
       element,
       symbol: element ? doc.symbols[element.symbolId] : undefined,
       wire,
+      highlight: wire ? editor.highlight : undefined,
       sheet: doc.sheets[editor.sheetId]!,
     };
   });
@@ -99,16 +106,20 @@
     </p>
   {:else if view.wire}
     <h3>Filo</h3>
+    {#if view.highlight}
+      <p class="hint">
+        Potenziale evidenziato: {view.highlight.wires} fili su {view.highlight.sheets}
+        {view.highlight.sheets === 1 ? 'foglio' : 'fogli'}.
+      </p>
+    {/if}
+    <button class="link" onclick={() => editor.rerouteSelectedWire()}>Ricalcola percorso</button>
     <div class="grid">
       <label class="wide"
-        >Numero <input
+        >Numero (vale per tutto il potenziale) <input
           type="text"
           value={view.wire.props.number ?? ''}
           onchange={(e) =>
-            editor.store.run(setWireProps, {
-              id: view.wire!.id,
-              set: { number: text(e) || undefined },
-            })}
+            editor.store.run(setPotentialNumber, { id: view.wire!.id, number: text(e) })}
         /></label
       >
       <label

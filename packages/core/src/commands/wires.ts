@@ -5,8 +5,9 @@ import { newId } from '../ids.ts';
 import { distanceToSegment, endPosition } from '../geometry.ts';
 import type { Point, ProjectDoc, Wire, WireEnd, WireProps } from '../model.ts';
 import { isJunctionEnd } from '../model.ts';
+import { inheritNumberOps, potentialNumberOps } from '../numbering.ts';
 import type { Patch } from '../ops.ts';
-import { patch, put } from '../ops.ts';
+import { applyOps, patch, put } from '../ops.ts';
 import { sameEnd } from '../validate.ts';
 
 function sheetOfEnd(doc: ProjectDoc, end: WireEnd): SheetId | CommandError {
@@ -38,8 +39,37 @@ export const addWire = defineCommand<{
   if (typeof b !== 'string') return { ok: false, error: b };
   if (a !== b) return fail('cross-sheet', 'Both ends must be on the same sheet');
   const wire: Wire = { id, sheetId: a, from, to, bends, props };
-  return ok([put('wires', wire)]);
+  const ops = [put('wires', wire)];
+  // The new wire joins potentials: unnumbered wires take the potential's number.
+  return ok([...ops, ...inheritNumberOps(applyOps(doc, ops).doc, id)]);
 });
+
+/** Moves one end of a wire to another terminal or junction, optionally with new bends. */
+export const reconnectWire = defineCommand<{
+  id: WireId;
+  end: 'from' | 'to';
+  target: WireEnd;
+  bends?: Point[];
+}>('Ricollega filo', (doc, { id, end, target, bends }) => {
+  const wire = doc.wires[id];
+  if (!wire) return fail('not-found', 'Wire not found');
+  const other = end === 'from' ? wire.to : wire.from;
+  if (sameEnd(target, other)) return fail('loop', 'A wire needs two different ends');
+  const sheet = sheetOfEnd(doc, target);
+  if (typeof sheet !== 'string') return { ok: false, error: sheet };
+  if (sheet !== wire.sheetId) return fail('cross-sheet', 'Both ends must be on the same sheet');
+  const ops = [patch('wires', id, { [end]: target, ...(bends && { bends }) })];
+  return ok([...ops, ...inheritNumberOps(applyOps(doc, ops).doc, id)]);
+});
+
+/** Sets the number of a wire and of every wire in its potential (empty clears it). */
+export const setPotentialNumber = defineCommand<{ id: WireId; number: string }>(
+  'Numero filo',
+  (doc, { id, number }) => {
+    if (!doc.wires[id]) return fail('not-found', 'Wire not found');
+    return ok(potentialNumberOps(doc, id, number));
+  },
+);
 
 export const setWireBends = defineCommand<{ id: WireId; bends: Point[] }>(
   'Modifica percorso',

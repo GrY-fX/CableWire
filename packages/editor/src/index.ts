@@ -10,6 +10,9 @@ export * from './schematic/hit.ts';
 export {
   SchematicEditor,
   type Ghost,
+  type Highlight,
   type SchematicTool,
+  type WireHandle,
   type Modifiers as SchematicModifiers,
 } from './schematic/controller.ts';
+export * from './schematic/wiring.ts';
