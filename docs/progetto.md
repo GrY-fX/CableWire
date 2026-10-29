@@ -228,7 +228,7 @@ un adattatore, non un rifacimento.
 
 | File | Contenuto |
 |---|---|
-| **`.cwp`** (progetto) | zip con `project.json` (il modello sopra, versionato con `formatVersion`), i simboli incorporati e le eventuali immagini |
+| **`.cwp`** (progetto) | JSON semplice: il modello sopra, versionato con `formatVersion`, con i simboli incorporati (immagini in base64). Un'eventuale variante compressa sarà `.cwpz` (vedi [formats-design.md](formats-design.md)) |
 | **`.cwsym`** (simbolo) | JSON di un singolo `SymbolDef`, per condividere un simbolo |
 | **`.cwpack`** (pacchetto) | zip con `manifest.json` e, a scelta, regole di autonumerazione, cartigli, preferenze, simboli (vedi 5.3) |
 

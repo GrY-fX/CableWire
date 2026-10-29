@@ -1,0 +1,162 @@
+{
+  "format": "cablewire-project",
+  "formatVersion": 1,
+  "app": "CableWire test",
+  "meta": { "author": "Giuseppe", "createdAt": "2026-10-29T10:00:00.000Z", "title": "Quadro pompa", "updatedAt": "2026-10-29T10:00:00.000Z" },
+  "settings": { "gridStep": 2.5 },
+  "sheetOrder": ["sheet-1", "sheet-2"],
+  "elements": {
+    "x1": {
+      "id": "x1",
+      "info": { "label": "X1:1", "plc_address": "I0.0" },
+      "mirrored": false,
+      "rotation": 0,
+      "sheetId": "sheet-1",
+      "symbolId": "rich",
+      "x": 20,
+      "y": 20
+    },
+    "x2": {
+      "id": "x2",
+      "info": { "label": "X1" },
+      "mirrored": true,
+      "rotation": 90,
+      "sheetId": "sheet-1",
+      "symbolId": "rich",
+      "x": 20.3,
+      "y": 40
+    },
+    "x3": {
+      "id": "x3",
+      "info": { "label": "X1" },
+      "mirrored": false,
+      "rotation": 0,
+      "sheetId": "sheet-1",
+      "symbolId": "rich",
+      "x": 40,
+      "y": 40
+    }
+  },
+  "junctions": {
+    "j1": { "id": "j1", "sheetId": "sheet-1", "x": 20, "y": 28 }
+  },
+  "sheets": {
+    "sheet-1": {
+      "cols": 10,
+      "id": "sheet-1",
+      "orientation": "landscape",
+      "rows": 6,
+      "size": "A3",
+      "title": "1"
+    },
+    "sheet-2": {
+      "cols": 10,
+      "id": "sheet-2",
+      "orientation": "landscape",
+      "rows": 6,
+      "size": "A3",
+      "title": "Potenza"
+    }
+  },
+  "symbols": {
+    "rich": {
+      "bridges": [
+        ["t1", "t2"]
+      ],
+      "category": "Morsetti",
+      "defaultInfo": { "label": "X1" },
+      "graphics": [
+        {
+          "type": "line",
+          "x1": 0,
+          "x2": 0,
+          "y1": -5,
+          "y2": -1.25
+        },
+        {
+          "closed": true,
+          "filled": true,
+          "points": [
+            { "x": -1, "y": 0 },
+            { "x": 1, "y": 0 },
+            { "x": 0, "y": 1 }
+          ],
+          "type": "polyline"
+        },
+        {
+          "cx": 0,
+          "cy": 0,
+          "r": 2,
+          "start": 180,
+          "sweep": 180,
+          "type": "arc"
+        },
+        { "cx": 0, "cy": 0, "r": 1.25, "type": "circle" },
+        {
+          "filled": false,
+          "height": 5,
+          "type": "rect",
+          "width": 5,
+          "x": -2.5,
+          "y": -2.5
+        },
+        {
+          "anchor": "start",
+          "size": 2.5,
+          "text": "{label}",
+          "type": "text",
+          "x": 3,
+          "y": 0
+        }
+      ],
+      "id": "rich",
+      "kind": "terminal",
+      "name": "Morsetto doppio",
+      "terminals": [
+        {
+          "dir": "n",
+          "id": "t1",
+          "name": "1",
+          "x": 0,
+          "y": -5
+        },
+        {
+          "dir": "s",
+          "id": "t2",
+          "name": "2",
+          "x": 0,
+          "y": 5
+        }
+      ],
+      "version": 3
+    }
+  },
+  "wires": {
+    "w1": {
+      "bends": [],
+      "from": { "element": "x1", "terminal": "t2" },
+      "id": "w1",
+      "props": { "color": "BU", "number": "101", "section": "1.5" },
+      "sheetId": "sheet-1",
+      "to": { "junction": "j1" }
+    },
+    "w2": {
+      "bends": [
+        { "x": 20, "y": 30 }
+      ],
+      "from": { "junction": "j1" },
+      "id": "w2",
+      "props": { "color": "BU", "number": "101", "section": "1.5" },
+      "sheetId": "sheet-1",
+      "to": { "element": "x2", "terminal": "t1" }
+    },
+    "w3": {
+      "bends": [],
+      "from": { "junction": "j1" },
+      "id": "w3",
+      "props": {},
+      "sheetId": "sheet-1",
+      "to": { "element": "x3", "terminal": "t1" }
+    }
+  }
+}
