@@ -29,7 +29,18 @@ export type Primitive =
   | { type: 'arc'; cx: number; cy: number; r: number; start: number; sweep: number }
   | { type: 'circle'; cx: number; cy: number; r: number; filled?: boolean }
   | { type: 'rect'; x: number; y: number; width: number; height: number; filled?: boolean }
-  | { type: 'text'; x: number; y: number; text: string; size: number };
+  /**
+   * (x, y) is the anchor point, vertically centred. `{field}` placeholders are replaced
+   * with the element's info values when drawn.
+   */
+  | {
+      type: 'text';
+      x: number;
+      y: number;
+      text: string;
+      size: number;
+      anchor?: 'start' | 'middle' | 'end';
+    };
 
 export interface SymbolTerminal {
   id: TerminalId;
