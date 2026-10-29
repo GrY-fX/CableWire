@@ -77,6 +77,8 @@ export const symbolSchema = v.object({
   bridges: v.array(v.tuple([id<TerminalId>(), id<TerminalId>()])),
   defaultInfo: strings,
   version: v.pipe(v.number(), v.integer()),
+  author: v.exactOptional(v.string()),
+  license: v.exactOptional(v.string()),
 });
 
 const sheet = v.object({

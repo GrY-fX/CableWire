@@ -65,6 +65,9 @@ export interface SymbolDef {
   bridges: [TerminalId, TerminalId][];
   defaultInfo: Record<string, string>;
   version: number;
+  author?: string;
+  /** SPDX identifier, e.g. `CC0-1.0`. */
+  license?: string;
 }
 
 export interface Element {

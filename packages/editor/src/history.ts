@@ -74,6 +74,11 @@ export class SnapshotHistory<T> {
     return true;
   }
 
+  /** Replaces the current value without recording an entry (e.g. after saving). */
+  replace(value: T): void {
+    this.current = value;
+  }
+
   /** Starts over with a new value and an empty history. */
   reset(value: T): void {
     this.past = [];

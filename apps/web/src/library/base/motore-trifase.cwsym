@@ -1,0 +1,86 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Potenza",
+    "defaultInfo": { "label": "M" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": -5,
+        "y2": -1.33
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -2
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": -5,
+        "y2": -1.33
+      },
+      { "cx": 0, "cy": 3, "r": 5, "type": "circle" },
+      {
+        "anchor": "middle",
+        "size": 4,
+        "text": "M",
+        "type": "text",
+        "x": 0,
+        "y": 2
+      },
+      {
+        "anchor": "middle",
+        "size": 2.5,
+        "text": "3~",
+        "type": "text",
+        "x": 0,
+        "y": 5.5
+      },
+      {
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 6,
+        "y": 3
+      }
+    ],
+    "id": "base-motore-trifase",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Motore trifase",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "U1",
+        "x": -2.5,
+        "y": -5
+      },
+      {
+        "dir": "n",
+        "id": "t2",
+        "name": "V1",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "n",
+        "id": "t3",
+        "name": "W1",
+        "x": 2.5,
+        "y": -5
+      }
+    ],
+    "version": 1
+  }
+}

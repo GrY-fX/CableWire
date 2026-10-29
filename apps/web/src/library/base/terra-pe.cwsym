@@ -1,0 +1,63 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Alimentazioni",
+    "defaultInfo": { "label": "PE" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": 0
+      },
+      {
+        "type": "line",
+        "x1": -3,
+        "x2": 3,
+        "y1": 0,
+        "y2": 0
+      },
+      {
+        "type": "line",
+        "x1": -2,
+        "x2": 2,
+        "y1": 1,
+        "y2": 1
+      },
+      {
+        "type": "line",
+        "x1": -1,
+        "x2": 1,
+        "y1": 2,
+        "y2": 2
+      },
+      { "cx": 0, "cy": 1, "r": 3.5, "type": "circle" },
+      {
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 5,
+        "y": 0
+      }
+    ],
+    "id": "base-terra-pe",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Terra di protezione (PE)",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "PE",
+        "x": 0,
+        "y": -5
+      }
+    ],
+    "version": 1
+  }
+}

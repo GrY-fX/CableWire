@@ -1,0 +1,163 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Potenza",
+    "defaultInfo": { "label": "KM" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": -5,
+        "x2": -5,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": -5,
+        "x2": -5,
+        "y1": 2.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": -5,
+        "x2": -7.5,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "cx": -5,
+        "cy": -2.5,
+        "r": 1,
+        "start": 180,
+        "sweep": 180,
+        "type": "arc"
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 2.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": -2.5,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "cx": 0,
+        "cy": -2.5,
+        "r": 1,
+        "start": 180,
+        "sweep": 180,
+        "type": "arc"
+      },
+      {
+        "type": "line",
+        "x1": 5,
+        "x2": 5,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 5,
+        "x2": 5,
+        "y1": 2.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": 5,
+        "x2": 2.5,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "cx": 5,
+        "cy": -2.5,
+        "r": 1,
+        "start": 180,
+        "sweep": 180,
+        "type": "arc"
+      },
+      {
+        "type": "line",
+        "x1": -6.25,
+        "x2": 3.75,
+        "y1": -0.25,
+        "y2": -0.25
+      },
+      {
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 6,
+        "y": 0
+      }
+    ],
+    "id": "base-contattore-tripolare",
+    "kind": "slave",
+    "license": "CC0-1.0",
+    "name": "Contatti di potenza tripolari",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "1",
+        "x": -5,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "2",
+        "x": -5,
+        "y": 5
+      },
+      {
+        "dir": "n",
+        "id": "t3",
+        "name": "3",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t4",
+        "name": "4",
+        "x": 0,
+        "y": 5
+      },
+      {
+        "dir": "n",
+        "id": "t5",
+        "name": "5",
+        "x": 5,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t6",
+        "name": "6",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

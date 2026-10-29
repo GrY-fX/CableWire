@@ -1,0 +1,70 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Segnalazioni",
+    "defaultInfo": { "label": "H" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -3
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 3,
+        "y2": 5
+      },
+      { "cx": 0, "cy": 0, "r": 3, "type": "circle" },
+      {
+        "type": "line",
+        "x1": -2.121,
+        "x2": 2.121,
+        "y1": -2.121,
+        "y2": 2.121
+      },
+      {
+        "type": "line",
+        "x1": -2.121,
+        "x2": 2.121,
+        "y1": 2.121,
+        "y2": -2.121
+      },
+      {
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 4,
+        "y": 0
+      }
+    ],
+    "id": "base-lampada",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Lampada di segnalazione",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "X1",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "X2",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

@@ -109,6 +109,16 @@ export class SymbolEditor {
     this.emit();
   }
 
+  /**
+   * Swaps in what was actually saved (new version or id) keeping the undo history,
+   * so saving is not itself an undoable step.
+   */
+  replaceSymbol(symbol: SymbolDef): void {
+    this.history.replace(symbol);
+    this.pruneSelection();
+    this.emit();
+  }
+
   setTool(tool: ToolName): void {
     this.currentTool = tool;
     this.resetDrawing();

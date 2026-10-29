@@ -1,0 +1,83 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Contatti",
+    "defaultInfo": { "label": "K" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 5,
+        "y2": 2.5
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 0.5,
+        "y1": -2.5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 1.5,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 4,
+        "y": 1
+      }
+    ],
+    "id": "base-contatto-scambio",
+    "kind": "slave",
+    "license": "CC0-1.0",
+    "name": "Contatto di scambio",
+    "terminals": [
+      {
+        "dir": "s",
+        "id": "t1",
+        "name": "11",
+        "x": 0,
+        "y": 5
+      },
+      {
+        "dir": "n",
+        "id": "t2",
+        "name": "12",
+        "x": 2.5,
+        "y": -5
+      },
+      {
+        "dir": "n",
+        "id": "t3",
+        "name": "14",
+        "x": -2.5,
+        "y": -5
+      }
+    ],
+    "version": 1
+  }
+}

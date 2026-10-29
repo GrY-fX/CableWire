@@ -1,0 +1,69 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Bobine",
+    "defaultInfo": { "label": "K" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 2.5,
+        "y2": 5
+      },
+      {
+        "height": 5,
+        "type": "rect",
+        "width": 6,
+        "x": -3,
+        "y": -2.5
+      },
+      {
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 4.5,
+        "y": 0
+      },
+      {
+        "size": 2,
+        "text": "{function}",
+        "type": "text",
+        "x": 4.5,
+        "y": 3
+      }
+    ],
+    "id": "base-bobina",
+    "kind": "master",
+    "license": "CC0-1.0",
+    "name": "Bobina",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "A1",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "A2",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

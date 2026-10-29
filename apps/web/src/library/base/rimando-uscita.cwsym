@@ -1,0 +1,52 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Rimandi",
+    "defaultInfo": { "label": "" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 2.5,
+        "y1": 0,
+        "y2": 0
+      },
+      {
+        "closed": true,
+        "points": [
+          { "x": 2.5, "y": -1.5 },
+          { "x": 6.5, "y": -1.5 },
+          { "x": 8, "y": 0 },
+          { "x": 6.5, "y": 1.5 },
+          { "x": 2.5, "y": 1.5 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 9,
+        "y": 0
+      }
+    ],
+    "id": "base-rimando-uscita",
+    "kind": "report",
+    "license": "CC0-1.0",
+    "name": "Rimando di foglio (uscita)",
+    "terminals": [
+      {
+        "dir": "w",
+        "id": "t1",
+        "name": "1",
+        "x": 0,
+        "y": 0
+      }
+    ],
+    "version": 1
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Alimentazioni",
+    "defaultInfo": { "label": "+24V" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 0,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": -3,
+        "x2": 3,
+        "y1": 0,
+        "y2": 0
+      },
+      {
+        "anchor": "middle",
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 0,
+        "y": -2
+      }
+    ],
+    "id": "base-alimentazione-positiva",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Alimentazione positiva",
+    "terminals": [
+      {
+        "dir": "s",
+        "id": "t1",
+        "name": "+",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

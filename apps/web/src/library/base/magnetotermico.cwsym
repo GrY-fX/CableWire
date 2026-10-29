@@ -1,0 +1,76 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Protezioni",
+    "defaultInfo": { "label": "Q" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 2.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": -2.5,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "type": "line",
+        "x1": -1,
+        "x2": 1,
+        "y1": -3.5,
+        "y2": -1.5
+      },
+      {
+        "type": "line",
+        "x1": -1,
+        "x2": 1,
+        "y1": -1.5,
+        "y2": -3.5
+      },
+      {
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 2,
+        "y": 0
+      }
+    ],
+    "id": "base-magnetotermico",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Interruttore magnetotermico",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "1",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "2",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

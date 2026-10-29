@@ -45,5 +45,9 @@ npm test           # Vitest
 CableWire è software libero: GNU Affero General Public License v3.0 o
 successiva. Vedi [LICENSE](LICENSE).
 
+I simboli di base in `apps/web/src/library/base/` sono dedicati al pubblico
+dominio con CC0 1.0 (vedi il [README della cartella](apps/web/src/library/base/README.md)).
+Il materiale di terze parti è elencato in [THIRD_PARTY.md](THIRD_PARTY.md).
+
 CableWire si ispira a QElectroTech, ma è un progetto indipendente e non
 affiliato.

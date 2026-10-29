@@ -56,6 +56,13 @@
     if (shapeIndex === undefined || !shape) return;
     set(replaceShape(symbol, shapeIndex, { ...shape, ...patch } as Primitive));
   };
+  /** Sets an optional text field, removing it when empty. */
+  function withOptional(s: SymbolDef, key: 'author' | 'license', value: string): SymbolDef {
+    const next = { ...s };
+    if (value.trim()) next[key] = value.trim();
+    else delete next[key];
+    return next;
+  }
   const num = (e: Event) => Number((e.currentTarget as HTMLInputElement).value);
   const text = (e: Event) => (e.currentTarget as HTMLInputElement).value;
 
@@ -328,6 +335,24 @@
           {#each KINDS as k (k.value)}<option value={k.value}>{k.label}</option>{/each}
         </select>
       </label>
+      <label
+        >Autore
+        <input
+          type="text"
+          value={symbol.author ?? ''}
+          onchange={(e) => set(withOptional(symbol, 'author', text(e)))}
+        /></label
+      >
+      <label
+        >Licenza
+        <input
+          type="text"
+          value={symbol.license ?? ''}
+          placeholder="es. CC0-1.0"
+          onchange={(e) => set(withOptional(symbol, 'license', text(e)))}
+        /></label
+      >
+      <span class="wide hint">Versione {symbol.version}</span>
     </div>
     <h4>Campi predefiniti</h4>
     <p class="hint">Valori iniziali dei campi quando il simbolo viene inserito nello schema.</p>

@@ -1,0 +1,55 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Protezioni",
+    "defaultInfo": { "label": "F" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": 5
+      },
+      {
+        "height": 7,
+        "type": "rect",
+        "width": 3,
+        "x": -1.5,
+        "y": -3.5
+      },
+      {
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 3,
+        "y": 0
+      }
+    ],
+    "id": "base-fusibile",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Fusibile",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "1",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "2",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}
