@@ -27,6 +27,19 @@ packages/editor/   interazione con il disegno
 docs/              documentazione
 ```
 
+## Sviluppo
+
+Serve Node.js 22 o successivo.
+
+```bash
+npm install        # dipendenze
+npm run dev        # app in sviluppo su http://localhost:5173
+npm run build      # sito statico in apps/web/dist
+npm run lint       # ESLint + Prettier
+npm run typecheck  # TypeScript e svelte-check
+npm test           # Vitest
+```
+
 ## Licenza
 
 CableWire è software libero: GNU Affero General Public License v3.0 o
