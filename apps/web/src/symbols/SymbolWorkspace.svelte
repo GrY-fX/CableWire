@@ -1,20 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { newId } from '@cablewire/core';
-  import type { SymbolDef, SymbolId } from '@cablewire/core';
+  import type { SymbolDef } from '@cablewire/core';
   import { checkSymbol, newSymbol, SymbolEditor } from '@cablewire/editor';
   import type { ToolName } from '@cablewire/editor';
   import { parseSymbol, serializeSymbol } from '@cablewire/formats';
-  import { loadBaseSymbols } from '../library/base.ts';
+  import type { Library } from '../library/library.svelte.ts';
   import LibraryPanel from '../library/LibraryPanel.svelte';
   import { prepareSave, resolveImport, symbolFileName } from '../library/logic.ts';
   import type { ImportChoice, LibraryItem, Source } from '../library/logic.ts';
-  import { requestPersistentStorage, SymbolStorage } from '../library/storage.ts';
   import PropertiesPanel from './PropertiesPanel.svelte';
   import RotationPreview from './RotationPreview.svelte';
   import SymbolCanvas from './SymbolCanvas.svelte';
 
-  let { active }: { active: boolean } = $props();
+  let { active, library }: { active: boolean; library: Library } = $props();
 
   const first = newSymbol();
   const editor = new SymbolEditor(first);
@@ -22,13 +21,6 @@
   let scale = $state(10);
   let canvas: SymbolCanvas | undefined = $state();
 
-  const base = loadBaseSymbols();
-  const baseIds = new Set(base.map((s) => s.id));
-  let storage: SymbolStorage | undefined;
-  let storageError = $state('');
-  // Raw state: symbols are compared by reference and handed to the editor unproxied.
-  let personal = $state.raw<SymbolDef[]>([]);
-  let favorites = $state.raw(new Set<SymbolId>());
   /** Where the open symbol comes from, and the version last saved or opened. */
   let current = $state.raw<{ source: Source | undefined; saved: SymbolDef }>({
     source: undefined,
@@ -38,15 +30,6 @@
 
   onMount(() => {
     const unsubscribe = editor.subscribe(() => version++);
-    SymbolStorage.open()
-      .then(async (s) => {
-        storage = s;
-        await refresh();
-      })
-      .catch(() => {
-        storageError =
-          'Archivio del browser non disponibile (navigazione privata?): i simboli non verranno salvati.';
-      });
     const beforeunload = (e: BeforeUnloadEvent) => {
       if (dirty) e.preventDefault();
     };
@@ -54,7 +37,6 @@
     return () => {
       unsubscribe();
       window.removeEventListener('beforeunload', beforeunload);
-      storage?.close();
     };
   });
 
@@ -69,18 +51,6 @@
     };
   });
   const dirty = $derived(view.symbol !== current.saved);
-  const items = $derived<LibraryItem[]>([
-    ...personal.map((symbol) => ({
-      symbol,
-      source: 'personal' as const,
-      favorite: favorites.has(symbol.id),
-    })),
-    ...base.map((symbol) => ({
-      symbol,
-      source: 'base' as const,
-      favorite: favorites.has(symbol.id),
-    })),
-  ]);
   const status = $derived(
     current.source === 'base'
       ? 'Simbolo di base: salvando ne crei una copia personale.'
@@ -90,12 +60,6 @@
           : 'Salvato nella libreria.'
         : 'Nuovo simbolo, non ancora salvato.',
   );
-
-  async function refresh() {
-    if (!storage) return;
-    personal = (await storage.list()).map((e) => e.symbol);
-    favorites = await storage.favorites();
-  }
 
   function confirmDiscard(): boolean {
     return !dirty || confirm('Le modifiche al simbolo aperto non sono salvate. Continuare?');
@@ -129,19 +93,17 @@
   }
 
   async function save() {
-    if (!storage) return;
+    if (!library.available) return;
     const { errors, warnings } = checkSymbol(view.symbol);
     if (errors.length) {
       notice = { kind: 'error', lines: ['Impossibile salvare:', ...errors] };
       return;
     }
-    const stored = personal.find((s) => s.id === view.symbol.id);
+    const stored = library.personal.find((s) => s.id === view.symbol.id);
     const next = prepareSave(view.symbol, current.source, stored);
-    if (next !== stored) await storage.put(next);
-    if (personal.length === 0) void requestPersistentStorage();
+    if (next !== stored) await library.put(next);
     editor.replaceSymbol(next);
     current = { source: 'personal', saved: next };
-    await refresh();
     notice = {
       kind: 'info',
       lines: [`Salvato «${next.name}» (versione ${next.version}).`, ...warnings],
@@ -149,18 +111,16 @@
   }
 
   async function toggleFavorite(item: LibraryItem) {
-    await storage?.setFavorite(item.symbol.id, !item.favorite);
-    await refresh();
+    await library.setFavorite(item.symbol.id, !item.favorite);
   }
 
   async function remove(item: LibraryItem) {
-    if (!storage || !confirm(`Eliminare «${item.symbol.name}» dalla libreria?`)) return;
-    await storage.remove(item.symbol.id);
+    if (!library.available || !confirm(`Eliminare «${item.symbol.name}» dalla libreria?`)) return;
+    await library.remove(item.symbol.id);
     if (current.source === 'personal' && view.symbol.id === item.symbol.id) {
       // Keep it open, but as an unsaved symbol.
       current = { source: undefined, saved: newSymbol() };
     }
-    await refresh();
   }
 
   function exportSymbol() {
@@ -191,7 +151,7 @@
   }
 
   async function importFiles(files: FileList | null) {
-    if (!storage || !files?.length) return;
+    if (!library.available || !files?.length) return;
     const lines: string[] = [];
     let imported = 0;
     for (const file of files) {
@@ -201,12 +161,11 @@
         continue;
       }
       const symbol = parsed.value;
-      const ids = new Set(personal.map((s) => s.id));
+      const ids = new Set(library.personal.map((s) => s.id));
       const choice = ids.has(symbol.id) ? await askConflict(symbol.name) : undefined;
-      const toStore = resolveImport(symbol, ids, baseIds, choice);
+      const toStore = resolveImport(symbol, ids, library.baseIds, choice);
       if (!toStore) continue;
-      await storage.put(toStore);
-      await refresh();
+      await library.put(toStore);
       imported++;
     }
     fileInput.value = '';
@@ -303,7 +262,7 @@
     <h3>Libreria</h3>
     <div class="actions">
       <button onclick={startNew}>Nuovo</button>
-      <button onclick={() => fileInput.click()} disabled={!!storageError}>Importa…</button>
+      <button onclick={() => fileInput.click()} disabled={!!library.error}>Importa…</button>
     </div>
     <input
       bind:this={fileInput}
@@ -313,9 +272,9 @@
       hidden
       onchange={(e) => importFiles(e.currentTarget.files)}
     />
-    {#if storageError}<p class="notice error">{storageError}</p>{/if}
+    {#if library.error}<p class="notice error">{library.error}</p>{/if}
     <LibraryPanel
-      {items}
+      items={library.items}
       currentId={current.source ? view.symbol.id : undefined}
       onopen={openItem}
       onfavorite={toggleFavorite}
@@ -331,7 +290,7 @@
       <button
         class="primary"
         onclick={save}
-        disabled={!!storageError}
+        disabled={!!library.error}
         title="Salva nella libreria (Ctrl+S)"
         >{current.source === 'base' ? 'Salva come copia' : 'Salva'}</button
       >

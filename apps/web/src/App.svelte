@@ -2,7 +2,8 @@
   import { onMount } from 'svelte';
   import { FONT_FAMILY } from '@cablewire/render';
   import fontUrl from '@cablewire/render/assets/osifont.woff?url';
-  import SchemaPreview from './schema/SchemaPreview.svelte';
+  import { Library } from './library/library.svelte.ts';
+  import SchemaWorkspace from './schema/SchemaWorkspace.svelte';
   import SymbolWorkspace from './symbols/SymbolWorkspace.svelte';
 
   type Tab = 'schema' | 'symbols';
@@ -12,6 +13,9 @@
   ];
   let tab = $state<Tab>(location.hash === '#simboli' ? 'symbols' : 'schema');
 
+  /** Shared by both workspaces, so a symbol saved in Simboli is ready to place in Schema. */
+  const library = new Library();
+
   function open(next: Tab) {
     tab = next;
     history.replaceState(null, '', next === 'symbols' ? '#simboli' : '#schema');
@@ -19,6 +23,8 @@
 
   onMount(() => {
     new FontFace(FONT_FAMILY, `url(${fontUrl})`).load().then((font) => document.fonts.add(font));
+    void library.open();
+    return () => library.close();
   });
 </script>
 
@@ -32,9 +38,11 @@
     </nav>
   </header>
   <!-- Both workspaces stay mounted so switching tab keeps their state. -->
-  <div class="content" hidden={tab !== 'schema'}><SchemaPreview /></div>
+  <div class="content" hidden={tab !== 'schema'}>
+    <SchemaWorkspace active={tab === 'schema'} {library} />
+  </div>
   <div class="content" hidden={tab !== 'symbols'}>
-    <SymbolWorkspace active={tab === 'symbols'} />
+    <SymbolWorkspace active={tab === 'symbols'} {library} />
   </div>
 </div>
 

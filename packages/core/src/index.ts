@@ -12,3 +12,4 @@ export * from './commands/symbols.ts';
 export * from './commands/elements.ts';
 export * from './commands/wires.ts';
 export * from './commands/remove.ts';
+export * from './commands/clipboard.ts';
