@@ -1,13 +1,18 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import {
+    formatPattern,
+    getNumbering,
+    parsePattern,
     setElementInfo,
+    setPotentialLock,
     setPotentialNumber,
     setWireProps,
+    updateNumbering,
     updateProjectMeta,
     updateSheet,
   } from '@cablewire/core';
-  import type { ElementId, SheetSize, WireId } from '@cablewire/core';
+  import type { ElementId, NumberingSettings, SheetSize, WireId } from '@cablewire/core';
   import { parseItemKey } from '@cablewire/editor';
   import type { SchematicEditor } from '@cablewire/editor';
 
@@ -64,6 +69,25 @@
     if (name && view.element) setInfo(name.replace(/\s+/g, '_'), '-');
   }
 
+  // Numbering settings: the pattern is checked while typing, applied only when valid.
+  const numbering = $derived(getNumbering(view.doc));
+  let patternDraft = $state<string | undefined>();
+  const pattern = $derived(patternDraft ?? numbering.pattern);
+  const parsedPattern = $derived(parsePattern(pattern));
+  const preview = $derived.by(() => {
+    if (!parsedPattern.ok) return '';
+    const f = (n: number, sheet: number) =>
+      formatPattern(parsedPattern.tokens, { n, sheet, column: 1 });
+    const s = numbering.start;
+    return `${f(s, 1)}, ${f(s + 1, 1)}, ${f(s + 2, 1)} … foglio 2: ${f(s, 2)}`;
+  });
+  const PLACEHOLDERS = ['{n}', '{n:2}', '{foglio}', '{colonna}'];
+
+  function setNumbering(set: Partial<NumberingSettings>) {
+    const result = editor.store.run(updateNumbering, { set });
+    if (result.ok) patternDraft = undefined;
+  }
+
   let labelInput: HTMLInputElement | undefined = $state();
   /** Puts the cursor in the label field (double click on an element). */
   export async function focusLabel() {
@@ -115,13 +139,28 @@
     <button class="link" onclick={() => editor.rerouteSelectedWire()}>Ricalcola percorso</button>
     <div class="grid">
       <label class="wide"
-        >Numero (vale per tutto il potenziale) <input
-          type="text"
-          value={view.wire.props.number ?? ''}
-          onchange={(e) =>
-            editor.store.run(setPotentialNumber, { id: view.wire!.id, number: text(e) })}
-        /></label
-      >
+        >Numero (vale per tutto il potenziale)
+        <span class="number-row">
+          <input
+            type="text"
+            value={view.wire.props.number ?? ''}
+            onchange={(e) =>
+              editor.store.run(setPotentialNumber, { id: view.wire!.id, number: text(e) })}
+          />
+          <button
+            class="lock"
+            disabled={!view.wire.props.number}
+            title={view.wire.props.numberLocked
+              ? 'Bloccato: il ricalcolo non lo cambia. Clic per sbloccare.'
+              : 'Automatico: il ricalcolo può cambiarlo. Clic per bloccare.'}
+            onclick={() =>
+              editor.store.run(setPotentialLock, {
+                id: view.wire!.id,
+                locked: !view.wire!.props.numberLocked,
+              })}>{view.wire.props.numberLocked ? '🔒' : '🔓'}</button
+          >
+        </span>
+      </label>
       <label
         >Sezione (mm²) <input
           type="text"
@@ -231,10 +270,101 @@
         /></label
       >
     </div>
+    <h3>Numerazione fili</h3>
+    <div class="grid">
+      <label class="check wide"
+        ><input
+          type="checkbox"
+          checked={numbering.auto}
+          onchange={(e) => setNumbering({ auto: e.currentTarget.checked })}
+        /> Numera automaticamente i fili nuovi</label
+      >
+      <label class="wide"
+        >Modello
+        <input
+          type="text"
+          value={pattern}
+          class:invalid={!parsedPattern.ok}
+          oninput={(e) => (patternDraft = text(e))}
+          onchange={(e) => {
+            if (parsePattern(text(e)).ok) setNumbering({ pattern: text(e) });
+          }}
+        />
+      </label>
+      <div class="wide chips">
+        {#each PLACEHOLDERS as p (p)}
+          <button
+            class="chip"
+            title="Aggiungi al modello"
+            onclick={() => {
+              const next = pattern + p;
+              patternDraft = next;
+              if (parsePattern(next).ok) setNumbering({ pattern: next });
+            }}>{p}</button
+          >
+        {/each}
+      </div>
+      {#if parsedPattern.ok}
+        <p class="wide hint">Esempio: {preview}</p>
+      {:else}
+        <p class="wide error">{parsedPattern.error}</p>
+      {/if}
+      <label
+        >Primo numero <input
+          type="number"
+          min="0"
+          value={numbering.start}
+          onchange={(e) => setNumbering({ start: Math.max(0, Math.round(num(e))) })}
+        /></label
+      >
+    </div>
+    <p class="hint">
+      {'{n}'} contatore · {'{n:2}'} con almeno 2 cifre · {'{foglio}'} numero del foglio · {'{colonna}'}
+      colonna del riquadro. I numeri scritti a mano sono bloccati (🔒).
+    </p>
   {/if}
 </div>
 
 <style>
+  .number-row {
+    display: flex;
+    gap: 0.3rem;
+  }
+  .lock {
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .lock:disabled {
+    opacity: 0.4;
+  }
+  label.check {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    color: inherit;
+  }
+  label.check input {
+    width: auto;
+  }
+  input.invalid {
+    border-color: var(--error);
+  }
+  .error {
+    color: var(--error);
+    font-size: 0.8rem;
+    margin: 0;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  .chip {
+    font-size: 0.75rem;
+    padding: 0.1rem 0.4rem;
+  }
   .panel {
     padding: 0.25rem 0.75rem 1rem;
   }

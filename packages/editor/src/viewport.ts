@@ -31,6 +31,19 @@ export function zoomAt(vp: Viewport, screenPoint: Point, factor: number): Viewpo
   return { scale, x: anchor.x - screenPoint.x / scale, y: anchor.y - screenPoint.y / scale };
 }
 
+/** Zoom speed: scale change per pixel of wheel scrolling (≈10% per 100 px mouse notch). */
+export const WHEEL_ZOOM_SPEED = 0.001;
+
+/**
+ * Zoom factor for a wheel event, proportional to how far the wheel moved, so a
+ * touchpad's many small events zoom as smoothly as a mouse notch.
+ * `deltaMode`: 0 pixels, 1 lines, 2 pages (as in WheelEvent).
+ */
+export function wheelZoomFactor(deltaY: number, deltaMode = 0): number {
+  const pixels = deltaY * (deltaMode === 1 ? 16 : deltaMode === 2 ? 800 : 1);
+  return Math.min(2, Math.max(0.5, Math.exp(-pixels * WHEEL_ZOOM_SPEED)));
+}
+
 /** Moves the view by a screen-pixel delta (dragging the drawing). */
 export function panBy(vp: Viewport, dx: number, dy: number): Viewport {
   return { ...vp, x: vp.x - dx / vp.scale, y: vp.y - dy / vp.scale };

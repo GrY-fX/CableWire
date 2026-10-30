@@ -1,60 +1,10 @@
-import type { ProjectDoc, Sheet, SheetSize } from '@cablewire/core';
+import { BAND, sheetLayout } from '@cablewire/core';
+import type { ProjectDoc, Rect, Sheet } from '@cablewire/core';
 import type { SceneNode } from './scene.ts';
 
-/** ISO 216 sizes in millimetres, landscape (width ≥ height). */
-const ISO_SIZES: Record<SheetSize, [number, number]> = {
-  A4: [297, 210],
-  A3: [420, 297],
-  A2: [594, 420],
-  A1: [841, 594],
-  A0: [1189, 841],
-};
-
-export interface Rect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-export function sheetDimensions(sheet: Sheet): { width: number; height: number } {
-  const [long, short] = ISO_SIZES[sheet.size];
-  return sheet.orientation === 'landscape'
-    ? { width: long, height: short }
-    : { width: short, height: long };
-}
-
-/** Width of the band holding column numbers and row letters. */
-export const BAND = 5;
-export const TITLE_BLOCK = { width: 120, height: 20 };
-
-export interface SheetLayout {
-  width: number;
-  height: number;
-  /** Outer frame, inside the paper margin. */
-  frame: Rect;
-  /** Area for the drawing, inside the reference bands. */
-  drawing: Rect;
-  titleBlock: Rect;
-}
-
-export function sheetLayout(sheet: Sheet): SheetLayout {
-  const { width, height } = sheetDimensions(sheet);
-  const margin = sheet.size === 'A4' ? 5 : 10;
-  const frame = { x: margin, y: margin, width: width - 2 * margin, height: height - 2 * margin };
-  const drawing = {
-    x: frame.x + BAND,
-    y: frame.y + BAND,
-    width: frame.width - BAND,
-    height: frame.height - BAND,
-  };
-  const titleBlock = {
-    x: frame.x + frame.width - TITLE_BLOCK.width,
-    y: frame.y + frame.height - TITLE_BLOCK.height,
-    ...TITLE_BLOCK,
-  };
-  return { width, height, frame, drawing, titleBlock };
-}
+// Sheet geometry lives in core (numbering needs it too); re-exported for existing users.
+export { BAND, sheetDimensions, sheetLayout, TITLE_BLOCK } from '@cablewire/core';
+export type { Rect, SheetLayout } from '@cablewire/core';
 
 const rect = (r: Rect) => `M${r.x} ${r.y}h${r.width}v${r.height}h${-r.width}Z`;
 const line = (x1: number, y1: number, x2: number, y2: number) => `M${x1} ${y1}L${x2} ${y2}`;

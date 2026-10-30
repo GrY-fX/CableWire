@@ -10,6 +10,7 @@
     SHAPE_GRID,
     TERMINAL_GRID,
     viewBoxOf,
+    wheelZoomFactor,
     zoomAt,
   } from '@cablewire/editor';
   import type { SymbolEditor, Viewport } from '@cablewire/editor';
@@ -51,7 +52,7 @@
     // Non-passive, so the page does not scroll while zooming.
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
-      zoom(e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP, local(e));
+      zoom(wheelZoomFactor(e.deltaY, e.deltaMode), local(e));
     };
     svg.addEventListener('wheel', wheel, { passive: false });
     return () => {

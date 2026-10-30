@@ -117,9 +117,36 @@ export interface ProjectMeta {
   updatedAt: string;
 }
 
+/** Where a potential's number can come from, before falling back to the pattern. */
+export type NumberSource = 'plc' | 'terminal' | 'label';
+
+export interface NumberingSettings {
+  /** Number new potentials as soon as they are drawn. */
+  auto: boolean;
+  /** E.g. `{foglio}.{n:2}`; must contain `{n}`. */
+  pattern: string;
+  /** First value of the counter. */
+  start: number;
+  /** Sources in priority order (empty: pattern only). */
+  sources: NumberSource[];
+}
+
+export const DEFAULT_NUMBERING: NumberingSettings = {
+  auto: true,
+  pattern: '{foglio}.{n:2}',
+  start: 1,
+  sources: ['plc'],
+};
+
 export interface ProjectSettings {
   /** Snap grid step in millimetres. */
   gridStep: number;
+  /** Wire numbering; missing in older files, see getNumbering(). */
+  numbering?: NumberingSettings;
+}
+
+export function getNumbering(doc: ProjectDoc): NumberingSettings {
+  return { ...DEFAULT_NUMBERING, ...doc.settings.numbering };
 }
 
 export interface ProjectDoc {

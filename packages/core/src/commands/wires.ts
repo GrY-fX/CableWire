@@ -62,12 +62,25 @@ export const reconnectWire = defineCommand<{
   return ok([...ops, ...inheritNumberOps(applyOps(doc, ops).doc, id)]);
 });
 
-/** Sets the number of a wire and of every wire in its potential (empty clears it). */
-export const setPotentialNumber = defineCommand<{ id: WireId; number: string }>(
+/**
+ * Sets the number of a wire and of every wire in its potential (empty clears it).
+ * Numbers typed by hand are locked by default, so renumbering leaves them alone.
+ */
+export const setPotentialNumber = defineCommand<{ id: WireId; number: string; locked?: boolean }>(
   'Numero filo',
-  (doc, { id, number }) => {
+  (doc, { id, number, locked = true }) => {
     if (!doc.wires[id]) return fail('not-found', 'Wire not found');
-    return ok(potentialNumberOps(doc, id, number));
+    return ok(potentialNumberOps(doc, id, number, locked));
+  },
+);
+
+/** Locks or unlocks the number of a potential (no effect without a number). */
+export const setPotentialLock = defineCommand<{ id: WireId; locked: boolean }>(
+  'Blocca numero',
+  (doc, { id, locked }) => {
+    const wire = doc.wires[id];
+    if (!wire) return fail('not-found', 'Wire not found');
+    return ok(wire.props.number ? potentialNumberOps(doc, id, wire.props.number, locked) : []);
   },
 );
 

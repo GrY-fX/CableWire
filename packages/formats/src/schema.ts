@@ -131,7 +131,17 @@ export const projectSchema = v.object({
     createdAt: v.string(),
     updatedAt: v.string(),
   }),
-  settings: v.object({ gridStep: v.pipe(num, v.minValue(0.1)) }),
+  settings: v.object({
+    gridStep: v.pipe(num, v.minValue(0.1)),
+    numbering: v.exactOptional(
+      v.object({
+        auto: v.boolean(),
+        pattern: v.string(),
+        start: v.pipe(v.number(), v.integer(), v.minValue(0)),
+        sources: v.array(v.picklist(['plc', 'terminal', 'label'])),
+      }),
+    ),
+  }),
   sheetOrder: v.array(id<SheetId>()),
   sheets: table<SheetId, typeof sheet>(sheet),
   symbols: table<SymbolId, typeof symbolSchema>(symbolSchema),

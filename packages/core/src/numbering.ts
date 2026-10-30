@@ -5,8 +5,8 @@ import { patch } from './ops.ts';
 import { getPotentials } from './potentials.ts';
 
 // A wire number belongs to its potential: every wire of a potential shows the same
-// number. Conflicts between two numbered potentials joined together are left as they
-// are here; resolving them is the job of automatic numbering (phase 1, step 6).
+// number and lock state. Conflicts between two numbered potentials joined together are
+// left as they are here; they are listed and resolved by automatic numbering.
 
 /** Wires in the same potential as `wireId`, including it. */
 export function potentialWires(doc: ProjectDoc, wireId: WireId): Wire[] {
@@ -15,31 +15,55 @@ export function potentialWires(doc: ProjectDoc, wireId: WireId): Wire[] {
   return p === undefined ? [] : potentials.wires(p).map((id) => doc.wires[id]!);
 }
 
-const withNumber = (props: WireProps, number: string | undefined): WireProps => {
+/** Props with the given number and lock (both removed when there is no number). */
+export function withNumber(
+  props: WireProps,
+  number: string | undefined,
+  locked: boolean,
+): WireProps {
   const next = { ...props };
-  if (number) next.number = number;
-  else delete next.number;
+  delete next.number;
+  delete next.numberLocked;
+  if (number) {
+    next.number = number;
+    if (locked) next.numberLocked = true;
+  }
   return next;
-};
+}
+
+const sameNumbering = (props: WireProps, number: string | undefined, locked: boolean) =>
+  props.number === number && !!props.numberLocked === (!!number && locked);
 
 /**
- * Ops giving unnumbered wires of `wireId`'s potential the potential's number
+ * Ops giving unnumbered wires of `wireId`'s potential the potential's number and lock
  * (the wire's own number first, else the first numbered wire). `doc` must already
  * contain the change that connected the wire.
  */
 export function inheritNumberOps(doc: ProjectDoc, wireId: WireId): Op[] {
   const wires = potentialWires(doc, wireId);
-  const number = doc.wires[wireId]?.props.number || wires.find((w) => w.props.number)?.props.number;
-  if (!number) return [];
+  const self = doc.wires[wireId];
+  const source = self?.props.number ? self : wires.find((w) => w.props.number);
+  if (!source) return [];
+  const { number, numberLocked } = source.props;
   return wires
     .filter((w) => !w.props.number)
-    .map((w) => patch('wires', w.id, { props: withNumber(w.props, number) }));
+    .map((w) => patch('wires', w.id, { props: withNumber(w.props, number, !!numberLocked) }));
 }
 
-/** Ops setting (or clearing, when empty) the number of every wire in a potential. */
-export function potentialNumberOps(doc: ProjectDoc, wireId: WireId, number: string): Op[] {
+/** Ops setting (or clearing, when empty) the number and lock of every wire in a potential. */
+export function potentialNumberOps(
+  doc: ProjectDoc,
+  wireId: WireId,
+  number: string,
+  locked: boolean,
+): Op[] {
   const value = number.trim() || undefined;
   return potentialWires(doc, wireId)
-    .filter((w) => w.props.number !== value)
-    .map((w) => patch('wires', w.id, { props: withNumber(w.props, value) }));
+    .filter((w) => !sameNumbering(w.props, value, locked))
+    .map((w) => patch('wires', w.id, { props: withNumber(w.props, value, locked) }));
+}
+
+/** True if any wire of the potential has a locked number. */
+export function isPotentialLocked(doc: ProjectDoc, wireId: WireId): boolean {
+  return potentialWires(doc, wireId).some((w) => w.props.numberLocked && w.props.number);
 }

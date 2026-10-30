@@ -3,6 +3,7 @@ import type { ElementId, JunctionId, SheetId, WireId } from '../ids.ts';
 import { newId } from '../ids.ts';
 import type { Element, Junction, ProjectDoc, SymbolDef, Wire, WireEnd } from '../model.ts';
 import { isJunctionEnd } from '../model.ts';
+import { withNumber } from '../numbering.ts';
 import type { Op } from '../ops.ts';
 import { put } from '../ops.ts';
 
@@ -104,6 +105,8 @@ export const pasteFragment = defineCommand<{
         from,
         to,
         bends: w.bends.map((p) => ({ x: p.x + dx, y: p.y + dy })),
+        // Copies are new potentials: they get their own numbers, not the originals'.
+        props: withNumber(w.props, undefined, false),
       }),
     );
   }

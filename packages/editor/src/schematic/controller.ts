@@ -1,5 +1,6 @@
 import {
   addWire,
+  autoNumberPotential,
   autoRoute,
   copyFragment,
   endDirection,
@@ -470,15 +471,13 @@ export class SchematicEditor {
     this.store.begin('Collega filo');
     const from = resolveAnchor(this.store, this.sheet, start);
     const to = from && resolveAnchor(this.store, this.sheet, target);
+    const id = newId<'wire'>() as WireId;
     const ok =
       !!from &&
       !!to &&
-      this.run(addWire, {
-        id: newId<'wire'>() as WireId,
-        from,
-        to,
-        bends: path.slice(1, -1),
-      });
+      this.run(addWire, { id, from, to, bends: path.slice(1, -1) }) &&
+      // A new potential gets its number in the same undo entry.
+      this.run(autoNumberPotential, { id });
     if (ok) this.store.commit();
     else {
       this.store.rollback();
@@ -585,15 +584,24 @@ export class SchematicEditor {
     if (!clip) return;
     const step = clip.sheet === this.sheet ? 2 * this.grid * (clip.pasted + 1) : 0;
     const ids = freshIds(clip.fragment);
-    if (
-      this.run(pasteFragment, {
-        fragment: clip.fragment,
-        sheetId: this.sheet,
-        dx: step,
-        dy: step,
-        ids,
-      })
-    ) {
+    this.store.begin('Incolla');
+    const pasted = this.run(pasteFragment, {
+      fragment: clip.fragment,
+      sheetId: this.sheet,
+      dx: step,
+      dy: step,
+      ids,
+    });
+    // Pasted wires come without numbers: number their potentials in the same entry.
+    if (pasted) {
+      for (const w of clip.fragment.wires) {
+        if (ids[w.id]) this.run(autoNumberPotential, { id: ids[w.id] as WireId });
+      }
+      this.store.commit();
+    } else {
+      this.store.rollback();
+    }
+    if (pasted) {
       clip.pasted++;
       this.selected = new Set([
         ...clip.fragment.elements.map((e) => elementKey(ids[e.id]!)),

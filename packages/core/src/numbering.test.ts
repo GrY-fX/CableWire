@@ -111,7 +111,9 @@ describe('wire numbers follow the potential', () => {
       props: { number: '9' },
     });
     must(ctx.store, setPotentialNumber, { id: id('xb'), number: ' 12 ' });
-    expect(wire(ctx, 'ax').props).toEqual({ number: '12', section: '1.5' });
+    // Typed by hand: locked on every wire of the potential.
+    expect(wire(ctx, 'ax').props).toEqual({ number: '12', section: '1.5', numberLocked: true });
+    expect(wire(ctx, 'xb').props.numberLocked).toBe(true);
     expect(wire(ctx, 'xb').props.number).toBe('12');
     expect(wire(ctx, 'other').props.number).toBe('9'); // another potential
     expect(ctx.store.undoLabel).toBe('Numero filo');

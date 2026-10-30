@@ -183,3 +183,27 @@ describe('editing wires', () => {
     expect(wires(editor)[0]!.bends).toEqual([p(12.5, 25), p(40, 25)]);
   });
 });
+
+describe('automatic numbering while drawing', () => {
+  it('numbers new potentials in the same undo entry, and pasted ones anew', () => {
+    const { editor, store } = setup();
+    editor.setTool('wire');
+    click(editor, 10, 15);
+    click(editor, 40, 35);
+    expect(wires(editor)[0]!.props.number).toBe('1.01');
+    store.undo();
+    expect(wires(editor)).toEqual([]);
+    store.redo();
+
+    editor.setTool('select');
+    editor.key('a', { ctrl: true });
+    editor.key('c', { ctrl: true });
+    editor.key('v', { ctrl: true });
+    expect(
+      wires(editor)
+        .map((w) => w.props.number)
+        .sort(),
+    ).toEqual(['1.01', '1.02']);
+    expect(store.undoLabel).toBe('Incolla');
+  });
+});

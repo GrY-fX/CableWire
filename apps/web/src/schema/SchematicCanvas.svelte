@@ -7,7 +7,14 @@
     DomRenderer,
     sheetDimensions,
   } from '@cablewire/render';
-  import { fitBounds, panBy, screenToWorld, viewBoxOf, zoomAt } from '@cablewire/editor';
+  import {
+    fitBounds,
+    panBy,
+    screenToWorld,
+    viewBoxOf,
+    wheelZoomFactor,
+    zoomAt,
+  } from '@cablewire/editor';
   import type { SchematicEditor, Viewport } from '@cablewire/editor';
 
   let {
@@ -46,7 +53,7 @@
     observer.observe(svg);
     const wheel = (e: WheelEvent) => {
       e.preventDefault();
-      zoom(e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP, local(e));
+      zoom(wheelZoomFactor(e.deltaY, e.deltaMode), local(e));
     };
     svg.addEventListener('wheel', wheel, { passive: false });
     return () => {

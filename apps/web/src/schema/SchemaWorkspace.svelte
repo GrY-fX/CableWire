@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { createEmptyProject, createStore } from '@cablewire/core';
-  import type { SymbolDef } from '@cablewire/core';
+  import { createEmptyProject, createStore, renumber } from '@cablewire/core';
+  import type { SheetId, SymbolDef } from '@cablewire/core';
   import { SchematicEditor } from '@cablewire/editor';
   import { buildScene, FONT_FAMILY, toSvgString } from '@cablewire/render';
   import fontUrl from '@cablewire/render/assets/osifont.woff?url';
@@ -147,6 +147,18 @@
     }
   }
 
+  let renumberMenu = $state(false);
+
+  function recalc(sheetId: SheetId | undefined) {
+    renumberMenu = false;
+    const before = store.undoLabel;
+    const result = store.run(renumber, sheetId === undefined ? {} : { sheetId });
+    if (!result.ok) notice = { kind: 'error', lines: [result.error.message] };
+    else if (store.undoLabel === before) {
+      notice = { kind: 'info', lines: ['La numerazione è già in ordine: nessun numero cambiato.'] };
+    }
+  }
+
   function newProject() {
     if (!confirm('Iniziare un nuovo progetto? Quello aperto verrà sostituito.')) return;
     store.reset(createEmptyProject('Nuovo progetto'));
@@ -229,6 +241,19 @@
       <button title="Ingrandisci (+)" onclick={() => canvas?.zoom(1.2)}>+</button>
       <button title="Adatta al foglio (0)" onclick={() => canvas?.fit()}>Adatta</button>
       <label class="check"><input type="checkbox" bind:checked={showGrid} /> Griglia</label>
+      <span class="sep"></span>
+      <div class="menu">
+        <button
+          title="Rifà i numeri dei fili in ordine di lettura, chiudendo i buchi (i numeri bloccati restano)"
+          onclick={() => (renumberMenu = !renumberMenu)}>Ricalcola numerazione ▾</button
+        >
+        {#if renumberMenu}
+          <div class="menu-items">
+            <button onclick={() => recalc(editor.sheetId)}>Foglio corrente</button>
+            <button onclick={() => recalc(undefined)}>Tutto il progetto</button>
+          </div>
+        {/if}
+      </div>
       <span class="spacer"></span>
       <button onclick={exportSvg}>Esporta SVG</button>
       <button onclick={newProject}>Nuovo progetto</button>
@@ -357,6 +382,27 @@
   }
   .spacer {
     flex: 1;
+  }
+  .menu {
+    position: relative;
+  }
+  .menu-items {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    min-width: 11rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+  }
+  .menu-items button {
+    text-align: left;
+    border-radius: 0;
+    padding: 0.35rem 0.6rem;
   }
   .canvas {
     flex: 1;

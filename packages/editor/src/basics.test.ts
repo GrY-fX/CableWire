@@ -3,7 +3,15 @@ import type { Primitive } from '@cablewire/core';
 import { SnapshotHistory } from './history.ts';
 import { distanceToPrimitive } from './hit.ts';
 import { snapPoint } from './snap.ts';
-import { fitBounds, panBy, screenToWorld, viewBoxOf, worldToScreen, zoomAt } from './viewport.ts';
+import {
+  fitBounds,
+  panBy,
+  screenToWorld,
+  viewBoxOf,
+  wheelZoomFactor,
+  worldToScreen,
+  zoomAt,
+} from './viewport.ts';
 
 describe('viewport', () => {
   const vp = { x: -10, y: -5, scale: 4 };
@@ -108,5 +116,16 @@ describe('SnapshotHistory', () => {
     expect(h.value).toBe(2);
     h.set(9);
     expect(h.canRedo).toBe(false);
+  });
+});
+
+describe('wheel zoom', () => {
+  it('zooms in proportion to the wheel movement, gently and within limits', () => {
+    expect(wheelZoomFactor(-100)).toBeCloseTo(1.105, 3); // one mouse notch in
+    expect(wheelZoomFactor(100)).toBeCloseTo(1 / 1.105, 3);
+    expect(wheelZoomFactor(-4)).toBeCloseTo(1.004, 3); // a small touchpad step
+    expect(wheelZoomFactor(-3, 1)).toBeCloseTo(wheelZoomFactor(-48), 6); // lines
+    expect(wheelZoomFactor(-100000)).toBe(2);
+    expect(wheelZoomFactor(100000)).toBe(0.5);
   });
 });
