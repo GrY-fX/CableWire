@@ -53,6 +53,21 @@ export function parsePattern(pattern: string): ParsedPattern {
   return { ok: true, tokens };
 }
 
+/** Checks a PLC card pattern: only {byte} and {morsetto}, and {morsetto} is required. */
+export function checkPlcPattern(pattern: string): string | undefined {
+  const names = [...pattern.matchAll(/\{([^}]*)\}/g)].map((m) => m[1]!.trim());
+  const unknown = names.find((n) => n !== 'byte' && n !== 'morsetto');
+  if (unknown !== undefined) return `Segnaposto sconosciuto {${unknown}}: usa {byte} e {morsetto}.`;
+  if (!names.includes('morsetto')) return 'Il formato della scheda PLC deve contenere {morsetto}.';
+  if (/[{}]/.test(pattern.replace(/\{[^}]*\}/g, ''))) return 'Graffe non bilanciate.';
+  return undefined;
+}
+
+/** Address of a PLC card terminal, e.g. `{byte}.{morsetto}` with I0 and 3 → I0.3. */
+export function formatPlcAddress(pattern: string, byte: string, terminal: string): string {
+  return pattern.replace(/\{\s*byte\s*\}/g, byte).replace(/\{\s*morsetto\s*\}/g, terminal);
+}
+
 export function formatPattern(tokens: readonly PatternToken[], ctx: PatternContext): string {
   return tokens
     .map((t) => {

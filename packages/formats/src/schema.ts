@@ -139,6 +139,8 @@ export const projectSchema = v.object({
         pattern: v.string(),
         start: v.pipe(v.number(), v.integer(), v.minValue(0)),
         sources: v.array(v.picklist(['plc', 'terminal', 'label'])),
+        terminalStyle: v.exactOptional(v.picklist(['number', 'full'])),
+        plcPattern: v.exactOptional(v.string()),
       }),
     ),
   }),

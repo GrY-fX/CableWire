@@ -1,9 +1,13 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import {
+    checkPlcPattern,
     formatPattern,
+    formatPlcAddress,
     getNumbering,
+    numberOrigin,
     parsePattern,
+    SOURCE_NAMES,
     setElementInfo,
     setPotentialLock,
     setPotentialNumber,
@@ -12,9 +16,16 @@
     updateProjectMeta,
     updateSheet,
   } from '@cablewire/core';
-  import type { ElementId, NumberingSettings, SheetSize, WireId } from '@cablewire/core';
+  import type {
+    ElementId,
+    NumberingSettings,
+    NumberSource,
+    SheetSize,
+    WireId,
+  } from '@cablewire/core';
   import { parseItemKey } from '@cablewire/editor';
   import type { SchematicEditor } from '@cablewire/editor';
+  import LockIcon from './LockIcon.svelte';
 
   let { editor, version }: { editor: SchematicEditor; version: number } = $props();
 
@@ -88,6 +99,55 @@
     if (result.ok) patternDraft = undefined;
   }
 
+  // PLC card address format, checked while typing like the main pattern.
+  let plcDraft = $state<string | undefined>();
+  const plcPattern = $derived(plcDraft ?? numbering.plcPattern ?? '{byte}.{morsetto}');
+  const plcError = $derived(checkPlcPattern(plcPattern));
+  $effect(() => {
+    // Forget the draft once the setting matches it (applied or undone).
+    if (plcDraft !== undefined && plcDraft === numbering.plcPattern) plcDraft = undefined;
+  });
+
+  // Number sources: presets per kind of project, or a custom choice and order.
+  const ALL_SOURCES: NumberSource[] = ['plc', 'terminal', 'label'];
+  const PRESETS: { id: string; label: string; sources: NumberSource[] }[] = [
+    { id: 'plc', label: 'Quadro con PLC', sources: ['plc'] },
+    { id: 'electromechanical', label: 'Quadro elettromeccanico', sources: ['terminal'] },
+    { id: 'plc-terminal', label: 'PLC e morsettiere', sources: ['plc', 'terminal'] },
+    { id: 'counter', label: 'Solo contatore', sources: [] },
+  ];
+  const preset = $derived(
+    PRESETS.find((p) => p.sources.join() === numbering.sources.join())?.id ?? 'custom',
+  );
+  /** Enabled sources in priority order, then the disabled ones. */
+  const sourceRows = $derived([
+    ...numbering.sources.map((s) => ({ source: s, enabled: true })),
+    ...ALL_SOURCES.filter((s) => !numbering.sources.includes(s)).map((s) => ({
+      source: s,
+      enabled: false,
+    })),
+  ]);
+
+  function toggleSource(source: NumberSource, enabled: boolean) {
+    const sources = enabled
+      ? [...numbering.sources, source]
+      : numbering.sources.filter((s) => s !== source);
+    setNumbering({ sources });
+  }
+
+  function moveSource(index: number, delta: -1 | 1) {
+    const sources = [...numbering.sources];
+    const target = index + delta;
+    if (target < 0 || target >= sources.length) return;
+    [sources[index], sources[target]] = [sources[target]!, sources[index]!];
+    setNumbering({ sources });
+  }
+
+  const origin = $derived.by(() => {
+    void version;
+    return view.wire ? numberOrigin(view.doc, view.wire.id) : undefined;
+  });
+
   let labelInput: HTMLInputElement | undefined = $state();
   /** Puts the cursor in the label field (double click on an element). */
   export async function focusLabel() {
@@ -103,7 +163,9 @@
     <div class="grid">
       {#each fields as [key, label] (key)}
         <label class="wide"
-          >{label}
+          >{key === 'plc_address' && view.symbol.kind === 'plc'
+            ? 'Byte della scheda (es. I0)'
+            : label}
           {#if key === 'label'}
             <input
               bind:this={labelInput}
@@ -136,6 +198,9 @@
         {view.highlight.sheets === 1 ? 'foglio' : 'fogli'}.
       </p>
     {/if}
+    {#if origin}
+      <p class="hint">Numero preso da {SOURCE_NAMES[origin.source]} di {origin.from}.</p>
+    {/if}
     <button class="link" onclick={() => editor.rerouteSelectedWire()}>Ricalcola percorso</button>
     <div class="grid">
       <label class="wide"
@@ -149,6 +214,7 @@
           />
           <button
             class="lock"
+            class:locked={view.wire.props.numberLocked}
             disabled={!view.wire.props.number}
             title={view.wire.props.numberLocked
               ? 'Bloccato: il ricalcolo non lo cambia. Clic per sbloccare.'
@@ -157,8 +223,11 @@
               editor.store.run(setPotentialLock, {
                 id: view.wire!.id,
                 locked: !view.wire!.props.numberLocked,
-              })}>{view.wire.props.numberLocked ? '🔒' : '🔓'}</button
+              })}
           >
+            <LockIcon locked={!!view.wire.props.numberLocked} />
+            {view.wire.props.numberLocked ? 'Bloccato' : 'Automatico'}
+          </button>
         </span>
       </label>
       <label
@@ -320,21 +389,146 @@
     </div>
     <p class="hint">
       {'{n}'} contatore · {'{n:2}'} con almeno 2 cifre · {'{foglio}'} numero del foglio · {'{colonna}'}
-      colonna del riquadro. I numeri scritti a mano sono bloccati (🔒).
+      colonna del riquadro. I numeri scritti a mano diventano «Bloccato».
+    </p>
+    <h4>Numero dal terminale raggiunto</h4>
+    <p class="hint">
+      Prima del contatore si prova, in quest'ordine, a prendere il numero dagli elementi raggiunti
+      dal potenziale.
+    </p>
+    <label
+      >Tipo di progetto
+      <select
+        value={preset}
+        onchange={(e) => {
+          const p = PRESETS.find((x) => x.id === text(e));
+          if (p) setNumbering({ sources: p.sources });
+        }}
+      >
+        {#each PRESETS as p (p.id)}<option value={p.id}>{p.label}</option>{/each}
+        <option value="custom" disabled>Personalizzato</option>
+      </select>
+    </label>
+    <ul class="sources">
+      {#each sourceRows as row, i (row.source)}
+        <li>
+          <label class="check"
+            ><input
+              type="checkbox"
+              checked={row.enabled}
+              onchange={(e) => toggleSource(row.source, e.currentTarget.checked)}
+            />
+            {row.enabled ? `${i + 1}.` : ''}
+            {SOURCE_NAMES[row.source]}</label
+          >
+          {#if row.enabled}
+            <button
+              class="icon"
+              title="Più importante"
+              disabled={i === 0}
+              onclick={() => moveSource(i, -1)}>▲</button
+            >
+            <button
+              class="icon"
+              title="Meno importante"
+              disabled={i === numbering.sources.length - 1}
+              onclick={() => moveSource(i, 1)}>▼</button
+            >
+          {/if}
+        </li>
+      {/each}
+    </ul>
+    {#if numbering.sources.includes('plc')}
+      <label
+        >Indirizzo dalle schede PLC
+        <input
+          type="text"
+          value={plcPattern}
+          class:invalid={!!plcError}
+          oninput={(e) => (plcDraft = text(e))}
+          onchange={(e) => {
+            if (!checkPlcPattern(text(e))) setNumbering({ plcPattern: text(e) });
+          }}
+        />
+      </label>
+      {#if plcError}
+        <p class="error">{plcError}</p>
+      {:else}
+        <p class="hint">
+          Esempio: scheda con byte I0, morsetto 3 → {formatPlcAddress(plcPattern, 'I0', '3')} · {'{byte}'}
+          = indirizzo della scheda, {'{morsetto}'} = numero del terminale (solo terminali numerati).
+        </p>
+      {/if}
+    {/if}
+    {#if numbering.sources.includes('terminal')}
+      <label
+        >Numero dal morsetto
+        <select
+          value={numbering.terminalStyle ?? 'number'}
+          onchange={(e) => setNumbering({ terminalStyle: text(e) as 'number' | 'full' })}
+        >
+          <option value="number">Solo numero (X1:5 → 5)</option>
+          <option value="full">Sigla completa (X1:5)</option>
+        </select>
+      </label>
+    {/if}
+    <p class="hint">
+      Indirizzo PLC: campo «Indirizzo PLC» di un elemento · morsetto: sigla di un elemento di tipo
+      morsetto · sigla: sigla degli altri elementi. Le modifiche valgono per i fili nuovi; usa
+      «Ricalcola numerazione» per applicarle ai fili esistenti.
     </p>
   {/if}
 </div>
 
 <style>
+  h4 {
+    margin: 0.9rem 0 0.25rem;
+    font-size: 0.85rem;
+  }
+  .sources {
+    list-style: none;
+    margin: 0.4rem 0;
+    padding: 0;
+  }
+  .sources li {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+  .sources label {
+    flex: 1;
+  }
+  .icon {
+    border: none;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.75rem;
+  }
+  .icon:disabled {
+    opacity: 0.3;
+  }
   .number-row {
     display: flex;
     gap: 0.3rem;
   }
   .lock {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex: none;
+    padding: 0 0.45rem;
     border: 1px solid var(--border);
     background: #fff;
     border-radius: 3px;
     cursor: pointer;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .lock.locked {
+    border-color: #e0b35c;
+    background: #fff8e6;
+    color: var(--warning);
   }
   .lock:disabled {
     opacity: 0.4;

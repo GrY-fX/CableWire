@@ -19,3 +19,5 @@ export * from './commands/clipboard.ts';
 export * from './commands/numbering.ts';
 export * from './autonumber/rule.ts';
 export * from './autonumber/allocate.ts';
+export * from './autonumber/sources.ts';
+export * from './autonumber/conflicts.ts';

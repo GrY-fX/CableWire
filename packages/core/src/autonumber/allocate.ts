@@ -7,6 +7,7 @@ import type { Op } from '../ops.ts';
 import { getPotentials } from '../potentials.ts';
 import { columnAt } from '../sheet.ts';
 import { formatPattern, parsePattern } from './rule.ts';
+import { sourceValues } from './sources.ts';
 import type { PatternContext, PatternToken } from './rule.ts';
 
 /** A potential that has wires, with where it "starts" in reading order. */
@@ -100,9 +101,19 @@ export function autoNumberOps(doc: ProjectDoc, wireId: WireId): Op[] {
   const infos = potentialsInReadingOrder(doc);
   const info = infos.find((i) => i.wires.some((w) => w.id === wireId));
   if (!info || info.number) return [];
+  // A source (PLC address, terminal...) wins over the counter; with several values the
+  // first is used and the potential shows up as a conflict to resolve.
+  const fromSource = sourceValues(doc, wireId)?.values[0]?.value;
   const used = new Set(infos.flatMap((i) => (i.number ? [i.number] : [])));
-  const number = nextFreeNumber(tokens, info.context, settings.start, used);
+  const number = fromSource ?? nextFreeNumber(tokens, info.context, settings.start, used);
   return potentialNumberOps(doc, wireId, number, false);
+}
+
+/** Potentials with a locked number, on one sheet (where they start) or in the whole project. */
+export function countLocked(doc: ProjectDoc, sheetId?: SheetId): number {
+  return potentialsInReadingOrder(doc).filter(
+    (i) => i.locked && (sheetId === undefined || i.sheet === sheetId),
+  ).length;
 }
 
 /**
@@ -119,11 +130,23 @@ export function renumberOps(doc: ProjectDoc, sheetId?: SheetId): Op[] {
   const used = new Set(
     infos.flatMap((i) => ((!inScope(i) || i.locked) && i.number ? [i.number] : [])),
   );
+  const todo = infos.filter((i) => inScope(i) && !i.locked);
+  // Source values first, so that the counter never produces one of them.
+  const fromSource = new Map<PotentialInfo, string>();
+  for (const info of todo) {
+    const value = sourceValues(doc, info.wire)?.values[0]?.value;
+    if (value) {
+      fromSource.set(info, value);
+      used.add(value);
+    }
+  }
   const ops: Op[] = [];
-  for (const info of infos) {
-    if (!inScope(info) || info.locked) continue;
-    const number = nextFreeNumber(tokens, info.context, start, used);
-    used.add(number);
+  for (const info of todo) {
+    let number = fromSource.get(info);
+    if (number === undefined) {
+      number = nextFreeNumber(tokens, info.context, start, used);
+      used.add(number);
+    }
     ops.push(...potentialNumberOps(doc, info.wire, number, false));
   }
   return ops;

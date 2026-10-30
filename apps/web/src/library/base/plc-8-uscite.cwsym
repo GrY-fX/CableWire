@@ -1,0 +1,269 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "PLC",
+    "defaultInfo": { "label": "A2", "plc_address": "Q0" },
+    "graphics": [
+      {
+        "height": 10,
+        "type": "rect",
+        "width": 40,
+        "x": -20,
+        "y": -5
+      },
+      {
+        "type": "line",
+        "x1": -17.5,
+        "x2": -17.5,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": -12.5,
+        "x2": -12.5,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": -7.5,
+        "x2": -7.5,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": 7.5,
+        "x2": 7.5,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": 12.5,
+        "x2": 12.5,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": 17.5,
+        "x2": 17.5,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "anchor": "middle",
+        "size": 1.8,
+        "text": "0",
+        "type": "text",
+        "x": -17.5,
+        "y": -3.5
+      },
+      {
+        "anchor": "middle",
+        "size": 1.8,
+        "text": "1",
+        "type": "text",
+        "x": -12.5,
+        "y": -3.5
+      },
+      {
+        "anchor": "middle",
+        "size": 1.8,
+        "text": "2",
+        "type": "text",
+        "x": -7.5,
+        "y": -3.5
+      },
+      {
+        "anchor": "middle",
+        "size": 1.8,
+        "text": "3",
+        "type": "text",
+        "x": -2.5,
+        "y": -3.5
+      },
+      {
+        "anchor": "middle",
+        "size": 1.8,
+        "text": "4",
+        "type": "text",
+        "x": 2.5,
+        "y": -3.5
+      },
+      {
+        "anchor": "middle",
+        "size": 1.8,
+        "text": "5",
+        "type": "text",
+        "x": 7.5,
+        "y": -3.5
+      },
+      {
+        "anchor": "middle",
+        "size": 1.8,
+        "text": "6",
+        "type": "text",
+        "x": 12.5,
+        "y": -3.5
+      },
+      {
+        "anchor": "middle",
+        "size": 1.8,
+        "text": "7",
+        "type": "text",
+        "x": 17.5,
+        "y": -3.5
+      },
+      {
+        "type": "line",
+        "x1": -5,
+        "x2": -5,
+        "y1": 5,
+        "y2": 7.5
+      },
+      {
+        "type": "line",
+        "x1": 5,
+        "x2": 5,
+        "y1": 5,
+        "y2": 7.5
+      },
+      {
+        "anchor": "middle",
+        "size": 1.5,
+        "text": "L+",
+        "type": "text",
+        "x": -5,
+        "y": 3.5
+      },
+      {
+        "anchor": "middle",
+        "size": 1.5,
+        "text": "M",
+        "type": "text",
+        "x": 5,
+        "y": 3.5
+      },
+      {
+        "anchor": "middle",
+        "size": 2.5,
+        "text": "DO 8",
+        "type": "text",
+        "x": 0,
+        "y": 0.5
+      },
+      {
+        "size": 2.5,
+        "text": "{label}",
+        "type": "text",
+        "x": 21,
+        "y": -2
+      },
+      {
+        "size": 2,
+        "text": "{plc_address}",
+        "type": "text",
+        "x": 21,
+        "y": 2
+      }
+    ],
+    "id": "base-plc-8-uscite",
+    "kind": "plc",
+    "license": "CC0-1.0",
+    "name": "Scheda PLC 8 uscite digitali",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "b0",
+        "name": "0",
+        "x": -17.5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "b1",
+        "name": "1",
+        "x": -12.5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "b2",
+        "name": "2",
+        "x": -7.5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "b3",
+        "name": "3",
+        "x": -2.5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "b4",
+        "name": "4",
+        "x": 2.5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "b5",
+        "name": "5",
+        "x": 7.5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "b6",
+        "name": "6",
+        "x": 12.5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "b7",
+        "name": "7",
+        "x": 17.5,
+        "y": -7.5
+      },
+      {
+        "dir": "s",
+        "id": "lp",
+        "name": "L+",
+        "x": -5,
+        "y": 7.5
+      },
+      {
+        "dir": "s",
+        "id": "m",
+        "name": "M",
+        "x": 5,
+        "y": 7.5
+      }
+    ],
+    "version": 1
+  }
+}

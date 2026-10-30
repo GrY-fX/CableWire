@@ -64,7 +64,8 @@ Valori presi dagli elementi raggiunti dal potenziale:
 | Sorgente | Da dove viene | Esempio |
 |---|---|---|
 | Indirizzo PLC | campo `plc_address` di un elemento del potenziale | `I0.3` |
-| Morsetto | nome del terminale di un elemento di tipo *morsetto* | `X1` morsetto `5` → `5` (o `X1:5`, opzione) |
+| Indirizzo PLC da scheda | su un simbolo di tipo **PLC** il campo è il **byte** della scheda; il filo prende `{byte}.{morsetto}` (formato configurabile) dal terminale raggiunto, solo se il terminale ha un nome numerico (L+, M… esclusi) | byte `I0`, morsetto `3` → `I0.3` |
+| Morsetto | sigla di un elemento di tipo *morsetto* (non il nome del terminale: i due lati di un morsetto passante sono lo stesso potenziale) | `X1:5` → `5` ("solo numero", predefinito) o `X1:5` ("sigla completa") |
 | Sigla | campo `label` di un elemento di un tipo scelto | `KM1` |
 
 Se una sorgente trova **un solo valore** lo usa. Se ne trova più di uno

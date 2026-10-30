@@ -1,6 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { createEmptyProject, createStore, renumber } from '@cablewire/core';
+  import {
+    countLocked,
+    createEmptyProject,
+    createStore,
+    numberingConflicts,
+    renumber,
+  } from '@cablewire/core';
   import type { SheetId, SymbolDef } from '@cablewire/core';
   import { SchematicEditor } from '@cablewire/editor';
   import { buildScene, FONT_FAMILY, toSvgString } from '@cablewire/render';
@@ -10,6 +16,7 @@
   import { sameSymbol } from '../library/logic.ts';
   import type { LibraryItem } from '../library/logic.ts';
   import { ProjectAutosave } from './autosave.ts';
+  import ConflictsPanel from './ConflictsPanel.svelte';
   import SchematicCanvas from './SchematicCanvas.svelte';
   import SchemaProperties from './SchemaProperties.svelte';
   import SheetTabs from './SheetTabs.svelte';
@@ -148,15 +155,33 @@
   }
 
   let renumberMenu = $state(false);
+  let showConflicts = $state(false);
+  const conflicts = $derived.by(() => {
+    void version;
+    return numberingConflicts(editor.doc);
+  });
 
   function recalc(sheetId: SheetId | undefined) {
     renumberMenu = false;
     const before = store.undoLabel;
     const result = store.run(renumber, sheetId === undefined ? {} : { sheetId });
-    if (!result.ok) notice = { kind: 'error', lines: [result.error.message] };
-    else if (store.undoLabel === before) {
-      notice = { kind: 'info', lines: ['La numerazione è già in ordine: nessun numero cambiato.'] };
+    if (!result.ok) {
+      notice = { kind: 'error', lines: [result.error.message] };
+      return;
     }
+    const lines = [
+      store.undoLabel === before
+        ? 'La numerazione è già in ordine: nessun numero cambiato.'
+        : 'Numerazione ricalcolata.',
+    ];
+    // Numbers typed by hand are kept on purpose: say so, or it looks like a bug.
+    const locked = countLocked(store.doc, sheetId);
+    if (locked) {
+      lines.push(
+        `${locked} ${locked === 1 ? 'numero bloccato non è stato modificato' : 'numeri bloccati non sono stati modificati'}: sbloccali con il pulsante «Bloccato» nel pannello del filo, o cancellane il numero, per ricalcolarli.`,
+      );
+    }
+    notice = { kind: 'info', lines };
   }
 
   function newProject() {
@@ -254,10 +279,21 @@
           </div>
         {/if}
       </div>
+      {#if conflicts.length}
+        <button
+          class="warn"
+          title="Potenziali con più numeri possibili: scegli quello giusto"
+          onclick={() => (showConflicts = !showConflicts)}
+          >⚠ {conflicts.length} {conflicts.length === 1 ? 'conflitto' : 'conflitti'}</button
+        >
+      {/if}
       <span class="spacer"></span>
       <button onclick={exportSvg}>Esporta SVG</button>
       <button onclick={newProject}>Nuovo progetto</button>
     </div>
+    {#if showConflicts && conflicts.length}
+      <ConflictsPanel {editor} {conflicts} onclose={() => (showConflicts = false)} />
+    {/if}
     {#if notice}
       <div class="notice {notice.kind}">
         <ul>
@@ -385,6 +421,11 @@
   }
   .menu {
     position: relative;
+  }
+  .toolbar button.warn {
+    color: var(--warning);
+    border-color: var(--warning);
+    background: #fff8e6;
   }
   .menu-items {
     position: absolute;

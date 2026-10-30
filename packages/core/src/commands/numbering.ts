@@ -1,5 +1,5 @@
 import { autoNumberOps, renumberOps } from '../autonumber/allocate.ts';
-import { parsePattern } from '../autonumber/rule.ts';
+import { checkPlcPattern, parsePattern } from '../autonumber/rule.ts';
 import { defineCommand, fail, ok } from '../command.ts';
 import type { SheetId, WireId } from '../ids.ts';
 import type { NumberingSettings } from '../model.ts';
@@ -13,6 +13,8 @@ export const updateNumbering = defineCommand<{ set: Partial<NumberingSettings> }
     const numbering = { ...getNumbering(doc), ...set };
     const parsed = parsePattern(numbering.pattern);
     if (!parsed.ok) return fail('invalid-pattern', parsed.error);
+    const plcError = numbering.plcPattern ? checkPlcPattern(numbering.plcPattern) : undefined;
+    if (plcError) return fail('invalid-pattern', plcError);
     return ok([meta({ settings: { ...doc.settings, numbering } })]);
   },
 );

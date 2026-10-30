@@ -129,6 +129,13 @@ export interface NumberingSettings {
   start: number;
   /** Sources in priority order (empty: pattern only). */
   sources: NumberSource[];
+  /** Terminal source: `number` takes what follows the last ":" of the label (X1:5 → 5). */
+  terminalStyle?: 'number' | 'full';
+  /**
+   * PLC cards (symbols of kind `plc`): address of a wire on a numbered terminal, from the
+   * card's byte (its PLC address field) and the terminal name, e.g. `{byte}.{morsetto}`.
+   */
+  plcPattern?: string;
 }
 
 export const DEFAULT_NUMBERING: NumberingSettings = {
@@ -136,6 +143,8 @@ export const DEFAULT_NUMBERING: NumberingSettings = {
   pattern: '{foglio}.{n:2}',
   start: 1,
   sources: ['plc'],
+  terminalStyle: 'number',
+  plcPattern: '{byte}.{morsetto}',
 };
 
 export interface ProjectSettings {
