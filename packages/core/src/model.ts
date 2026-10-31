@@ -68,6 +68,8 @@ export interface SymbolDef {
   author?: string;
   /** SPDX identifier, e.g. `CC0-1.0`. */
   license?: string;
+  /** Sheet references (kind `report`): incoming or outgoing; links join one of each. */
+  report?: 'in' | 'out';
 }
 
 export interface Element {
@@ -152,6 +154,11 @@ export interface ProjectSettings {
   gridStep: number;
   /** Wire numbering; missing in older files, see getNumbering(). */
   numbering?: NumberingSettings;
+  /**
+   * Text next to a sheet reference telling where the wire continues, e.g.
+   * `→ {foglio}.{colonna}`; see DEFAULT_REFERENCE_PATTERN.
+   */
+  referencePattern?: string;
 }
 
 export function getNumbering(doc: ProjectDoc): NumberingSettings {

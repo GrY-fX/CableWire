@@ -1,22 +1,36 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import {
+    availablePartners,
     checkPlcPattern,
+    DEFAULT_REFERENCE_PATTERN,
     formatPattern,
     formatPlcAddress,
+    formatReference,
     getNumbering,
+    getReferencePattern,
+    linkedReport,
+    linkReports,
     numberOrigin,
     parsePattern,
+    referenceValues,
+    reportDirection,
+    reportName,
+    reportWires,
     SOURCE_NAMES,
     setElementInfo,
     setPotentialLock,
     setPotentialNumber,
     setWireProps,
+    unlinkedReports,
+    unlinkReport,
     updateNumbering,
     updateProjectMeta,
+    updateSettings,
     updateSheet,
   } from '@cablewire/core';
   import type {
+    Element,
     ElementId,
     NumberingSettings,
     NumberSource,
@@ -54,11 +68,15 @@
     ['location', 'Posizione (+)'],
     ['plc_address', 'Indirizzo PLC'],
   ];
+  /** Sheet references show their id instead of the usual fields (the name is computed). */
+  const REPORT_FIELDS: [string, string][] = [['ref_id', 'Nome']];
   const fields = $derived.by(() => {
     const info = view.element?.info ?? {};
-    const known = new Set(FIELDS.map(([k]) => k));
+    const report = view.symbol?.kind === 'report';
+    const own = report ? REPORT_FIELDS : FIELDS;
+    const known = new Set([...FIELDS, ...REPORT_FIELDS].map(([k]) => k));
     return [
-      ...FIELDS,
+      ...own,
       ...Object.keys(info)
         .filter((k) => !known.has(k))
         .map((k): [string, string] => [k, k]),
@@ -148,6 +166,60 @@
     return view.wire ? numberOrigin(view.doc, view.wire.id) : undefined;
   });
 
+  // Sheet references: name, where the partner is, free partners to link to.
+  const report = $derived.by(() => {
+    const { doc, element, symbol } = view;
+    if (!element || symbol?.kind !== 'report') return undefined;
+    const place = (e: Element) => {
+      const values = referenceValues(doc, e);
+      return {
+        id: e.id,
+        name: reportName(doc, e),
+        where: `foglio ${values['foglio']} «${values['titolo']}», colonna ${values['colonna']}`,
+      };
+    };
+    const partner = linkedReport(doc, element);
+    return {
+      direction: reportDirection(doc, element),
+      name: reportName(doc, element),
+      wires: reportWires(doc, element),
+      partner: partner && place(partner),
+      available: partner ? [] : availablePartners(doc, element).map(place),
+    };
+  });
+
+  /**
+   * The name of a reference is its wire number: with wires connected it renumbers the
+   * whole potential (like the wire's own field), otherwise it is the reference's id.
+   */
+  function setReportName(name: string) {
+    const wire = report?.wires[0];
+    if (wire) editor.store.run(setPotentialNumber, { id: wire, number: name });
+    else setInfo('ref_id', name.trim());
+  }
+
+  /** Shows an element: switches to its sheet and selects it. */
+  function goTo(id: ElementId) {
+    const element = editor.doc.elements[id];
+    if (!element) return;
+    editor.setSheet(element.sheetId);
+    editor.select([`element:${id}`]);
+  }
+
+  // Reference pattern, with a preview.
+  const referencePattern = $derived(getReferencePattern(view.doc));
+  const referencePreview = $derived(
+    formatReference(referencePattern, { foglio: '3', colonna: '5', riga: 'B', titolo: 'Motori' }),
+  );
+  const unlinked = $derived.by(() => {
+    void version;
+    return unlinkedReports(view.doc).map((e) => ({
+      id: e.id,
+      name: reportName(view.doc, e),
+      sheet: view.doc.sheetOrder.indexOf(e.sheetId) + 1,
+    }));
+  });
+
   let labelInput: HTMLInputElement | undefined = $state();
   /** Puts the cursor in the label field (double click on an element). */
   export async function focusLabel() {
@@ -165,8 +237,19 @@
         <label class="wide"
           >{key === 'plc_address' && view.symbol.kind === 'plc'
             ? 'Byte della scheda (es. I0)'
-            : label}
-          {#if key === 'label'}
+            : key === 'ref_id' && report
+              ? report.wires.length > 0
+                ? 'Nome (numero del filo, vale per tutto il potenziale)'
+                : 'Nome (ID finché non è collegato a un filo)'
+              : label}
+          {#if key === 'ref_id' && report}
+            <input
+              bind:this={labelInput}
+              type="text"
+              value={report.name}
+              onchange={(e) => setReportName(text(e))}
+            />
+          {:else if key === 'label'}
             <input
               bind:this={labelInput}
               type="text"
@@ -184,6 +267,48 @@
       {/each}
     </div>
     <button class="link" onclick={addField}>+ Aggiungi campo</button>
+    {#if report}
+      <h4>
+        Rimando {report.direction === 'in'
+          ? 'in entrata'
+          : report.direction === 'out'
+            ? 'in uscita'
+            : ''}: {report.name || '—'}
+      </h4>
+      {#if report.partner}
+        <p class="hint">
+          Collegato a <strong>{report.partner.name}</strong> · {report.partner.where}.
+        </p>
+        <div class="actions">
+          <button onclick={() => goTo(report.partner!.id)}>Vai al rimando</button>
+          <button onclick={() => editor.store.run(unlinkReport, { id: view.element!.id })}
+            >Scollega</button
+          >
+        </div>
+        <p class="hint">Doppio clic sul rimando nello schema per saltare al collegato.</p>
+      {:else if report.available.length > 0}
+        <p class="warning">
+          Non collegato. Scegli il rimando {report.direction === 'in' ? 'in uscita' : 'in entrata'} a
+          cui collegarlo:
+        </p>
+        <ul class="partners">
+          {#each report.available as p (p.id)}
+            <li>
+              <button
+                onclick={() => editor.store.run(linkReports, { a: view.element!.id, b: p.id })}
+              >
+                <strong>{p.name}</strong> <span>{p.where}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <p class="warning">
+          Non collegato e nessun rimando {report.direction === 'in' ? 'in uscita' : 'in entrata'}
+          libero: inseriscine uno sul foglio dove prosegue il filo.
+        </p>
+      {/if}
+    {/if}
     <p class="hint">
       Posizione ({view.element.x}, {view.element.y}) mm · rotazione {view.element.rotation}°{view
         .element.mirrored
@@ -339,6 +464,36 @@
         /></label
       >
     </div>
+    <h3>Rimandi di foglio</h3>
+    <label
+      >Testo del riferimento
+      <input
+        type="text"
+        value={referencePattern}
+        placeholder={DEFAULT_REFERENCE_PATTERN}
+        onchange={(e) =>
+          editor.store.run(updateSettings, {
+            set: { referencePattern: text(e) || DEFAULT_REFERENCE_PATTERN },
+          })}
+      />
+    </label>
+    <p class="hint">
+      Esempio: {referencePreview} · {'{foglio}'} = numero del foglio, {'{colonna}'}, {'{riga}'},
+      {'{titolo}'} = titolo del foglio del rimando collegato.
+    </p>
+    {#if unlinked.length > 0}
+      <p class="warning">
+        {unlinked.length}
+        {unlinked.length === 1 ? 'rimando non collegato' : 'rimandi non collegati'}:
+      </p>
+      <div class="chips">
+        {#each unlinked as u (u.id)}
+          <button class="chip" title="Vai al rimando" onclick={() => goTo(u.id)}
+            >{u.name} (f. {u.sheet})</button
+          >
+        {/each}
+      </div>
+    {/if}
     <h3>Numerazione fili</h3>
     <div class="grid">
       <label class="check wide"
@@ -600,5 +755,32 @@
     color: var(--accent);
     padding: 0.3rem 0;
     cursor: pointer;
+  }
+  .warning {
+    color: var(--warning);
+    font-size: 0.8rem;
+  }
+  .actions {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .partners {
+    list-style: none;
+    margin: 0.3rem 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .partners button {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    text-align: left;
+    font-size: 0.8rem;
+  }
+  .partners span {
+    color: var(--muted);
   }
 </style>

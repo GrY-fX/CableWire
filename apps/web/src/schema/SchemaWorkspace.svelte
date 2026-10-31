@@ -4,11 +4,12 @@
     countLocked,
     createEmptyProject,
     createStore,
+    linkedReport,
     numberingConflicts,
     renumber,
   } from '@cablewire/core';
-  import type { SheetId, SymbolDef } from '@cablewire/core';
-  import { SchematicEditor } from '@cablewire/editor';
+  import type { ElementId, SheetId, SymbolDef } from '@cablewire/core';
+  import { parseItemKey, SchematicEditor } from '@cablewire/editor';
   import { fontCss, pngSize, safeFileName, sheetSvg, svgToPng } from '../files/export.ts';
   import { download } from '../files/fileAccess.ts';
   import { printSheets } from '../files/print.ts';
@@ -182,6 +183,20 @@
     void version;
     return numberingConflicts(editor.doc);
   });
+
+  /** Double click: a linked sheet reference jumps to its partner, others edit the label. */
+  function dblElement(key: string) {
+    const item = parseItemKey(key);
+    const element =
+      item?.kind === 'element' ? editor.doc.elements[item.id as ElementId] : undefined;
+    const partner = element && linkedReport(editor.doc, element);
+    if (!partner) {
+      void properties?.focusLabel();
+      return;
+    }
+    editor.setSheet(partner.sheetId);
+    editor.select([`element:${partner.id}`]);
+  }
 
   function recalc(sheetId: SheetId | undefined) {
     renumberMenu = false;
@@ -419,7 +434,7 @@
         {version}
         {showGrid}
         onview={(s) => (scale = s)}
-        ondblelement={() => properties?.focusLabel()}
+        ondblelement={dblElement}
       />
     </div>
     <footer>

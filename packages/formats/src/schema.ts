@@ -79,6 +79,7 @@ export const symbolSchema = v.object({
   version: v.pipe(v.number(), v.integer()),
   author: v.exactOptional(v.string()),
   license: v.exactOptional(v.string()),
+  report: v.exactOptional(v.picklist(['in', 'out'])),
 });
 
 const sheet = v.object({
@@ -143,6 +144,7 @@ export const projectSchema = v.object({
         plcPattern: v.exactOptional(v.string()),
       }),
     ),
+    referencePattern: v.exactOptional(v.string()),
   }),
   sheetOrder: v.array(id<SheetId>()),
   sheets: table<SheetId, typeof sheet>(sheet),

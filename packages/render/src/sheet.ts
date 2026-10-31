@@ -1,25 +1,13 @@
-import { BAND, sheetLayout } from '@cablewire/core';
+import { BAND, rowLabel, sheetLayout } from '@cablewire/core';
 import type { ProjectDoc, Rect, Sheet } from '@cablewire/core';
 import type { SceneNode } from './scene.ts';
 
 // Sheet geometry lives in core (numbering needs it too); re-exported for existing users.
-export { BAND, sheetDimensions, sheetLayout, TITLE_BLOCK } from '@cablewire/core';
+export { BAND, rowLabel, sheetDimensions, sheetLayout, TITLE_BLOCK } from '@cablewire/core';
 export type { Rect, SheetLayout } from '@cablewire/core';
 
 const rect = (r: Rect) => `M${r.x} ${r.y}h${r.width}v${r.height}h${-r.width}Z`;
 const line = (x1: number, y1: number, x2: number, y2: number) => `M${x1} ${y1}L${x2} ${y2}`;
-
-/** Row label for 0-based index: A, B, ... Z, AA, AB, ... */
-export function rowLabel(index: number): string {
-  let label = '';
-  let n = index + 1;
-  while (n > 0) {
-    const r = (n - 1) % 26;
-    label = String.fromCharCode(65 + r) + label;
-    n = Math.floor((n - 1) / 26);
-  }
-  return label;
-}
 
 /** Frame, reference bands and the simple title block. */
 export function buildFrame(doc: ProjectDoc, sheet: Sheet): SceneNode {

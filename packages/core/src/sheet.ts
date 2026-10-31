@@ -55,6 +55,25 @@ export function sheetLayout(sheet: Sheet): SheetLayout {
   return { width, height, frame, drawing, titleBlock };
 }
 
+/** Row label for 0-based index: A, B, ... Z, AA, AB, ... */
+export function rowLabel(index: number): string {
+  let label = '';
+  let n = index + 1;
+  while (n > 0) {
+    const r = (n - 1) % 26;
+    label = String.fromCharCode(65 + r) + label;
+    n = Math.floor((n - 1) / 26);
+  }
+  return label;
+}
+
+/** Row (0-based, clamped to the frame) of the reference grid containing `p`. */
+export function rowAt(sheet: Sheet, p: Point): number {
+  const { drawing } = sheetLayout(sheet);
+  const row = Math.floor(((p.y - drawing.y) / drawing.height) * sheet.rows);
+  return Math.min(sheet.rows - 1, Math.max(0, row));
+}
+
 /** Column (1-based, clamped to the frame) of the reference grid containing `p`. */
 export function columnAt(sheet: Sheet, p: Point): number {
   const { drawing } = sheetLayout(sheet);

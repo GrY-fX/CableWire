@@ -63,6 +63,13 @@
     else delete next[key];
     return next;
   }
+  /** Kind change; only sheet references keep a direction (outgoing by default). */
+  function withKind(s: SymbolDef, kind: SymbolKind): SymbolDef {
+    const next = { ...s, kind };
+    if (kind === 'report') next.report = s.report ?? 'out';
+    else delete next.report;
+    return next;
+  }
   const num = (e: Event) => Number((e.currentTarget as HTMLInputElement).value);
   const text = (e: Event) => (e.currentTarget as HTMLInputElement).value;
 
@@ -328,13 +335,26 @@
       >
       <label class="wide"
         >Tipo
-        <select
-          value={symbol.kind}
-          onchange={(e) => set({ ...symbol, kind: text(e) as SymbolKind })}
-        >
+        <select value={symbol.kind} onchange={(e) => set(withKind(symbol, text(e) as SymbolKind))}>
           {#each KINDS as k (k.value)}<option value={k.value}>{k.label}</option>{/each}
         </select>
       </label>
+      {#if symbol.kind === 'report'}
+        <label class="wide"
+          >Direzione
+          <select
+            value={symbol.report ?? 'out'}
+            onchange={(e) => set({ ...symbol, report: text(e) as 'in' | 'out' })}
+          >
+            <option value="out">Uscita (il filo prosegue su un altro foglio)</option>
+            <option value="in">Entrata (il filo arriva da un altro foglio)</option>
+          </select>
+        </label>
+        <span class="wide hint"
+          >Nei testi usa <code>{'{ref_name}'}</code> per il numero del filo (o l'ID N/C_n) e
+          <code>{'{ref_target}'}</code> per il foglio e la colonna del rimando collegato.</span
+        >
+      {/if}
       <label
         >Autore
         <input

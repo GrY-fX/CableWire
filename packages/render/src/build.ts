@@ -1,4 +1,4 @@
-import { endPosition, transformPoint } from '@cablewire/core';
+import { endPosition, referenceTarget, reportName, transformPoint } from '@cablewire/core';
 import type {
   Element,
   Junction,
@@ -47,7 +47,10 @@ function computeScene(doc: ProjectDoc, sheetId: SheetId): Scene {
       items.push({
         key: `element:${element.id}`,
         layer: 'elements',
-        node: buildElementNode(element, symbol),
+        node: buildElementNode(
+          symbol.kind === 'report' ? { ...element, info: reportInfo(doc, element) } : element,
+          symbol,
+        ),
       });
     }
   }
@@ -60,6 +63,21 @@ function computeScene(doc: ProjectDoc, sheetId: SheetId): Scene {
     });
   }
   return { width, height, items };
+}
+
+/**
+ * Info of a sheet reference with the computed fields: `{ref_name}` (wire number or
+ * N/C id) and `{ref_target}` (where the wire continues). `{label}` falls back to the
+ * name, for symbols drawn before these fields existed.
+ */
+export function reportInfo(doc: ProjectDoc, element: Element): Record<string, string> {
+  const name = reportName(doc, element);
+  return {
+    ...element.info,
+    label: element.info['label'] || name,
+    ref_name: name,
+    ref_target: referenceTarget(doc, element),
+  };
 }
 
 export function primitivePath(p: Exclude<Primitive, { type: 'text' }>): SceneNode {

@@ -71,6 +71,18 @@ function computePotentials(doc: ProjectDoc): Potentials {
       union(add(terminalKey(element.id, a)), add(terminalKey(element.id, b)));
     }
   }
+  // Linked sheet references (each pointing at the other) continue the same potential.
+  for (const element of Object.values(doc.elements)) {
+    const partner = element.link && doc.elements[element.link];
+    const mine = doc.symbols[element.symbolId];
+    const theirs = partner && doc.symbols[partner.symbolId];
+    if (!partner || partner.link !== element.id || mine?.kind !== 'report') continue;
+    if (theirs?.kind !== 'report' || !mine.terminals[0] || !theirs.terminals[0]) continue;
+    union(
+      add(terminalKey(element.id, mine.terminals[0].id)),
+      add(terminalKey(partner.id, theirs.terminals[0].id)),
+    );
+  }
   for (const id of Object.keys(doc.junctions)) add(`j:${id}`);
   const wireIds = Object.keys(doc.wires) as WireId[];
   for (const id of wireIds) {

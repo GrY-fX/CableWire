@@ -28,7 +28,14 @@
       },
       {
         "size": 2.5,
-        "text": "{label}",
+        "text": "{ref_name}",
+        "type": "text",
+        "x": 2.5,
+        "y": -3
+      },
+      {
+        "size": 2.5,
+        "text": "{ref_target}",
         "type": "text",
         "x": 9,
         "y": 0
@@ -38,6 +45,7 @@
     "kind": "report",
     "license": "CC0-1.0",
     "name": "Rimando di foglio (uscita)",
+    "report": "out",
     "terminals": [
       {
         "dir": "w",
@@ -47,6 +55,6 @@
         "y": 0
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

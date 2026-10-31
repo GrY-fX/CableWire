@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Sheet } from '@cablewire/core';
+import type { Element, ProjectDoc, Sheet, SymbolDef } from '@cablewire/core';
 import { buildScene, primitivePath, wireNumber } from './build.ts';
 import type { SceneNode } from './scene.ts';
 import { rowLabel, sheetLayout } from './sheet.ts';
@@ -122,5 +122,44 @@ describe('buildScene', () => {
   it('is memoized per document version and sheet', () => {
     const { store, sheet } = fixture();
     expect(buildScene(store.doc, sheet)).toBe(buildScene(store.doc, sheet));
+  });
+});
+
+describe('sheet references', () => {
+  it('draw the wire number (or N/C id) and where the wire continues', () => {
+    const { store, sheet } = fixture();
+    const doc = store.doc;
+    const report = {
+      id: 'rep',
+      name: 'out',
+      category: 't',
+      kind: 'report',
+      report: 'out',
+      graphics: [
+        { type: 'text', x: 9, y: 0, text: '{ref_name}', size: 2.5 },
+        { type: 'text', x: 9, y: 3, text: '{ref_target}', size: 2 },
+      ],
+      terminals: [{ id: 't1', name: '1', x: 0, y: 0, dir: 'w' }],
+      bridges: [],
+      defaultInfo: {},
+      version: 1,
+    } as unknown as SymbolDef;
+    const element = {
+      id: 'r1',
+      sheetId: sheet,
+      symbolId: 'rep',
+      x: 200,
+      y: 100,
+      rotation: 0,
+      mirrored: false,
+      info: { ref_id: 'N/C_3' },
+    } as unknown as Element;
+    const withReport: ProjectDoc = {
+      ...doc,
+      symbols: { ...doc.symbols, [report.id]: report },
+      elements: { ...doc.elements, [element.id]: element },
+    };
+    const item = buildScene(withReport, sheet).items.find((i) => i.key === 'element:r1')!;
+    expect(texts(item.node).map((t) => t.text)).toEqual(['N/C_3', '→ ?.?']);
   });
 });

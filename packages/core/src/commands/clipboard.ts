@@ -6,6 +6,7 @@ import { isJunctionEnd } from '../model.ts';
 import { withNumber } from '../numbering.ts';
 import type { Op } from '../ops.ts';
 import { put } from '../ops.ts';
+import { nextReferenceId } from '../references.ts';
 
 /** A self-contained piece of a sheet, as copied to the clipboard. */
 export interface Fragment {
@@ -69,6 +70,7 @@ export const pasteFragment = defineCommand<{
     }
   }
   const map = <T extends string>(id: string) => ids[id] as T;
+  const refIds: string[] = [];
 
   for (const e of fragment.elements) {
     const symbol = symbols.get(e.symbolId);
@@ -77,6 +79,12 @@ export const pasteFragment = defineCommand<{
     if (e.link !== undefined) {
       if (ids[e.link]) element.link = map<ElementId>(e.link);
       else delete element.link;
+    }
+    if (symbol.kind === 'report') {
+      // A pasted reference is a new one: it gets its own id.
+      const refId = nextReferenceId(doc, refIds);
+      refIds.push(refId);
+      element.info = { ...e.info, ref_id: refId };
     }
     ops.push(put('elements', element));
   }
