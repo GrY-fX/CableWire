@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { newId } from '@cablewire/core';
-  import type { SymbolDef } from '@cablewire/core';
+  import type { SymbolDef, SymbolId } from '@cablewire/core';
   import { checkSymbol, newSymbol, SymbolEditor } from '@cablewire/editor';
   import type { ToolName } from '@cablewire/editor';
   import { parseSymbol, serializeSymbol } from '@cablewire/formats';
@@ -51,9 +51,17 @@
     };
   });
   const dirty = $derived(view.symbol !== current.saved);
+  /** The open base symbol has a saved version of the user's in place of the original. */
+  const modifiedBase = $derived(
+    current.source === 'base' && library.personal.some((s) => s.id === view.symbol.id),
+  );
   const status = $derived(
     current.source === 'base'
-      ? 'Simbolo di base: salvando ne crei una copia personale.'
+      ? dirty
+        ? "Simbolo di base: salvando sostituisci l'originale (si può ripristinare)."
+        : modifiedBase
+          ? 'Simbolo di base modificato da te.'
+          : 'Simbolo di base originale.'
       : current.source === 'personal'
         ? dirty
           ? 'Modifiche non salvate.'
@@ -100,10 +108,12 @@
       return;
     }
     const stored = library.personal.find((s) => s.id === view.symbol.id);
-    const next = prepareSave(view.symbol, current.source, stored);
-    if (next !== stored) await library.put(next);
+    const original = current.source === 'base' ? library.original(view.symbol.id) : undefined;
+    const previous = stored ?? original;
+    const next = prepareSave(view.symbol, previous);
+    if (next !== previous) await library.put(next);
     editor.replaceSymbol(next);
-    current = { source: 'personal', saved: next };
+    current = { source: current.source === 'base' ? 'base' : 'personal', saved: next };
     notice = {
       kind: 'info',
       lines: [`Salvato «${next.name}» (versione ${next.version}).`, ...warnings],
@@ -114,7 +124,20 @@
     await library.setFavorite(item.symbol.id, !item.favorite);
   }
 
+  /** Drops the user's version of a base symbol; the original comes back. */
+  async function restore(id: SymbolId) {
+    const original = library.original(id);
+    if (!library.available || !original) return;
+    if (
+      !confirm(`Ripristinare «${original.name}» com'era in origine? La tua versione andrà persa.`)
+    )
+      return;
+    await library.remove(id);
+    if (current.source === 'base' && view.symbol.id === id) open(original, 'base');
+  }
+
   async function remove(item: LibraryItem) {
+    if (item.modified) return restore(item.symbol.id);
     if (!library.available || !confirm(`Eliminare «${item.symbol.name}» dalla libreria?`)) return;
     await library.remove(item.symbol.id);
     if (current.source === 'personal' && view.symbol.id === item.symbol.id) {
@@ -291,9 +314,13 @@
         class="primary"
         onclick={save}
         disabled={!!library.error}
-        title="Salva nella libreria (Ctrl+S)"
-        >{current.source === 'base' ? 'Salva come copia' : 'Salva'}</button
+        title="Salva nella libreria (Ctrl+S)">Salva</button
       >
+      {#if modifiedBase}
+        <button onclick={() => restore(view.symbol.id)} title="Torna al simbolo di base originale"
+          >Ripristina originale</button
+        >
+      {/if}
       <button onclick={duplicate} title="Apri una copia di questo simbolo">Duplica</button>
       <button onclick={exportSymbol} title="Scarica il file .cwsym">Esporta .cwsym</button>
     </div>

@@ -8,7 +8,7 @@ import { addWire, setPotentialLock, setPotentialNumber } from '../commands/wires
 import { removeItems } from '../commands/remove.ts';
 import { copyFragment, freshIds, pasteFragment } from '../commands/clipboard.ts';
 import { columnAt } from '../sheet.ts';
-import { CONTACT, T1, T2, must, setup } from '../test-utils.ts';
+import { A3, CONTACT, T1, T2, must, setup } from '../test-utils.ts';
 import { potentialsInReadingOrder } from './allocate.ts';
 import { formatPattern, parsePattern } from './rule.ts';
 
@@ -135,7 +135,7 @@ describe('renumbering', () => {
     ctx.wire(1);
     must(ctx.store, setPotentialNumber, { id: id('w0'), number: '9', locked: false });
     must(ctx.store, setPotentialNumber, { id: id('w1'), number: '8', locked: false });
-    must(ctx.store, addSheet, { id: 's2' as SheetId });
+    must(ctx.store, addSheet, { id: 's2' as SheetId, format: A3 });
     must(ctx.store, renumber, { sheetId: 's2' as SheetId });
     expect([0, 1].map(ctx.number)).toEqual(['9', '8']);
     must(ctx.store, renumber, {});

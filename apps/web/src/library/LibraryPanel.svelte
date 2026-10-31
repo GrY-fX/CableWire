@@ -6,12 +6,15 @@
 
   let {
     items,
+    recent,
     currentId,
     onopen,
     onfavorite,
     onremove,
   }: {
     items: LibraryItem[];
+    /** Last symbols used, most recent first; the section shows only when given. */
+    recent?: LibraryItem[];
     currentId: SymbolId | undefined;
     onopen: (item: LibraryItem) => void;
     onfavorite: (item: LibraryItem) => void;
@@ -21,6 +24,14 @@
   let query = $state('');
   const found = $derived(items.filter((i) => matches(i.symbol, query)));
   const sections = $derived([
+    ...(recent
+      ? [
+          {
+            title: 'Recenti',
+            groups: [{ name: '', items: recent.filter((i) => matches(i.symbol, query)) }],
+          },
+        ]
+      : []),
     { title: 'Preferiti', groups: [{ name: '', items: found.filter((i) => i.favorite) }] },
     { title: 'Personali', groups: groupByCategory(found.filter((i) => i.source === 'personal')) },
     { title: 'Base', groups: groupByCategory(found.filter((i) => i.source === 'base')) },
@@ -35,11 +46,13 @@
     <summary>{section.title} <span class="count">{count}</span></summary>
     {#if count === 0}
       <p class="empty">
-        {section.title === 'Preferiti'
-          ? 'Clicca ☆ su un simbolo per averlo qui.'
-          : section.title === 'Personali' && !query
-            ? 'Salva un simbolo per trovarlo qui.'
-            : 'Nessun simbolo.'}
+        {section.title === 'Recenti' && !query
+          ? 'Gli ultimi simboli che inserisci compaiono qui.'
+          : section.title === 'Preferiti'
+            ? 'Clicca ☆ su un simbolo per averlo qui.'
+            : section.title === 'Personali' && !query
+              ? 'Salva un simbolo per trovarlo qui.'
+              : 'Nessun simbolo.'}
       </p>
     {/if}
     {#each section.groups as group (group.name)}
@@ -51,6 +64,9 @@
               <button class="open" title={item.symbol.name} onclick={() => onopen(item)}>
                 <SymbolThumb symbol={item.symbol} />
                 <span class="name">{item.symbol.name}</span>
+                {#if item.modified}<span class="tag" title="Simbolo di base modificato da te"
+                    >mod.</span
+                  >{/if}
               </button>
               <button
                 class="icon"
@@ -60,6 +76,10 @@
               {#if item.source === 'personal'}
                 <button class="icon" title="Elimina dalla libreria" onclick={() => onremove(item)}
                   >×</button
+                >
+              {:else if item.modified}
+                <button class="icon" title="Ripristina l'originale" onclick={() => onremove(item)}
+                  >↺</button
                 >
               {/if}
             </li>
@@ -140,6 +160,14 @@
     cursor: pointer;
     padding: 0 0.2rem;
     font-size: 0.95rem;
+  }
+  .tag {
+    flex: none;
+    font-size: 0.65rem;
+    color: var(--warning);
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    padding: 0 0.2rem;
   }
   .empty {
     color: var(--muted);

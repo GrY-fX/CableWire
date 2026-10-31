@@ -1,10 +1,13 @@
 import type { Command } from './command.ts';
 import type { SymbolId, TerminalId } from './ids.ts';
-import type { ProjectDoc, SymbolDef } from './model.ts';
-import { createEmptyProject } from './model.ts';
+import type { ProjectDoc, SheetFormat, SymbolDef } from './model.ts';
+import { createEmptyProject, DEFAULT_SHEET_FORMAT } from './model.ts';
 import { createStore } from './store.ts';
 import type { Store, StoreOptions } from './store.ts';
 import { importSymbol } from './commands/symbols.ts';
+
+/** Tests use A3 sheets, the default before A4: their coordinates depend on it. */
+export const A3: SheetFormat = { ...DEFAULT_SHEET_FORMAT, size: 'A3' };
 
 export const T1 = 't1' as TerminalId;
 export const T2 = 't2' as TerminalId;
@@ -43,7 +46,7 @@ export function setup(options: StoreOptions = {}): {
   store: Store;
   sheet: ProjectDoc['sheetOrder'][number];
 } {
-  const store = createStore(createEmptyProject('test', '2026-01-01T00:00:00.000Z'), {
+  const store = createStore(createEmptyProject('test', '2026-01-01T00:00:00.000Z', A3), {
     checkInvariants: true,
     ...options,
   });

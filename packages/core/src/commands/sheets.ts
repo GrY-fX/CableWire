@@ -1,22 +1,24 @@
 import { defineCommand, fail, ok } from '../command.ts';
 import type { ElementId, JunctionId, SheetId, WireId } from '../ids.ts';
 import { newId } from '../ids.ts';
-import type { Sheet } from '../model.ts';
+import type { Sheet, SheetFormat } from '../model.ts';
 import { createSheet } from '../model.ts';
 import type { Patch } from '../ops.ts';
 import { del, meta, patch, put } from '../ops.ts';
 import { removeOps } from './remove.ts';
 
-export const addSheet = defineCommand<{ id?: SheetId; title?: string; index?: number }>(
-  'Aggiungi foglio',
-  (doc, { id = newId(), title, index = doc.sheetOrder.length }) => {
-    if (doc.sheets[id]) return fail('exists', 'A sheet with this id already exists');
-    const sheet = createSheet(title ?? String(doc.sheetOrder.length + 1), id);
-    const sheetOrder = [...doc.sheetOrder];
-    sheetOrder.splice(index, 0, id);
-    return ok([put('sheets', sheet), meta({ sheetOrder })]);
-  },
-);
+export const addSheet = defineCommand<{
+  id?: SheetId;
+  title?: string;
+  index?: number;
+  format?: SheetFormat;
+}>('Aggiungi foglio', (doc, { id = newId(), title, index = doc.sheetOrder.length, format }) => {
+  if (doc.sheets[id]) return fail('exists', 'A sheet with this id already exists');
+  const sheet = createSheet(title ?? String(doc.sheetOrder.length + 1), id, format);
+  const sheetOrder = [...doc.sheetOrder];
+  sheetOrder.splice(index, 0, id);
+  return ok([put('sheets', sheet), meta({ sheetOrder })]);
+});
 
 export const removeSheet = defineCommand<{ id: SheetId }>('Elimina foglio', (doc, { id }) => {
   if (!doc.sheets[id]) return fail('not-found', 'Sheet not found');

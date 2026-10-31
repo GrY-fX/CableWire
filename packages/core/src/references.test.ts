@@ -17,7 +17,7 @@ import {
   reportName,
   unlinkedReports,
 } from './references.ts';
-import { CONTACT, T1, T2, must, setup } from './test-utils.ts';
+import { A3, CONTACT, T1, T2, must, setup } from './test-utils.ts';
 
 const id = (s: string) => s as never;
 
@@ -42,7 +42,7 @@ function project() {
   const store = ctx.store;
   must(store, importSymbol, { symbol: OUT });
   must(store, importSymbol, { symbol: IN });
-  must(store, addSheet, { id: id('s2'), title: 'Motori' });
+  must(store, addSheet, { id: id('s2'), title: 'Motori', format: A3 });
   const s2 = 's2' as SheetId;
   const place = (name: string, symbolId: string, sheetId: SheetId, x: number, y = 50) =>
     must(store, placeElement, { id: id(name), sheetId, symbolId: id(symbolId), x, y });

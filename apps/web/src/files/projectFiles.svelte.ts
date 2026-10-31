@@ -6,6 +6,7 @@ import { canWriteInPlace, pickFile, readHandle, saveAs, writeHandle } from './fi
 import type { FileHandle, OpenedFile } from './fileAccess.ts';
 import { addRecent, getCurrentFile, listRecent, removeRecent, setCurrentFile } from './recent.ts';
 import type { RecentFile } from './recent.ts';
+import { loadSheetFormat } from '../schema/sheetFormat.ts';
 
 export type Notify = (kind: 'info' | 'error', lines: string[]) => void;
 
@@ -49,7 +50,7 @@ export class ProjectFiles {
   }
 
   newProject(): void {
-    this.store.reset(createEmptyProject('Nuovo progetto'));
+    this.store.reset(createEmptyProject('Nuovo progetto', undefined, loadSheetFormat()));
     this.file = undefined;
     this.saved = this.store.doc;
     void setCurrentFile(undefined);

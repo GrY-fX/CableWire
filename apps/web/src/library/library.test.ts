@@ -40,18 +40,17 @@ describe('library logic', () => {
     expect(groups[1]!.items.map((i) => i.symbol.name)).toEqual(['Beta', 'Zeta']);
   });
 
-  it('saves base symbols as personal copies and bumps versions on change', () => {
+  it('keeps the id on save and bumps the version only on change', () => {
     const base = sym('Contatto NA', 'Contatti', { author: 'CableWire', license: 'CC0-1.0' });
-    const copy = prepareSave(base, 'base', undefined);
-    expect(copy.id).not.toBe(base.id);
-    expect(copy).toMatchObject({ name: 'Contatto NA (copia)', version: 1 });
-    expect(copy.author).toBeUndefined();
-    expect(copy.license).toBeUndefined();
+    // A base symbol keeps its id: the saved version replaces the original.
+    const edited = prepareSave({ ...base, name: 'Contatto NA rinforzato' }, base);
+    expect(edited).toMatchObject({ id: base.id, version: base.version + 1 });
+    expect(prepareSave({ ...base }, base)).toBe(base);
 
     const stored = { ...base, version: 3 };
-    expect(prepareSave({ ...stored }, 'personal', stored)).toBe(stored);
-    expect(prepareSave({ ...stored, name: 'Altro' }, 'personal', stored).version).toBe(4);
-    expect(prepareSave(base, undefined, undefined)).toBe(base);
+    expect(prepareSave({ ...stored }, stored)).toBe(stored);
+    expect(prepareSave({ ...stored, name: 'Altro' }, stored).version).toBe(4);
+    expect(prepareSave(base, undefined)).toBe(base);
   });
 
   it('resolves import conflicts', () => {

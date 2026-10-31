@@ -7,6 +7,8 @@ export interface LibraryItem {
   symbol: SymbolDef;
   source: Source;
   favorite: boolean;
+  /** Base symbol replaced by the user's own version (it can be restored). */
+  modified?: boolean;
 }
 
 export interface Category {
@@ -53,20 +55,11 @@ export function sameSymbol(a: SymbolDef, b: SymbolDef): boolean {
 }
 
 /**
- * What to store when the user saves: base symbols become a personal copy with a
- * new id; a changed personal symbol gets its version bumped.
+ * What to store when the user saves, given the previous version (stored in the
+ * library, or the original of a base symbol): unchanged, it stays as it is; changed,
+ * its version is bumped. Base symbols keep their id, so they replace the original.
  */
-export function prepareSave(
-  symbol: SymbolDef,
-  source: Source | undefined,
-  stored: SymbolDef | undefined,
-): SymbolDef {
-  if (source === 'base') {
-    const copy: SymbolDef = { ...symbol, id: newId(), name: `${symbol.name} (copia)`, version: 1 };
-    delete copy.author;
-    delete copy.license;
-    return copy;
-  }
+export function prepareSave(symbol: SymbolDef, stored: SymbolDef | undefined): SymbolDef {
   if (!stored) return symbol;
   if (sameSymbol({ ...symbol, version: stored.version }, stored)) return stored;
   return { ...symbol, version: stored.version + 1 };

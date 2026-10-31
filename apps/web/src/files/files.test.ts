@@ -26,8 +26,8 @@ describe('file names', () => {
 describe('export sizes', () => {
   it('computes PNG pixels from the sheet size and dpi', () => {
     const doc = createEmptyProject('t');
-    const sheet = doc.sheets[doc.sheetOrder[0]!]!; // A3 landscape
-    expect(pngSize(sheet, 300)).toEqual({ width: 4961, height: 3508 });
+    const sheet = doc.sheets[doc.sheetOrder[0]!]!; // A4 landscape, the default
+    expect(pngSize(sheet, 300)).toEqual({ width: 3508, height: 2480 });
     expect(pngSize({ ...sheet, size: 'A4', orientation: 'portrait' }, 150)).toEqual({
       width: 1240,
       height: 1754,
@@ -39,13 +39,13 @@ describe('print document', () => {
   it('makes one page per sheet with its own size and orientation', () => {
     const store = createStore(createEmptyProject('t'));
     store.run(addSheet, { id: 's2' as SheetId });
-    store.run(updateSheet, { id: 's2' as SheetId, set: { size: 'A4', orientation: 'portrait' } });
+    store.run(updateSheet, { id: 's2' as SheetId, set: { size: 'A3', orientation: 'portrait' } });
     const { css, pages } = buildPrintDocument(store.doc, store.doc.sheetOrder, '/*font*/');
-    expect(css).toContain('@page cw-420x297 { size: 420mm 297mm; margin: 0; }');
-    expect(css).toContain('@page cw-210x297 { size: 210mm 297mm; margin: 0; }');
+    expect(css).toContain('@page cw-297x210 { size: 297mm 210mm; margin: 0; }');
+    expect(css).toContain('@page cw-297x420 { size: 297mm 420mm; margin: 0; }');
     expect(pages.map(({ name, width, height }) => ({ name, width, height }))).toEqual([
-      { name: 'cw-420x297', width: 420, height: 297 },
-      { name: 'cw-210x297', width: 210, height: 297 },
+      { name: 'cw-297x210', width: 297, height: 210 },
+      { name: 'cw-297x420', width: 297, height: 420 },
     ]);
     expect(pages[0]!.svg).not.toContain('terminal-mark');
     expect(pages[0]!.svg).toContain('/*font*/');
@@ -53,8 +53,8 @@ describe('print document', () => {
     const root = printRoot(pages);
     const sections = [...root.querySelectorAll('.cw-print-page')];
     expect(sections).toHaveLength(2);
-    expect((sections[1] as HTMLElement).style.width).toBe('210mm');
-    expect(sections[0]!.querySelector('svg')?.getAttribute('width')).toBe('420mm');
+    expect((sections[1] as HTMLElement).style.width).toBe('297mm');
+    expect(sections[0]!.querySelector('svg')?.getAttribute('width')).toBe('297mm');
   });
 });
 

@@ -2,6 +2,7 @@
   import { addSheet, moveSheet, newId, removeSheet, updateSheet } from '@cablewire/core';
   import type { SheetId } from '@cablewire/core';
   import type { SchematicEditor } from '@cablewire/editor';
+  import { loadSheetFormat } from './sheetFormat.ts';
 
   let { editor, version }: { editor: SchematicEditor; version: number } = $props();
 
@@ -23,6 +24,7 @@
     const result = editor.store.run(addSheet, {
       id,
       index: editor.doc.sheetOrder.indexOf(editor.sheetId) + 1,
+      format: loadSheetFormat(),
     });
     if (result.ok) editor.setSheet(id);
   }

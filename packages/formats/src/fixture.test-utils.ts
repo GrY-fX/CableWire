@@ -3,6 +3,7 @@ import {
   addWire,
   createEmptyProject,
   createStore,
+  DEFAULT_SHEET_FORMAT,
   importSymbol,
   placeElement,
   setWireProps,
@@ -14,6 +15,7 @@ import type {
   ElementId,
   JunctionId,
   ProjectDoc,
+  SheetFormat,
   SheetId,
   Store,
   SymbolDef,
@@ -21,6 +23,9 @@ import type {
   TerminalId,
   WireId,
 } from '@cablewire/core';
+
+/** The sample keeps A3 sheets, the default when it was written. */
+const A3: SheetFormat = { ...DEFAULT_SHEET_FORMAT, size: 'A3' };
 
 export const T1 = 't1' as TerminalId;
 export const T2 = 't2' as TerminalId;
@@ -64,7 +69,7 @@ function must<A>(store: Store, command: Command<A>, args: A): void {
 
 /** Deterministic two-sheet project (fixed ids and dates) used for fixtures and round trips. */
 export function sampleProject(): ProjectDoc {
-  const base = createEmptyProject('Quadro pompa', '2026-10-29T10:00:00.000Z');
+  const base = createEmptyProject('Quadro pompa', '2026-10-29T10:00:00.000Z', A3);
   const first = base.sheetOrder[0]!;
   const sheet1 = 'sheet-1' as SheetId;
   const store = createStore(
@@ -76,7 +81,7 @@ export function sampleProject(): ProjectDoc {
     { checkInvariants: true },
   );
   must(store, updateProjectMeta, { set: { author: 'Giuseppe' } });
-  must(store, addSheet, { id: 'sheet-2' as SheetId, title: 'Potenza' });
+  must(store, addSheet, { id: 'sheet-2' as SheetId, title: 'Potenza', format: A3 });
   must(store, importSymbol, { symbol: RICH_SYMBOL });
   const place = (id: string, x: number, y: number, extra = {}) =>
     must(store, placeElement, {

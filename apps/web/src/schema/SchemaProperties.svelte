@@ -34,12 +34,14 @@
     ElementId,
     NumberingSettings,
     NumberSource,
+    SheetFormat,
     SheetSize,
     WireId,
   } from '@cablewire/core';
   import { parseItemKey } from '@cablewire/editor';
   import type { SchematicEditor } from '@cablewire/editor';
   import LockIcon from './LockIcon.svelte';
+  import { rememberSheetFormat } from './sheetFormat.ts';
 
   let { editor, version }: { editor: SchematicEditor; version: number } = $props();
 
@@ -196,6 +198,13 @@
     const wire = report?.wires[0];
     if (wire) editor.store.run(setPotentialNumber, { id: wire, number: name });
     else setInfo('ref_id', name.trim());
+  }
+
+  /** Changes the paper or grid of the sheet and remembers it for new sheets. */
+  function setSheetFormat(set: Partial<SheetFormat>) {
+    const result = editor.store.run(updateSheet, { id: view.sheet.id, set });
+    const sheet = editor.doc.sheets[view.sheet.id];
+    if (result.ok && sheet) rememberSheetFormat(sheet);
   }
 
   /** Shows an element: switches to its sheet and selects it. */
@@ -397,11 +406,7 @@
         >Formato
         <select
           value={view.sheet.size}
-          onchange={(e) =>
-            editor.store.run(updateSheet, {
-              id: view.sheet.id,
-              set: { size: text(e) as SheetSize },
-            })}
+          onchange={(e) => setSheetFormat({ size: text(e) as SheetSize })}
         >
           {#each SIZES as s (s)}<option value={s}>{s}</option>{/each}
         </select>
@@ -410,11 +415,7 @@
         >Orientamento
         <select
           value={view.sheet.orientation}
-          onchange={(e) =>
-            editor.store.run(updateSheet, {
-              id: view.sheet.id,
-              set: { orientation: text(e) as 'landscape' },
-            })}
+          onchange={(e) => setSheetFormat({ orientation: text(e) as 'landscape' })}
         >
           <option value="landscape">Orizzontale</option>
           <option value="portrait">Verticale</option>
@@ -426,11 +427,7 @@
           min="1"
           max="40"
           value={view.sheet.cols}
-          onchange={(e) =>
-            editor.store.run(updateSheet, {
-              id: view.sheet.id,
-              set: { cols: Math.max(1, num(e)) },
-            })}
+          onchange={(e) => setSheetFormat({ cols: Math.max(1, num(e)) })}
         /></label
       >
       <label
@@ -439,11 +436,7 @@
           min="1"
           max="26"
           value={view.sheet.rows}
-          onchange={(e) =>
-            editor.store.run(updateSheet, {
-              id: view.sheet.id,
-              set: { rows: Math.max(1, num(e)) },
-            })}
+          onchange={(e) => setSheetFormat({ rows: Math.max(1, num(e)) })}
         /></label
       >
     </div>

@@ -8,7 +8,7 @@
     numberingConflicts,
     renumber,
   } from '@cablewire/core';
-  import type { ElementId, SheetId, SymbolDef } from '@cablewire/core';
+  import type { ElementId, SheetId, SymbolDef, SymbolId } from '@cablewire/core';
   import { parseItemKey, SchematicEditor } from '@cablewire/editor';
   import { fontCss, pngSize, safeFileName, sheetSvg, svgToPng } from '../files/export.ts';
   import { download } from '../files/fileAccess.ts';
@@ -22,11 +22,12 @@
   import ConflictsPanel from './ConflictsPanel.svelte';
   import SchematicCanvas from './SchematicCanvas.svelte';
   import SchemaProperties from './SchemaProperties.svelte';
+  import { loadSheetFormat } from './sheetFormat.ts';
   import SheetTabs from './SheetTabs.svelte';
 
   let { active, library }: { active: boolean; library: Library } = $props();
 
-  const store = createStore(createEmptyProject('Nuovo progetto'));
+  const store = createStore(createEmptyProject('Nuovo progetto', undefined, loadSheetFormat()));
   const editor = new SchematicEditor(store);
   let version = $state(0);
   let scale = $state(2);
@@ -143,8 +144,13 @@
     answerVersion = undefined;
   }
 
+  // Last 3 symbols chosen from the library, for this session only.
+  let recentIds = $state.raw<SymbolId[]>([]);
+  const recent = $derived(recentIds.flatMap((id) => library.find(id) ?? []));
+
   async function placeFromLibrary(item: LibraryItem) {
     const fromLibrary = item.symbol;
+    recentIds = [fromLibrary.id, ...recentIds.filter((id) => id !== fromLibrary.id)].slice(0, 3);
     const inProject: SymbolDef | undefined = editor.doc.symbols[fromLibrary.id];
     if (!inProject || sameSymbol(inProject, fromLibrary)) {
       editor.startPlacing(fromLibrary);
@@ -294,13 +300,15 @@
     {#if library.error}<p class="notice error">{library.error}</p>{/if}
     <LibraryPanel
       items={library.items}
+      {recent}
       currentId={view.ghost?.symbol.id}
       onopen={placeFromLibrary}
       onfavorite={(item) => library.setFavorite(item.symbol.id, !item.favorite)}
       onremove={(item) => {
-        if (confirm(`Eliminare «${item.symbol.name}» dalla libreria?`)) {
-          void library.remove(item.symbol.id);
-        }
+        const question = item.modified
+          ? `Ripristinare «${item.symbol.name}» com'era in origine? La tua versione andrà persa.`
+          : `Eliminare «${item.symbol.name}» dalla libreria?`;
+        if (confirm(question)) void library.remove(item.symbol.id);
       }}
     />
   </aside>

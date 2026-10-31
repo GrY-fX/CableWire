@@ -1,6 +1,7 @@
 import {
   addWire,
   createEmptyProject,
+  DEFAULT_SHEET_FORMAT,
   createStore,
   importSymbol,
   placeElement,
@@ -55,9 +56,15 @@ export const J1 = 'j1' as JunctionId;
 
 /** K1 at (50,50) and K2 at (80,80), wired K1.A2 → bend (50,80) → K2.A1. */
 export function fixture() {
-  const store = createStore(createEmptyProject('Impianto', '2026-10-29T10:00:00.000Z'), {
-    checkInvariants: true,
-  });
+  const store = createStore(
+    createEmptyProject('Impianto', '2026-10-29T10:00:00.000Z', {
+      ...DEFAULT_SHEET_FORMAT,
+      size: 'A3',
+    }),
+    {
+      checkInvariants: true,
+    },
+  );
   const sheet = store.doc.sheetOrder[0]!;
   must(store, updateProjectMeta, { set: { author: 'G.' } });
   must(store, importSymbol, { symbol: COIL });

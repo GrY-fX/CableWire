@@ -20,18 +20,29 @@ export class Library {
   error = $state('');
   private storage: SymbolStorage | undefined;
 
-  readonly items: LibraryItem[] = $derived([
-    ...this.personal.map((symbol) => ({
-      symbol,
-      source: 'personal' as const,
-      favorite: this.favorites.has(symbol.id),
-    })),
-    ...this.base.map((symbol) => ({
-      symbol,
-      source: 'base' as const,
-      favorite: this.favorites.has(symbol.id),
-    })),
-  ]);
+  /** Stored symbols with a base id are the user's versions of base symbols. */
+  readonly items: LibraryItem[] = $derived.by(() => {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local lookup, never mutated
+    const stored = new Map(this.personal.map((s) => [s.id, s]));
+    return [
+      ...this.personal
+        .filter((symbol) => !this.baseIds.has(symbol.id))
+        .map((symbol) => ({
+          symbol,
+          source: 'personal' as const,
+          favorite: this.favorites.has(symbol.id),
+        })),
+      ...this.base.map((original) => {
+        const own = stored.get(original.id);
+        return {
+          symbol: own ?? original,
+          source: 'base' as const,
+          favorite: this.favorites.has(original.id),
+          ...(own ? { modified: true } : {}),
+        };
+      }),
+    ];
+  });
 
   async open(): Promise<void> {
     try {
@@ -45,6 +56,11 @@ export class Library {
 
   get available(): boolean {
     return !!this.storage;
+  }
+
+  /** The base symbol as shipped with the app, ignoring the user's version. */
+  original(id: SymbolId): SymbolDef | undefined {
+    return this.base.find((s) => s.id === id);
   }
 
   find(id: SymbolId): LibraryItem | undefined {

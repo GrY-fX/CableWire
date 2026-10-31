@@ -179,13 +179,32 @@ export interface ProjectDoc {
 
 export const DEFAULT_GRID_STEP = 2.5;
 
-export function createSheet(title: string, id: SheetId = newId()): Sheet {
-  return { id, title, size: 'A3', orientation: 'landscape', rows: 6, cols: 10 };
+/** Paper and reference grid of a sheet, without its identity. */
+export type SheetFormat = Pick<Sheet, 'size' | 'orientation' | 'rows' | 'cols'>;
+
+export const DEFAULT_SHEET_FORMAT: SheetFormat = {
+  size: 'A4',
+  orientation: 'landscape',
+  rows: 6,
+  cols: 10,
+};
+
+export function createSheet(
+  title: string,
+  id: SheetId = newId(),
+  format: SheetFormat = DEFAULT_SHEET_FORMAT,
+): Sheet {
+  const { size, orientation, rows, cols } = format;
+  return { id, title, size, orientation, rows, cols };
 }
 
 /** A new project with a single empty sheet. */
-export function createEmptyProject(title = '', now = new Date().toISOString()): ProjectDoc {
-  const sheet = createSheet('1');
+export function createEmptyProject(
+  title = '',
+  now = new Date().toISOString(),
+  format: SheetFormat = DEFAULT_SHEET_FORMAT,
+): ProjectDoc {
+  const sheet = createSheet('1', undefined, format);
   return {
     formatVersion: 1,
     meta: { title, author: '', createdAt: now, updatedAt: now },
