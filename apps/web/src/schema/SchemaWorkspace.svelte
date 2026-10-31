@@ -12,6 +12,7 @@
   import { parseItemKey, SchematicEditor } from '@cablewire/editor';
   import { fontCss, pngSize, safeFileName, sheetSvg, svgToPng } from '../files/export.ts';
   import { download } from '../files/fileAccess.ts';
+  import { buildPdf } from '../files/pdf.ts';
   import { printSheets } from '../files/print.ts';
   import { ProjectFiles } from '../files/projectFiles.svelte.ts';
   import type { Library } from '../library/library.svelte.ts';
@@ -273,6 +274,24 @@
     }
   }
 
+  /** PDF with one page per sheet; linked sheet references become links. */
+  async function exportPdf(all: boolean) {
+    menu = undefined;
+    const doc = store.doc;
+    const sheets = all ? doc.sheetOrder : [editor.sheetId];
+    const sheetTitle = doc.sheets[editor.sheetId]!.title;
+    const name = all
+      ? safeFileName(doc.meta.title, '.pdf')
+      : safeFileName(`${doc.meta.title} - ${sheetTitle}`, '.pdf', 'foglio');
+    notice = { kind: 'info', lines: ['Creazione del PDF…'] };
+    try {
+      download(name, await buildPdf(doc, sheets));
+      notice = undefined;
+    } catch (e) {
+      notice = { kind: 'error', lines: ['PDF non creato.', String((e as Error).message ?? e)] };
+    }
+  }
+
   async function print(all: boolean) {
     menu = undefined;
     const sheets = all ? store.doc.sheetOrder : [editor.sheetId];
@@ -417,7 +436,12 @@
             >
             <button onclick={() => exportSheet('png', 300)}>Foglio corrente in PNG (300 dpi)</button
             >
-            <div class="menu-label">Stampa e PDF</div>
+            <div class="menu-label">PDF</div>
+            <button onclick={() => exportPdf(true)}
+              >PDF di tutti i fogli (con i rimandi cliccabili)</button
+            >
+            <button onclick={() => exportPdf(false)}>PDF del foglio corrente</button>
+            <div class="menu-label">Stampa</div>
             <button onclick={() => print(false)}>Stampa il foglio corrente…</button>
             <button onclick={() => print(true)}>Stampa tutti i fogli… <kbd>Ctrl+P</kbd></button>
           </div>

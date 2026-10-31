@@ -25,6 +25,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,woff,webmanifest}'],
+        // Optional parts of jsPDF (HTML and canvas rendering) that CableWire never loads.
+        globIgnores: ['**/html2canvas-*.js', '**/purify.es-*.js', '**/index.es-*.js'],
       },
     }),
   ],

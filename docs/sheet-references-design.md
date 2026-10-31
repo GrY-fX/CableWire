@@ -96,6 +96,11 @@ Librerie: `jsPDF` + `svg2pdf.js` (MIT), caricate **solo quando si esporta**
 (il resto dell'app non diventa più pesante). La stampa del browser resta per
 la carta.
 
+Realizzazione: `apps/web/src/files/pdf.ts`. `pdfPlan()` calcola pagine e
+link (dati puri, testati); il carattere osifont viene estratto dal WOFF già
+presente (jsPDF legge solo TTF); un link porta alla pagina del rimando
+collegato, mostrata a tutta larghezza con il rimando 30 mm sotto il bordo.
+
 ## 5. Test
 
 - Potenziali e numeri attraverso rimandi collegati; scollegamento.
