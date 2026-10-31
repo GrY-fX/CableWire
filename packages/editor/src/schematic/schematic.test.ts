@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { addSheet, addWire, createEmptyProject, createStore } from '@cablewire/core';
+import {
+  addSheet,
+  addWire,
+  createEmptyProject,
+  createStore,
+  linkSlave,
+  xrefLayout,
+} from '@cablewire/core';
 import type { ElementId, SheetId, SymbolDef, SymbolId, TerminalId } from '@cablewire/core';
 import { SchematicEditor } from './controller.ts';
 import { elementBounds, hitSheet, parseItemKey } from './hit.ts';
@@ -185,5 +192,64 @@ describe('sheet hit testing', () => {
     expect(hitSheet(editor.doc, sheet, { x: 25, y: 0.3 }, 0.5)).toMatch(/^wire:/);
     expect(hitSheet(editor.doc, sheet, { x: 41, y: 12 }, 0.5)).toBe(`element:${b}`);
     expect(hitSheet(editor.doc, sheet, { x: 25, y: 20 }, 0.5)).toBeUndefined();
+  });
+});
+
+describe('contact table', () => {
+  it('drags the table of a coil up or down on the grid, as one undo step', () => {
+    const { editor, store } = setup();
+    const contact: SymbolDef = { ...COIL, id: 'no' as SymbolId, kind: 'slave', contact: 'no' };
+    editor.startPlacing(COIL);
+    click(editor, 50, 50);
+    editor.startPlacing(contact);
+    click(editor, 100, 100);
+    editor.key('Escape');
+    const [coil, slave] = elementIds(editor);
+    store.run(linkSlave, { slave: slave!, master: coil! });
+    const box = xrefLayout(editor.doc, editor.doc.elements[coil!]!)!.box;
+    const inBox = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 };
+    editor.pointerDown(inBox);
+    editor.pointerMove({ x: inBox.x + 11.2, y: inBox.y + 4.9 });
+    editor.pointerUp({ x: inBox.x + 11.2, y: inBox.y + 4.9 });
+    // Only the vertical part counts: the table stays on the coil's X axis.
+    expect(editor.doc.elements[coil!]).toMatchObject({ x: 50, y: 50, xrefOffset: 5 });
+    expect([...editor.selection]).toEqual([`element:${coil}`]);
+    expect(store.undoLabel).toBe('Sposta tabellina');
+    store.undo();
+    expect(editor.doc.elements[coil!]!.xrefOffset).toBeUndefined();
+  });
+});
+
+describe('contact table rows', () => {
+  it('a double click on a row goes to that contact, also on another sheet', () => {
+    const { editor, store } = setup();
+    const contact: SymbolDef = { ...COIL, id: 'no' as SymbolId, kind: 'slave', contact: 'no' };
+    editor.startPlacing(COIL);
+    click(editor, 50, 50);
+    editor.key('Escape');
+    const coil = elementIds(editor)[0]!;
+    const first = editor.sheetId;
+    store.run(addSheet, { id: 's2' as SheetId });
+    editor.setSheet('s2' as SheetId);
+    editor.startPlacing(contact);
+    click(editor, 120, 80);
+    editor.key('Escape');
+    const slave = elementIds(editor).find((id) => id !== coil)!;
+    store.run(linkSlave, { slave, master: coil });
+    editor.setSheet(first);
+
+    const layout = xrefLayout(editor.doc, editor.doc.elements[coil]!)!;
+    const row = layout.rows[0]!.rect;
+    const inRow = { x: (row.minX + row.maxX) / 2, y: (row.minY + row.maxY) / 2 };
+    // A single click (on the header or on a row) only selects the coil.
+    click(editor, (layout.box.minX + layout.box.maxX) / 2, layout.box.minY + 1);
+    click(editor, inRow.x, inRow.y);
+    expect(editor.sheetId).toBe(first);
+    expect([...editor.selection]).toEqual([`element:${coil}`]);
+    // A double click on the row of the contact shows it on its sheet.
+    expect(editor.doubleClick(inRow)).toBeUndefined();
+    expect(editor.sheetId).toBe('s2');
+    expect([...editor.selection]).toEqual([`element:${slave}`]);
+    expect(editor.doc.elements[coil]!.xrefOffset).toBeUndefined();
   });
 });

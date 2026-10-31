@@ -10,6 +10,8 @@
     masterOf,
     mastersWithLabel,
     setSlaveLabel,
+    setXrefOffset,
+    showsXref,
     slaveLabel,
     slavesOf,
     unlinkedSlaves,
@@ -428,6 +430,29 @@
           {/each}
         </ul>
       {/if}
+      {#if coil.linked.length > 0 && showsXref(view.doc)}
+        <h4>Tabellina dei contatti</h4>
+        <label
+          >Spostamento verticale (mm, positivo verso il basso)
+          <input
+            type="number"
+            step={view.doc.settings.gridStep}
+            value={view.element.xrefOffset ?? 0}
+            onchange={(e) =>
+              editor.store.run(setXrefOffset, { id: view.element!.id, offset: num(e) })}
+          /></label
+        >
+        <button
+          class="link"
+          disabled={view.element.xrefOffset === undefined}
+          onclick={() =>
+            editor.store.run(setXrefOffset, { id: view.element!.id, offset: undefined })}
+          >Posizione predefinita (sotto la bobina)</button
+        >
+        <p class="hint">
+          Resta centrata sotto la bobina; si può anche trascinare in su o in giù nello schema.
+        </p>
+      {/if}
       {#if coil.free.length > 0}
         <h4>Contatti liberi ({coil.free.length})</h4>
         <p class="hint">Non collegati a nessuna bobina: un clic li collega a questa.</p>
@@ -659,6 +684,14 @@
       </div>
     {/if}
     <h3>Bobine e contatti</h3>
+    <label class="check"
+      ><input
+        type="checkbox"
+        checked={showsXref(view.doc)}
+        onchange={(e) =>
+          editor.store.run(updateSettings, { set: { showXref: e.currentTarget.checked } })}
+      /> Mostra la tabellina dei contatti sotto le bobine</label
+    >
     <label
       >Testo sotto il contatto (posizione della bobina)
       <input

@@ -102,6 +102,7 @@ const element = v.object({
   mirrored: v.boolean(),
   info: strings,
   link: v.exactOptional(id<ElementId>()),
+  xrefOffset: v.exactOptional(num),
 });
 
 const junction = v.object({ id: id<JunctionId>(), sheetId: id<SheetId>(), x: num, y: num });
@@ -147,6 +148,7 @@ export const projectSchema = v.object({
     ),
     referencePattern: v.exactOptional(v.string()),
     masterRefPattern: v.exactOptional(v.string()),
+    showXref: v.exactOptional(v.boolean()),
   }),
   sheetOrder: v.array(id<SheetId>()),
   sheets: table<SheetId, typeof sheet>(sheet),

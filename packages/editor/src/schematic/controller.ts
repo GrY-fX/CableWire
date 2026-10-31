@@ -19,7 +19,9 @@ import {
   rotateElements,
   routeOrthogonal,
   setWireBends,
+  setXrefOffset,
   simplifyPath,
+  xrefLayout,
 } from '@cablewire/core';
 import type {
   Bounds,
@@ -41,6 +43,7 @@ import { snapPoint } from '../snap.ts';
 import {
   elementKey,
   hitSheet,
+  hitXref,
   itemsInside,
   junctionKey,
   parseItemKey,
@@ -86,9 +89,13 @@ type Drag =
   | { kind: 'move'; origin: Point; applied: Point; keys: string[] }
   | { kind: 'marquee'; origin: Point; additive: boolean }
   | { kind: 'segment'; wire: WireId; index: number; base: Point[] }
-  | { kind: 'wire-end'; wire: WireId; end: 'from' | 'to' };
+  | { kind: 'wire-end'; wire: WireId; end: 'from' | 'to' }
+  | { kind: 'xref'; master: ElementId; origin: Point; base: number };
 
 const same = (a: Point, b: Point) => a.x === b.x && a.y === b.y;
+
+const insideBounds = (p: Point, b: Bounds) =>
+  p.x >= b.minX && p.x <= b.maxX && p.y >= b.minY && p.y <= b.maxY;
 
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
@@ -315,6 +322,17 @@ export class SchematicEditor {
       this.emit();
       return;
     }
+    // A coil's contact table: dragging moves the table up or down only (it stays on the
+    // coil's X axis); the coil gets selected.
+    const xref = mods.shift ? undefined : hitXref(this.doc, this.sheet, raw, this.tolerance);
+    if (xref) {
+      this.selected = new Set([elementKey(xref)]);
+      this.store.begin('Sposta tabellina');
+      const base = this.doc.elements[xref]?.xrefOffset ?? 0;
+      this.drag = { kind: 'xref', master: xref, origin: raw, base };
+      this.emit();
+      return;
+    }
     const hit = hitSheet(this.doc, this.sheet, raw, this.tolerance);
     if (!hit) {
       if (!mods.shift) this.selected = new Set();
@@ -349,6 +367,9 @@ export class SchematicEditor {
       }
     } else if (drag?.kind === 'marquee') {
       this.marqueeRect = rectFromPoints(drag.origin, raw);
+    } else if (drag?.kind === 'xref') {
+      const dy = snapPoint({ x: 0, y: raw.y - drag.origin.y }, this.grid).y;
+      this.run(setXrefOffset, { id: drag.master, offset: drag.base + dy });
     }
     this.emit();
   }
@@ -357,6 +378,8 @@ export class SchematicEditor {
     const drag = this.drag;
     this.drag = undefined;
     if (drag?.kind === 'move' || drag?.kind === 'segment') {
+      this.store.commit();
+    } else if (drag?.kind === 'xref') {
       this.store.commit();
     } else if (drag?.kind === 'wire-end') {
       this.reconnect(drag, anchorAt(this.doc, this.sheet, raw, this.tolerance));
@@ -368,8 +391,30 @@ export class SchematicEditor {
     this.emit();
   }
 
-  /** Returns the element double-clicked, if any (the UI focuses its label). */
+  /** Shows the contact of the table row under `p`: its sheet, with the contact selected. */
+  private goToXrefRow(master: ElementId, p: Point): void {
+    const coil = this.doc.elements[master];
+    const row = coil && xrefLayout(this.doc, coil)?.rows.find((r) => insideBounds(p, r.rect));
+    const slave = row && this.doc.elements[row.slave];
+    if (!slave) return;
+    if (slave.sheetId !== this.sheet) {
+      this.cancelDrag();
+      this.sheet = slave.sheetId;
+    }
+    this.selected = new Set([elementKey(slave.id)]);
+  }
+
+  /**
+   * Returns the element double-clicked, if any (the UI focuses its label). A double
+   * click on a row of a coil's contact table goes to that contact instead.
+   */
   doubleClick(raw: Point): string | undefined {
+    const xref = hitXref(this.doc, this.sheet, raw, this.tolerance);
+    if (xref) {
+      this.goToXrefRow(xref, raw);
+      this.emit();
+      return undefined;
+    }
     const hit = hitSheet(this.doc, this.sheet, raw, this.tolerance);
     if (!hit?.startsWith('element:')) return undefined;
     this.select([hit]);
@@ -675,7 +720,8 @@ export class SchematicEditor {
   }
 
   private cancelDrag(): void {
-    if (this.drag?.kind === 'move' && this.store.inTransaction) this.store.rollback();
+    const moving = this.drag?.kind === 'move' || this.drag?.kind === 'xref';
+    if (moving && this.store.inTransaction) this.store.rollback();
     this.drag = undefined;
     this.marqueeRect = undefined;
   }

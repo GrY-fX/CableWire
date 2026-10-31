@@ -88,6 +88,11 @@ export interface Element {
   info: Record<string, string>;
   /** Partner element for sheet references and master/slave links. */
   link?: ElementId;
+  /**
+   * Coils: vertical shift of the contact table from its default place under the
+   * coil, in mm. The table always stays centred on the coil's X axis.
+   */
+  xrefOffset?: number;
 }
 
 export interface Junction {
@@ -168,6 +173,8 @@ export interface ProjectSettings {
    * see DEFAULT_MASTER_REF_PATTERN.
    */
   masterRefPattern?: string;
+  /** Contact table under each coil; shown unless set to false. */
+  showXref?: boolean;
 }
 
 export function getNumbering(doc: ProjectDoc): NumberingSettings {

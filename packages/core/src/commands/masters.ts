@@ -47,3 +47,21 @@ export const setSlaveLabel = defineCommand<{ slave: ElementId; label: string }>(
     return ok([patch('elements', slave, { link: undefined, info })]);
   },
 );
+
+/**
+ * Moves a coil's contact table up or down from its default place (it stays on the
+ * coil's X axis); no offset, or 0, puts it back.
+ */
+export const setXrefOffset = defineCommand<{ id: ElementId; offset: number | undefined }>(
+  'Sposta tabellina',
+  (doc, { id, offset }) => {
+    const e = doc.elements[id];
+    if (!e) return fail('not-found', 'Element not found');
+    if (offset !== undefined && !Number.isFinite(offset)) {
+      return fail('invalid-offset', 'Spostamento non valido');
+    }
+    const value = offset || undefined;
+    if (value === e.xrefOffset) return ok([]);
+    return ok([patch('elements', id, { xrefOffset: value })]);
+  },
+);

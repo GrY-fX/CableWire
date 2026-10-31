@@ -8,6 +8,7 @@ import {
   createStore,
   importSymbol,
   linkReports,
+  linkSlave,
   placeElement,
   updateSheet,
 } from '@cablewire/core';
@@ -74,6 +75,33 @@ describe('PDF plan', () => {
         target: { page: 1, x: 250, y: 100 },
       },
     ]);
+  });
+
+  it('links a contact to its coil and each table row to its contact', () => {
+    const { doc, s1, s2 } = project();
+    const coil: SymbolDef = { ...report('out'), id: 'coil' as SymbolId, kind: 'master' };
+    delete coil.report;
+    const contact: SymbolDef = { ...coil, id: 'no' as SymbolId, kind: 'slave', contact: 'no' };
+    const store = createStore(doc);
+    store.run(importSymbol, { symbol: coil });
+    store.run(importSymbol, { symbol: contact });
+    store.run(placeElement, { id: 'k' as ElementId, sheetId: s1, symbolId: coil.id, x: 50, y: 50 });
+    store.run(placeElement, {
+      id: 'c' as ElementId,
+      sheetId: s2,
+      symbolId: contact.id,
+      x: 100,
+      y: 150,
+    });
+    store.run(linkSlave, { slave: 'c' as ElementId, master: 'k' as ElementId });
+    const { links } = pdfPlan(store.doc, [s1, s2]);
+    // Contact (page 2) → coil (page 1).
+    expect(links).toContainEqual(
+      expect.objectContaining({ page: 2, target: { page: 1, x: 50, y: 50 } }),
+    );
+    // Row of the coil's table (page 1, under the coil) → contact (page 2).
+    const row = links.find((l) => l.page === 1 && l.target.page === 2 && l.target.x === 100);
+    expect(row?.rect.y).toBeGreaterThan(52);
   });
 
   it('leaves out links to sheets not exported', () => {

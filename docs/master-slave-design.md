@@ -1,8 +1,12 @@
 # Rimandi padre → figlio (bobina → contatti) — design
 
-> Stato: **proposta da approvare**. Due passi: **P1** collegamento, sigla,
+> Stato: **approvato e realizzato**. Due passi: **P1** collegamento, sigla,
 > posizione sotto il contatto, pannello e salto; **P2** tabellina dei
-> contatti sotto la bobina e link nel PDF.
+> contatti sotto la bobina e link nel PDF. In più (richiesto provando P1): dal
+> pannello della bobina si collegano i contatti liberi.
+>
+> Codice: `packages/core/src/masters.ts`, `xref.ts` (righe e impaginazione della
+> tabellina, usate da disegno, editor e PDF), `commands/masters.ts`.
 
 ## 1. Obiettivo
 
@@ -74,20 +78,24 @@ Disegnata automaticamente sotto la bobina (non è un testo del simbolo):
 - Impostazione del progetto per nasconderla (predefinito: visibile).
 
 **Posizione regolabile.** Di default la tabellina sta subito sotto la bobina,
-centrata. Per ogni bobina si può spostare, così non si sovrappone ad altri
-simboli quando le bobine sono in punti diversi dei fogli:
+centrata. Per ogni bobina si può spostare **in su o in giù**, così non si
+sovrappone ad altri simboli; resta sempre **sull'asse X della bobina** (niente
+spostamenti di lato, che creerebbero sovrapposizioni con altre colonne):
 
-- nuovo campo opzionale nell'elemento bobina: `xrefOffset: { dx, dy }` in mm,
-  spostamento rispetto alla posizione predefinita (assente = predefinita);
+- nuovo campo opzionale nell'elemento bobina: `xrefOffset` in mm, spostamento
+  verticale rispetto alla posizione predefinita (assente = predefinita);
 - si sposta **trascinandola** nello schema (aggancio alla griglia, un solo
-  passo di annulla) oppure con i campi **Spostamento X / Y** nel pannello della
-  bobina, con "Posizione predefinita" per azzerarlo;
+  passo di annulla) oppure con il campo **Spostamento verticale** nel pannello
+  della bobina, con "Posizione predefinita" per azzerarlo;
 - spostando, ruotando o specchiando la bobina la tabellina la segue, mantenendo
   lo spostamento; resta sempre orizzontale e leggibile;
 - copia/incolla e annulla/ripeti portano con sé lo spostamento.
 
 ## 3. Interazione
 
+- **Doppio clic su una riga della tabellina**: si va al foglio del contatto e
+  lo si seleziona (un clic seleziona la bobina, trascinando la tabellina si
+  sposta).
 - **Doppio clic su un contatto collegato**: si va alla bobina e la si
   seleziona (come per i rimandi).
 - **Bobina selezionata**: il pannello elenca i suoi contatti (tipo, morsetti,
@@ -105,8 +113,8 @@ simboli quando le bobine sono in punti diversi dei fogli:
   eliminazione della bobina, copia/incolla con e senza la bobina.
 - Sigla e `{master_ref}` calcolati; la sigla segue la bobina.
 - Tabellina: colonne, scambio in entrambe, potenza a parte, ordine.
-- Spostamento della tabellina: trascinamento, campi del pannello, azzeramento,
-  segue la bobina spostata o ruotata.
+- Spostamento della tabellina: solo verticale (trascinamento e campo del
+  pannello), azzeramento, segue la bobina spostata o ruotata.
 - PDF: link contatto → bobina e righe → contatti.
 
 ## 6. Scelte
@@ -114,6 +122,6 @@ simboli quando le bobine sono in punti diversi dei fogli:
 | # | Scelta | Decisione |
 |---|---|---|
 | M1 | Collegamento | Esplicito dal pannello + automatico scrivendo la sigla |
-| M2 | Sotto la bobina | Tabellina NA \| NC con morsetti e foglio.colonna, sotto la bobina con spostamento regolabile per bobina |
+| M2 | Sotto la bobina | Tabellina NA \| NC con morsetti e foglio.colonna, sotto la bobina sul suo asse X, spostamento verticale regolabile per bobina |
 | M3 | Accanto al contatto | Posizione della bobina, modello `/{foglio}.{colonna}` |
 | M4 | Tipo di contatto | Campo `contact` nel simbolo slave |

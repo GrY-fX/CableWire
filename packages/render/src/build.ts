@@ -5,6 +5,8 @@ import {
   reportName,
   slaveLabel,
   transformPoint,
+  XREF_TEXT_SIZE,
+  xrefLayout,
 } from '@cablewire/core';
 import type {
   Element,
@@ -15,6 +17,7 @@ import type {
   SheetId,
   SymbolDef,
   Wire,
+  XrefLayout,
 } from '@cablewire/core';
 import type { Scene, SceneItem, SceneNode } from './scene.ts';
 import { buildFrame, sheetLayout } from './sheet.ts';
@@ -65,6 +68,12 @@ function computeScene(doc: ProjectDoc, sheetId: SheetId): Scene {
       });
     }
   }
+  for (const element of Object.values(doc.elements)) {
+    if (element.sheetId !== sheetId) continue;
+    const layout = xrefLayout(doc, element);
+    if (layout)
+      items.push({ key: `xref:${element.id}`, layer: 'elements', node: buildXref(layout) });
+  }
   for (const junction of Object.values(doc.junctions)) {
     if (junction.sheetId !== sheetId) continue;
     items.push({
@@ -97,6 +106,26 @@ export function slaveInfo(doc: ProjectDoc, element: Element): Record<string, str
     ...element.info,
     label: slaveLabel(doc, element),
     master_ref: masterRef(doc, element),
+  };
+}
+
+/** The contact table of a coil (see xrefLayout in core). */
+export function buildXref(layout: XrefLayout): SceneNode {
+  const d = layout.lines.map((l) => `M${l.x1} ${l.y1}L${l.x2} ${l.y2}`).join('');
+  return {
+    kind: 'group',
+    children: [
+      { kind: 'path', d, classes: ['stroke'] },
+      ...layout.texts.map((t): SceneNode => ({
+        kind: 'text',
+        x: round(t.x),
+        y: round(t.y),
+        text: t.text,
+        size: XREF_TEXT_SIZE,
+        anchor: t.anchor,
+        classes: ['text'],
+      })),
+    ],
   };
 }
 

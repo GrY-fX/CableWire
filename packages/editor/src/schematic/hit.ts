@@ -1,11 +1,14 @@
 import {
   boundsOfPoints,
   distanceToSegment,
+  elementBounds,
   endPosition,
-  symbolBounds,
-  transformPoint,
+  xrefLayout,
 } from '@cablewire/core';
-import type { Bounds, Element, Point, ProjectDoc, SheetId, SymbolDef, Wire } from '@cablewire/core';
+import type { Bounds, ElementId, Point, ProjectDoc, SheetId, Wire } from '@cablewire/core';
+
+// Kept here too for existing users; it lives in core (the PDF and the scene need it).
+export { elementBounds } from '@cablewire/core';
 
 /** Item keys, the same used by the sheet scene. */
 export const elementKey = (id: string) => `element:${id}`;
@@ -21,21 +24,6 @@ export function parseItemKey(key: string): ParsedKey | undefined {
   if (kind === 'element' || kind === 'wire' || kind === 'junction')
     return { kind, id: key.slice(i + 1) };
   return undefined;
-}
-
-/** Bounding box of a placed element on its sheet. */
-export function elementBounds(element: Element, symbol: SymbolDef): Bounds {
-  const b = symbolBounds(symbol) ?? { minX: -1, minY: -1, maxX: 1, maxY: 1 };
-  const corners = [
-    { x: b.minX, y: b.minY },
-    { x: b.maxX, y: b.minY },
-    { x: b.maxX, y: b.maxY },
-    { x: b.minX, y: b.maxY },
-  ].map((p) => {
-    const t = transformPoint(p, element.rotation, element.mirrored);
-    return { x: element.x + t.x, y: element.y + t.y };
-  });
-  return boundsOfPoints(corners)!;
 }
 
 /** Points of a wire from start to end, or undefined if an end does not resolve. */
@@ -82,6 +70,21 @@ export function hitSheet(
     const e = elements[i]!;
     const symbol = doc.symbols[e.symbolId];
     if (symbol && inside(p, elementBounds(e, symbol), tolerance)) return elementKey(e.id);
+  }
+  return undefined;
+}
+
+/** The coil whose contact table is under `p`, if any (tables lie over the drawing). */
+export function hitXref(
+  doc: ProjectDoc,
+  sheetId: SheetId,
+  p: Point,
+  tolerance: number,
+): ElementId | undefined {
+  for (const e of Object.values(doc.elements)) {
+    if (e.sheetId !== sheetId) continue;
+    const layout = xrefLayout(doc, e);
+    if (layout && inside(p, layout.box, tolerance)) return e.id;
   }
   return undefined;
 }

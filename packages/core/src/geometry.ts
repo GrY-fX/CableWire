@@ -1,5 +1,6 @@
 import type {
   Direction,
+  Element,
   Point,
   Primitive,
   ProjectDoc,
@@ -97,6 +98,24 @@ export function symbolBounds(symbol: SymbolDef): Bounds | undefined {
   let bounds = boundsOfPoints(symbol.terminals);
   for (const p of symbol.graphics) bounds = unionBounds(bounds, primitiveBounds(p));
   return bounds;
+}
+
+/** Bounding box of a placed element on its sheet. */
+export function elementBounds(
+  element: Pick<Element, 'x' | 'y' | 'rotation' | 'mirrored'>,
+  symbol: SymbolDef,
+): Bounds {
+  const b = symbolBounds(symbol) ?? { minX: -1, minY: -1, maxX: 1, maxY: 1 };
+  const corners = [
+    { x: b.minX, y: b.minY },
+    { x: b.maxX, y: b.minY },
+    { x: b.maxX, y: b.maxY },
+    { x: b.minX, y: b.maxY },
+  ].map((p) => {
+    const t = transformPoint(p, element.rotation, element.mirrored);
+    return { x: element.x + t.x, y: element.y + t.y };
+  });
+  return boundsOfPoints(corners)!;
 }
 
 /** Mirror horizontally (if requested), then rotate clockwise on screen (Y down). */

@@ -1,12 +1,18 @@
-import { linkedReport, sheetDimensions } from '@cablewire/core';
-import type { ProjectDoc, SheetId } from '@cablewire/core';
-import { elementBounds } from '@cablewire/editor';
+import {
+  elementBounds,
+  linkedReport,
+  masterOf,
+  sheetDimensions,
+  xrefLayout,
+} from '@cablewire/core';
+import type { Bounds, Element, ProjectDoc, SheetId } from '@cablewire/core';
 import { FONT_FAMILY } from '@cablewire/render';
 import fontUrl from '@cablewire/render/assets/osifont.woff?url';
 import { sheetSvg } from './export.ts';
 
 // PDF export: one vector page per sheet at its own size, a bookmark per sheet, and
-// each linked sheet reference a clickable area leading to its partner. The layout
+// clickable areas: a linked sheet reference leads to its partner, a contact to its
+// coil, a row of a coil's contact table to its contact. The layout
 // is computed by pdfPlan() (plain data, tested); jsPDF and svg2pdf are loaded only
 // when exporting, so the app itself stays light.
 
@@ -61,23 +67,32 @@ export function pdfPlan(doc: ProjectDoc, sheetIds: readonly SheetId[]): PdfPlan 
     };
   });
   const links: PdfLink[] = [];
-  for (const element of Object.values(doc.elements)) {
-    const page = pageOf.get(element.sheetId);
-    const partner = page && linkedReport(doc, element);
-    const target = partner && pageOf.get(partner.sheetId);
-    const symbol = doc.symbols[element.symbolId];
-    if (!page || !partner || !target || !symbol) continue;
-    const b = elementBounds(element, symbol);
+  const linkTo = (page: number, b: Bounds, margin: number, partner: Element) => {
+    const target = pageOf.get(partner.sheetId);
+    if (!target) return;
     links.push({
       page,
       rect: {
-        x: b.minX - LINK_MARGIN,
-        y: b.minY - LINK_MARGIN,
-        width: b.maxX - b.minX + 2 * LINK_MARGIN,
-        height: b.maxY - b.minY + 2 * LINK_MARGIN,
+        x: b.minX - margin,
+        y: b.minY - margin,
+        width: b.maxX - b.minX + 2 * margin,
+        height: b.maxY - b.minY + 2 * margin,
       },
       target: { page: target, x: partner.x, y: partner.y },
     });
+  };
+  for (const element of Object.values(doc.elements)) {
+    const page = pageOf.get(element.sheetId);
+    const symbol = doc.symbols[element.symbolId];
+    if (!page || !symbol) continue;
+    // A linked sheet reference leads to its partner, a linked contact to its coil.
+    const partner = linkedReport(doc, element) ?? masterOf(doc, element);
+    if (partner) linkTo(page, elementBounds(element, symbol), LINK_MARGIN, partner);
+    // Each row of a coil's contact table leads to its contact.
+    for (const row of xrefLayout(doc, element)?.rows ?? []) {
+      const slave = doc.elements[row.slave];
+      if (slave) linkTo(page, row.rect, 0, slave);
+    }
   }
   links.sort((a, b) => a.page - b.page || a.rect.y - b.rect.y || a.rect.x - b.rect.x);
   return { pages, links };
