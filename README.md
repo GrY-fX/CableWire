@@ -27,6 +27,13 @@ packages/editor/   interazione con il disegno
 docs/              documentazione
 ```
 
+## Provala
+
+L'app è pubblicata su <https://gry-fx.github.io/CableWire/> (si aggiorna a ogni
+modifica di `main` con la CI verde). Funziona anche offline dopo la prima visita
+e si può installare come applicazione da Chrome o Edge. I progetti restano nel
+tuo browser e nei file `.cwp` che salvi.
+
 ## Sviluppo
 
 Serve Node.js 22 o successivo.

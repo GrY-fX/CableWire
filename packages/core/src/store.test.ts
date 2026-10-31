@@ -99,3 +99,16 @@ describe('store', () => {
     expect(() => store.undo()).toThrow();
   });
 });
+
+describe('unrecorded commands', () => {
+  it('apply without an undo entry and keep the history intact', () => {
+    const { store, sheet } = setup();
+    must(store, placeElement, { id: E, sheetId: sheet, symbolId: CONTACT.id, x: 0, y: 0 });
+    const result = store.runUnrecorded(updateProjectMeta, { set: { updatedAt: '2030-01-01' } });
+    expect(result.ok).toBe(true);
+    expect(store.doc.meta.updatedAt).toBe('2030-01-01');
+    expect(store.undoLabel).toBe('Inserisci elemento');
+    store.begin('x');
+    expect(() => store.runUnrecorded(updateProjectMeta, { set: {} })).toThrow();
+  });
+});

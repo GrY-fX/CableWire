@@ -24,6 +24,11 @@ export interface Store {
   readonly doc: ProjectDoc;
   /** Runs a command; outside a transaction it becomes one undo entry. */
   run<A>(command: Command<A>, args: A): Result<void>;
+  /**
+   * Applies a command without an undo entry, for bookkeeping that is not an edit
+   * (e.g. the save date). Not allowed inside a transaction.
+   */
+  runUnrecorded<A>(command: Command<A>, args: A): Result<void>;
   /** Opens a transaction: every command until commit() becomes a single undo entry. */
   begin(label: string): void;
   commit(): void;
@@ -92,6 +97,14 @@ export function createStore(initial: ProjectDoc, options: StoreOptions = {}): St
       } else {
         record({ label: command.label, forward: ops, inverse });
       }
+      return ok(undefined);
+    },
+
+    runUnrecorded(command, args) {
+      if (pending) throw new Error('Cannot run an unrecorded command during a transaction');
+      const result = command.run(doc, args);
+      if (!result.ok) return result;
+      if (result.value.length > 0) apply(result.value);
       return ok(undefined);
     },
 

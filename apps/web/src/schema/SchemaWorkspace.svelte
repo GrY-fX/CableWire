@@ -9,8 +9,10 @@
   } from '@cablewire/core';
   import type { SheetId, SymbolDef } from '@cablewire/core';
   import { SchematicEditor } from '@cablewire/editor';
-  import { buildScene, FONT_FAMILY, toSvgString } from '@cablewire/render';
-  import fontUrl from '@cablewire/render/assets/osifont.woff?url';
+  import { fontCss, pngSize, safeFileName, sheetSvg, svgToPng } from '../files/export.ts';
+  import { download } from '../files/fileAccess.ts';
+  import { printSheets } from '../files/print.ts';
+  import { ProjectFiles } from '../files/projectFiles.svelte.ts';
   import type { Library } from '../library/library.svelte.ts';
   import LibraryPanel from '../library/LibraryPanel.svelte';
   import { sameSymbol } from '../library/logic.ts';
@@ -47,6 +49,7 @@
         const loaded = await a.load();
         if (loaded?.ok) {
           store.reset(loaded.value);
+          await files.restore();
         } else if (loaded) {
           notice = {
             kind: 'error',
@@ -63,10 +66,25 @@
     // Write a pending save when the page goes away.
     const pagehide = () => void autosave?.flush();
     window.addEventListener('pagehide', pagehide);
+    // An open file with changes not saved to disk: ask before leaving.
+    const beforeunload = (e: BeforeUnloadEvent) => {
+      if (files.file && files.dirty(store.doc)) e.preventDefault();
+    };
+    window.addEventListener('beforeunload', beforeunload);
+    // Close menus on a click elsewhere.
+    const closeMenus = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest('.menu')) {
+        menu = undefined;
+        renumberMenu = false;
+      }
+    };
+    window.addEventListener('click', closeMenus);
     return () => {
       unsubscribe();
       unwatch();
       window.removeEventListener('pagehide', pagehide);
+      window.removeEventListener('beforeunload', beforeunload);
+      window.removeEventListener('click', closeMenus);
       void autosave?.flush().then(() => autosave?.close());
     };
   });
@@ -142,6 +160,10 @@
 
   function onkey(e: KeyboardEvent) {
     if (!active) return;
+    if (fileShortcut(e)) {
+      e.preventDefault();
+      return;
+    }
     if ((e.target as HTMLElement).closest('input, textarea, select')) return;
     if (canvas?.key(e)) {
       e.preventDefault();
@@ -184,27 +206,68 @@
     notice = { kind: 'info', lines };
   }
 
-  function newProject() {
-    if (!confirm('Iniziare un nuovo progetto? Quello aperto verrà sostituito.')) return;
-    store.reset(createEmptyProject('Nuovo progetto'));
+  // Project file on disk (open/save) and its "changed since saved" state.
+  const files = new ProjectFiles(store, (kind, lines) => (notice = { kind, lines }));
+  const dirty = $derived.by(() => {
+    void version;
+    return files.dirty(store.doc);
+  });
+  let menu = $state<'file' | 'export' | undefined>();
+
+  /** Asks before throwing away changes not saved to disk (the browser copy is replaced too). */
+  function confirmDiscard(): boolean {
+    const empty = Object.keys(store.doc.elements).length === 0;
+    return (
+      !dirty ||
+      (empty && !files.file) ||
+      confirm('Le modifiche al progetto non sono salvate su disco. Continuare?')
+    );
+  }
+
+  async function fileAction(action: 'new' | 'open' | 'save' | 'saveAs') {
+    menu = undefined;
+    if ((action === 'new' || action === 'open') && !confirmDiscard()) return;
+    if (action === 'new') files.newProject();
+    else if (action === 'open') await files.open();
+    else if (action === 'save') await files.save();
+    else await files.saveAs();
     canvas?.fit();
   }
 
-  async function exportSvg() {
-    const bytes = new Uint8Array(await (await fetch(fontUrl)).arrayBuffer());
-    let binary = '';
-    for (const b of bytes) binary += String.fromCharCode(b);
-    const css = `@font-face { font-family: ${FONT_FAMILY}; src: url(data:font/woff;base64,${btoa(binary)}) format('woff'); }`;
-    const sheet = editor.doc.sheets[editor.sheetId]!;
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(
-      new Blob([toSvgString(buildScene(editor.doc, editor.sheetId), { css })], {
-        type: 'image/svg+xml',
-      }),
-    );
-    link.download = `${sheet.title || 'foglio'}.svg`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+  async function exportSheet(format: 'svg' | 'png', dpi = 150) {
+    menu = undefined;
+    const doc = editor.doc;
+    const sheet = doc.sheets[editor.sheetId]!;
+    const svg = sheetSvg(doc, sheet.id, await fontCss());
+    const name = safeFileName(`${doc.meta.title} - ${sheet.title}`, `.${format}`, 'foglio');
+    if (format === 'svg') {
+      download(name, new Blob([svg], { type: 'image/svg+xml' }));
+      return;
+    }
+    const { width, height } = pngSize(sheet, dpi);
+    try {
+      download(name, await svgToPng(svg, width, height));
+    } catch (e) {
+      notice = { kind: 'error', lines: ['PNG non creato.', String((e as Error).message ?? e)] };
+    }
+  }
+
+  async function print(all: boolean) {
+    menu = undefined;
+    const sheets = all ? store.doc.sheetOrder : [editor.sheetId];
+    printSheets(store.doc, sheets, await fontCss());
+  }
+
+  /** File shortcuts work even while typing in a field. */
+  function fileShortcut(e: KeyboardEvent): boolean {
+    if (e.type !== 'keydown' || !(e.ctrlKey || e.metaKey)) return false;
+    const k = e.key.toLowerCase();
+    if (k === 's') void fileAction(e.shiftKey ? 'saveAs' : 'save');
+    else if (k === 'o') void fileAction('open');
+    else if (k === 'p') void print(true);
+    else return false;
+    (document.activeElement as HTMLElement | null)?.blur();
+    return true;
   }
 </script>
 
@@ -232,12 +295,20 @@
       <strong class="title" title="Titolo del progetto (modificabile nel pannello a destra)"
         >{view.title || '(senza titolo)'}</strong
       >
+      <span
+        class="file"
+        class:dirty
+        title={dirty
+          ? 'Modifiche non salvate su disco (una copia è comunque salvata nel browser)'
+          : 'Salvato su disco'}
+        >{files.file ? files.file.name : 'non salvato su disco'}{dirty ? ' •' : ''}</span
+      >
       <span class="save" class:pending={saveState === 'pending'}>
         {saveState === 'off'
-          ? 'Salvataggio non disponibile'
+          ? 'copia nel browser non disponibile'
           : saveState === 'pending'
-            ? 'Salvataggio…'
-            : 'Salvato nel browser'}
+            ? 'copia nel browser…'
+            : 'copia nel browser ✓'}
       </span>
       <span class="sep"></span>
       <button
@@ -288,8 +359,47 @@
         >
       {/if}
       <span class="spacer"></span>
-      <button onclick={exportSvg}>Esporta SVG</button>
-      <button onclick={newProject}>Nuovo progetto</button>
+      <div class="menu">
+        <button onclick={() => (menu = menu === 'file' ? undefined : 'file')}>File ▾</button>
+        {#if menu === 'file'}
+          <div class="menu-items right">
+            <button onclick={() => fileAction('new')}>Nuovo progetto</button>
+            <button onclick={() => fileAction('open')}>Apri… <kbd>Ctrl+O</kbd></button>
+            <button onclick={() => fileAction('save')}
+              >{files.writeInPlace ? 'Salva' : 'Salva (scarica)'} <kbd>Ctrl+S</kbd></button
+            >
+            <button onclick={() => fileAction('saveAs')}
+              >Salva con nome… <kbd>Ctrl+Maiusc+S</kbd></button
+            >
+            {#if files.recent.length}
+              <div class="menu-label">Recenti</div>
+              {#each files.recent as r (r.name)}
+                <button
+                  onclick={() => {
+                    menu = undefined;
+                    if (confirmDiscard()) void files.openRecent(r).then(() => canvas?.fit());
+                  }}>{r.name}</button
+                >
+              {/each}
+            {/if}
+          </div>
+        {/if}
+      </div>
+      <div class="menu">
+        <button onclick={() => (menu = menu === 'export' ? undefined : 'export')}>Esporta ▾</button>
+        {#if menu === 'export'}
+          <div class="menu-items right">
+            <button onclick={() => exportSheet('svg')}>Foglio corrente in SVG</button>
+            <button onclick={() => exportSheet('png', 150)}>Foglio corrente in PNG (150 dpi)</button
+            >
+            <button onclick={() => exportSheet('png', 300)}>Foglio corrente in PNG (300 dpi)</button
+            >
+            <div class="menu-label">Stampa e PDF</div>
+            <button onclick={() => print(false)}>Stampa il foglio corrente…</button>
+            <button onclick={() => print(true)}>Stampa tutti i fogli… <kbd>Ctrl+P</kbd></button>
+          </div>
+        {/if}
+      </div>
     </div>
     {#if showConflicts && conflicts.length}
       <ConflictsPanel {editor} {conflicts} onclose={() => (showConflicts = false)} />
@@ -441,9 +551,39 @@
     box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
   }
   .menu-items button {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
     text-align: left;
     border-radius: 0;
     padding: 0.35rem 0.6rem;
+    white-space: nowrap;
+  }
+  .menu-items.right {
+    left: auto;
+    right: 0;
+  }
+  .menu-label {
+    padding: 0.35rem 0.6rem 0.15rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+  kbd {
+    font-family: inherit;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .file {
+    color: var(--muted);
+    font-size: 0.8rem;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .file.dirty {
+    color: var(--warning);
   }
   .canvas {
     flex: 1;

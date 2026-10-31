@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { FONT_FAMILY } from '@cablewire/render';
   import fontUrl from '@cablewire/render/assets/osifont.woff?url';
+  import { registerSW } from 'virtual:pwa-register';
   import { Library } from './library/library.svelte.ts';
   import SchemaWorkspace from './schema/SchemaWorkspace.svelte';
   import SymbolWorkspace from './symbols/SymbolWorkspace.svelte';
@@ -21,9 +22,14 @@
     history.replaceState(null, '', next === 'symbols' ? '#simboli' : '#schema');
   }
 
+  // Offline app: when a new version is ready, offer to reload instead of switching silently.
+  let updateReady = $state(false);
+  let applyUpdate: ((reload?: boolean) => Promise<void>) | undefined;
+
   onMount(() => {
     new FontFace(FONT_FAMILY, `url(${fontUrl})`).load().then((font) => document.fonts.add(font));
     void library.open();
+    applyUpdate = registerSW({ onNeedRefresh: () => (updateReady = true) });
     return () => library.close();
   });
 </script>
@@ -36,6 +42,13 @@
         <button class:active={tab === t.id} onclick={() => open(t.id)}>{t.label}</button>
       {/each}
     </nav>
+    {#if updateReady}
+      <span class="update">
+        Aggiornamento disponibile
+        <button onclick={() => applyUpdate?.(true)}>Ricarica</button>
+        <button class="later" onclick={() => (updateReady = false)}>Più tardi</button>
+      </span>
+    {/if}
   </header>
   <!-- Both workspaces stay mounted so switching tab keeps their state. -->
   <div class="content" hidden={tab !== 'schema'}>
@@ -97,6 +110,20 @@
     border-bottom-color: var(--accent);
     color: var(--accent);
     font-weight: 600;
+  }
+  .update {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--accent);
+  }
+  .update .later {
+    border: none;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
   }
   .content {
     flex: 1;
