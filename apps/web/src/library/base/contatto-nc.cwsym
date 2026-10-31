@@ -6,6 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Contatti",
+    "contact": "nc",
     "defaultInfo": { "label": "K" },
     "graphics": [
       {
@@ -42,6 +43,13 @@
         "type": "text",
         "x": 4,
         "y": 0
+      },
+      {
+        "size": 2,
+        "text": "{master_ref}",
+        "type": "text",
+        "x": 4,
+        "y": 2.8
       }
     ],
     "id": "base-contatto-nc",
@@ -64,6 +72,6 @@
         "y": 5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

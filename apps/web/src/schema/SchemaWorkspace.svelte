@@ -5,6 +5,7 @@
     createEmptyProject,
     createStore,
     linkedReport,
+    masterOf,
     numberingConflicts,
     renumber,
   } from '@cablewire/core';
@@ -191,12 +192,15 @@
     return numberingConflicts(editor.doc);
   });
 
-  /** Double click: a linked sheet reference jumps to its partner, others edit the label. */
+  /**
+   * Double click: a linked sheet reference jumps to its partner, a linked contact to
+   * its coil; anything else edits the label.
+   */
   function dblElement(key: string) {
     const item = parseItemKey(key);
     const element =
       item?.kind === 'element' ? editor.doc.elements[item.id as ElementId] : undefined;
-    const partner = element && linkedReport(editor.doc, element);
+    const partner = element && (linkedReport(editor.doc, element) ?? masterOf(editor.doc, element));
     if (!partner) {
       void properties?.focusLabel();
       return;

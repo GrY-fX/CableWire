@@ -1,7 +1,19 @@
 <script lang="ts">
   import { tick } from 'svelte';
   import {
+    allMasters,
     availablePartners,
+    contactType,
+    DEFAULT_MASTER_REF_PATTERN,
+    getMasterRefPattern,
+    linkSlave,
+    masterOf,
+    mastersWithLabel,
+    setSlaveLabel,
+    slaveLabel,
+    slavesOf,
+    unlinkedSlaves,
+    unlinkSlave,
     checkPlcPattern,
     DEFAULT_REFERENCE_PATTERN,
     formatPattern,
@@ -30,7 +42,9 @@
     updateSheet,
   } from '@cablewire/core';
   import type {
+    ContactType,
     Element,
+    ProjectDoc,
     ElementId,
     NumberingSettings,
     NumberSource,
@@ -168,18 +182,17 @@
     return view.wire ? numberOrigin(view.doc, view.wire.id) : undefined;
   });
 
+  /** Where an element is, in words, e.g. foglio 2 «Motori», colonna 5. */
+  function whereIs(doc: ProjectDoc, e: Element): string {
+    const values = referenceValues(doc, e);
+    return `foglio ${values['foglio']} «${values['titolo']}», colonna ${values['colonna']}`;
+  }
+
   // Sheet references: name, where the partner is, free partners to link to.
   const report = $derived.by(() => {
     const { doc, element, symbol } = view;
     if (!element || symbol?.kind !== 'report') return undefined;
-    const place = (e: Element) => {
-      const values = referenceValues(doc, e);
-      return {
-        id: e.id,
-        name: reportName(doc, e),
-        where: `foglio ${values['foglio']} «${values['titolo']}», colonna ${values['colonna']}`,
-      };
-    };
+    const place = (e: Element) => ({ id: e.id, name: reportName(doc, e), where: whereIs(doc, e) });
     const partner = linkedReport(doc, element);
     return {
       direction: reportDirection(doc, element),
@@ -189,6 +202,59 @@
       available: partner ? [] : availablePartners(doc, element).map(place),
     };
   });
+
+  // Contacts: their coil, or the coils to link to.
+  const CONTACT_NAMES: Record<ContactType, string> = {
+    no: 'NA',
+    nc: 'NC',
+    changeover: 'Scambio',
+    power: 'Potenza',
+  };
+  const contact = $derived.by(() => {
+    const { doc, element, symbol } = view;
+    if (!element || symbol?.kind !== 'slave') return undefined;
+    const master = masterOf(doc, element);
+    const place = (e: Element) => ({
+      id: e.id,
+      label: e.info['label'] || '—',
+      where: whereIs(doc, e),
+    });
+    return {
+      label: slaveLabel(doc, element),
+      master: master && place(master),
+      masters: master ? [] : allMasters(doc).map(place),
+    };
+  });
+  // Coils: their contacts, and the free contacts (linked to no coil) to add.
+  const coil = $derived.by(() => {
+    const { doc, element, symbol } = view;
+    if (!element || symbol?.kind !== 'master') return undefined;
+    const describe = (e: Element) => {
+      const type = contactType(doc, e);
+      return {
+        id: e.id,
+        type: type ? CONTACT_NAMES[type] : 'Contatto',
+        label: e.info['label'] || '—',
+        terminals: (doc.symbols[e.symbolId]?.terminals ?? []).map((t) => t.name).join('-'),
+        where: whereIs(doc, e),
+      };
+    };
+    return {
+      linked: slavesOf(doc, element).map(describe),
+      free: unlinkedSlaves(doc).map(describe),
+    };
+  });
+  let contactWarning = $state('');
+
+  /** A coil's label links the contact to it; several coils with that label do not. */
+  function setContactLabel(label: string) {
+    const element = view.element;
+    if (!element) return;
+    editor.store.run(setSlaveLabel, { slave: element.id, label });
+    const count = mastersWithLabel(editor.doc, label).length;
+    contactWarning =
+      count > 1 ? `Ci sono ${count} bobine con sigla «${label.trim()}»: scegli quella giusta.` : '';
+  }
 
   /**
    * The name of a reference is its wire number: with wires connected it renumbers the
@@ -229,6 +295,24 @@
     }));
   });
 
+  const masterRefPattern = $derived(getMasterRefPattern(view.doc));
+  const masterRefPreview = $derived(
+    formatReference(masterRefPattern, { foglio: '2', colonna: '4', riga: 'C', titolo: 'Comandi' }),
+  );
+  const unlinkedContacts = $derived.by(() => {
+    void version;
+    return unlinkedSlaves(view.doc).map((e) => ({
+      id: e.id,
+      name: e.info['label'] || '—',
+      sheet: view.doc.sheetOrder.indexOf(e.sheetId) + 1,
+    }));
+  });
+  $effect(() => {
+    // A warning about one contact's label does not follow the selection.
+    void view.element?.id;
+    contactWarning = '';
+  });
+
   let labelInput: HTMLInputElement | undefined = $state();
   /** Puts the cursor in the label field (double click on an element). */
   export async function focusLabel() {
@@ -246,17 +330,26 @@
         <label class="wide"
           >{key === 'plc_address' && view.symbol.kind === 'plc'
             ? 'Byte della scheda (es. I0)'
-            : key === 'ref_id' && report
-              ? report.wires.length > 0
-                ? 'Nome (numero del filo, vale per tutto il potenziale)'
-                : 'Nome (ID finché non è collegato a un filo)'
-              : label}
+            : key === 'label' && contact
+              ? 'Sigla (quella della bobina, se collegato)'
+              : key === 'ref_id' && report
+                ? report.wires.length > 0
+                  ? 'Nome (numero del filo, vale per tutto il potenziale)'
+                  : 'Nome (ID finché non è collegato a un filo)'
+                : label}
           {#if key === 'ref_id' && report}
             <input
               bind:this={labelInput}
               type="text"
               value={report.name}
               onchange={(e) => setReportName(text(e))}
+            />
+          {:else if key === 'label' && contact}
+            <input
+              bind:this={labelInput}
+              type="text"
+              value={contact.label}
+              onchange={(e) => setContactLabel(text(e))}
             />
           {:else if key === 'label'}
             <input
@@ -276,6 +369,84 @@
       {/each}
     </div>
     <button class="link" onclick={addField}>+ Aggiungi campo</button>
+    {#if contactWarning && contact}<p class="warning">{contactWarning}</p>{/if}
+    {#if contact}
+      <h4>Bobina</h4>
+      {#if contact.master}
+        <p class="hint">
+          Collegato a <strong>{contact.master.label}</strong> · {contact.master.where}.
+        </p>
+        <div class="actions">
+          <button onclick={() => goTo(contact.master!.id)}>Vai alla bobina</button>
+          <button onclick={() => editor.store.run(unlinkSlave, { slave: view.element!.id })}
+            >Scollega</button
+          >
+        </div>
+        <p class="hint">Doppio clic sul contatto nello schema per saltare alla bobina.</p>
+      {:else if contact.masters.length > 0}
+        <p class="warning">
+          Non collegato. Scegli la bobina, oppure scrivi la sua sigla nel campo Sigla:
+        </p>
+        <ul class="partners">
+          {#each contact.masters as m (m.id)}
+            <li>
+              <button
+                onclick={() => {
+                  contactWarning = '';
+                  editor.store.run(linkSlave, { slave: view.element!.id, master: m.id });
+                }}
+              >
+                <strong>{m.label}</strong> <span>{m.where}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <p class="warning">Non collegato: nel progetto non ci sono ancora bobine.</p>
+      {/if}
+    {/if}
+    {#if coil}
+      <h4>Contatti ({coil.linked.length})</h4>
+      {#if coil.linked.length === 0}
+        <p class="hint">
+          Nessun contatto collegato: scegli qui sotto tra i contatti liberi, oppure scrivi nel
+          contatto la sigla della bobina.
+        </p>
+      {:else}
+        <ul class="partners">
+          {#each coil.linked as c (c.id)}
+            <li>
+              <button title="Vai al contatto" onclick={() => goTo(c.id)}>
+                <strong>{c.type} {c.terminals}</strong> <span>{c.where}</span>
+              </button>
+              <button
+                class="icon"
+                title="Scollega dalla bobina"
+                onclick={() => editor.store.run(unlinkSlave, { slave: c.id })}>×</button
+              >
+            </li>
+          {/each}
+        </ul>
+      {/if}
+      {#if coil.free.length > 0}
+        <h4>Contatti liberi ({coil.free.length})</h4>
+        <p class="hint">Non collegati a nessuna bobina: un clic li collega a questa.</p>
+        <ul class="partners">
+          {#each coil.free as c (c.id)}
+            <li>
+              <button
+                title="Collega a questa bobina"
+                onclick={() =>
+                  editor.store.run(linkSlave, { slave: c.id, master: view.element!.id })}
+              >
+                <strong>+ {c.type} {c.terminals}</strong>
+                <span>{c.label} · {c.where}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
+    {/if}
     {#if report}
       <h4>
         Rimando {report.direction === 'in'
@@ -482,6 +653,35 @@
       <div class="chips">
         {#each unlinked as u (u.id)}
           <button class="chip" title="Vai al rimando" onclick={() => goTo(u.id)}
+            >{u.name} (f. {u.sheet})</button
+          >
+        {/each}
+      </div>
+    {/if}
+    <h3>Bobine e contatti</h3>
+    <label
+      >Testo sotto il contatto (posizione della bobina)
+      <input
+        type="text"
+        value={masterRefPattern}
+        placeholder={DEFAULT_MASTER_REF_PATTERN}
+        onchange={(e) =>
+          editor.store.run(updateSettings, {
+            set: { masterRefPattern: text(e) || DEFAULT_MASTER_REF_PATTERN },
+          })}
+      />
+    </label>
+    <p class="hint">
+      Esempio: {masterRefPreview} · stessi segnaposto dei rimandi, riferiti alla bobina.
+    </p>
+    {#if unlinkedContacts.length > 0}
+      <p class="warning">
+        {unlinkedContacts.length}
+        {unlinkedContacts.length === 1 ? 'contatto non collegato' : 'contatti non collegati'}:
+      </p>
+      <div class="chips">
+        {#each unlinkedContacts as u (u.id)}
+          <button class="chip" title="Vai al contatto" onclick={() => goTo(u.id)}
             >{u.name} (f. {u.sheet})</button
           >
         {/each}
@@ -775,5 +975,17 @@
   }
   .partners span {
     color: var(--muted);
+  }
+  .partners li {
+    display: flex;
+    gap: 0.2rem;
+  }
+  .partners .icon {
+    width: auto;
+    flex: none;
+    border: none;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
   }
 </style>

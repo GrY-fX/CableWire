@@ -6,6 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Contatti",
+    "contact": "no",
     "defaultInfo": { "label": "K" },
     "graphics": [
       {
@@ -35,6 +36,13 @@
         "type": "text",
         "x": 2,
         "y": 0
+      },
+      {
+        "size": 2,
+        "text": "{master_ref}",
+        "type": "text",
+        "x": 2,
+        "y": 2.8
       }
     ],
     "id": "base-contatto-na",
@@ -57,6 +65,6 @@
         "y": 5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

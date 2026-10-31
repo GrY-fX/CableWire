@@ -6,6 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Contatti",
+    "contact": "changeover",
     "defaultInfo": { "label": "K" },
     "graphics": [
       {
@@ -49,6 +50,13 @@
         "type": "text",
         "x": 4,
         "y": 1
+      },
+      {
+        "size": 2,
+        "text": "{master_ref}",
+        "type": "text",
+        "x": 4,
+        "y": 3.8
       }
     ],
     "id": "base-contatto-scambio",
@@ -78,6 +86,6 @@
         "y": -5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

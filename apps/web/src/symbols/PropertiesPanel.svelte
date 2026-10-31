@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Primitive, SymbolDef, SymbolKind, TerminalId } from '@cablewire/core';
+  import type { ContactType, Primitive, SymbolDef, SymbolKind, TerminalId } from '@cablewire/core';
   import {
     checkSymbol,
     parseKey,
@@ -63,11 +63,16 @@
     else delete next[key];
     return next;
   }
-  /** Kind change; only sheet references keep a direction (outgoing by default). */
+  /**
+   * Kind change; only sheet references keep a direction (outgoing by default) and
+   * only contacts a contact type (normally open by default).
+   */
   function withKind(s: SymbolDef, kind: SymbolKind): SymbolDef {
     const next = { ...s, kind };
     if (kind === 'report') next.report = s.report ?? 'out';
     else delete next.report;
+    if (kind === 'slave') next.contact = s.contact ?? 'no';
+    else delete next.contact;
     return next;
   }
   const num = (e: Event) => Number((e.currentTarget as HTMLInputElement).value);
@@ -353,6 +358,24 @@
         <span class="wide hint"
           >Nei testi usa <code>{'{ref_name}'}</code> per il numero del filo (o l'ID N/C_n) e
           <code>{'{ref_target}'}</code> per il foglio e la colonna del rimando collegato.</span
+        >
+      {/if}
+      {#if symbol.kind === 'slave'}
+        <label class="wide"
+          >Tipo di contatto
+          <select
+            value={symbol.contact ?? 'no'}
+            onchange={(e) => set({ ...symbol, contact: text(e) as ContactType })}
+          >
+            <option value="no">NA (normalmente aperto)</option>
+            <option value="nc">NC (normalmente chiuso)</option>
+            <option value="changeover">Scambio</option>
+            <option value="power">Potenza</option>
+          </select>
+        </label>
+        <span class="wide hint"
+          >Nei testi usa <code>{'{label}'}</code> per la sigla (quella della bobina, se collegato) e
+          <code>{'{master_ref}'}</code> per il foglio e la colonna della bobina.</span
         >
       {/if}
       <label

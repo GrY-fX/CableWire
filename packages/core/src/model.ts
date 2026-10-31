@@ -70,7 +70,11 @@ export interface SymbolDef {
   license?: string;
   /** Sheet references (kind `report`): incoming or outgoing; links join one of each. */
   report?: 'in' | 'out';
+  /** Contacts (kind `slave`): normally open, normally closed, changeover or power. */
+  contact?: ContactType;
 }
+
+export type ContactType = 'no' | 'nc' | 'changeover' | 'power';
 
 export interface Element {
   id: ElementId;
@@ -159,6 +163,11 @@ export interface ProjectSettings {
    * `→ {foglio}.{colonna}`; see DEFAULT_REFERENCE_PATTERN.
    */
   referencePattern?: string;
+  /**
+   * Text next to a contact telling where its coil is, e.g. `/{foglio}.{colonna}`;
+   * see DEFAULT_MASTER_REF_PATTERN.
+   */
+  masterRefPattern?: string;
 }
 
 export function getNumbering(doc: ProjectDoc): NumberingSettings {

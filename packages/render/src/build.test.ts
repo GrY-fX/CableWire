@@ -163,3 +163,45 @@ describe('sheet references', () => {
     expect(texts(item.node).map((t) => t.text)).toEqual(['N/C_3', '→ ?.?']);
   });
 });
+
+describe('contacts', () => {
+  it('draw the label of their coil and where the coil is', () => {
+    const { store, sheet } = fixture();
+    const doc = store.doc;
+    const contact = {
+      id: 'no',
+      name: 'NA',
+      category: 't',
+      kind: 'slave',
+      contact: 'no',
+      graphics: [
+        { type: 'text', x: 2, y: 0, text: '{label}', size: 2.5 },
+        { type: 'text', x: 2, y: 3, text: '{master_ref}', size: 2 },
+      ],
+      terminals: [],
+      bridges: [],
+      defaultInfo: {},
+      version: 1,
+    } as unknown as SymbolDef;
+    const coil = { ...doc.symbols[doc.elements[K1]!.symbolId]!, kind: 'master' } as SymbolDef;
+    const element = {
+      id: 'c1',
+      sheetId: sheet,
+      symbolId: 'no',
+      x: 300,
+      y: 100,
+      rotation: 0,
+      mirrored: false,
+      info: { label: 'K' },
+      link: K1,
+    } as unknown as Element;
+    const withContact: ProjectDoc = {
+      ...doc,
+      symbols: { ...doc.symbols, [coil.id]: coil, [contact.id]: contact },
+      elements: { ...doc.elements, [element.id]: element },
+    };
+    const item = buildScene(withContact, sheet).items.find((i) => i.key === 'element:c1')!;
+    // K1 is KM1 at (50, 50): sheet 1, column 1 of the A3 frame.
+    expect(texts(item.node).map((t) => t.text)).toEqual(['KM1', '/1.1']);
+  });
+});

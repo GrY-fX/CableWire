@@ -1,4 +1,11 @@
-import { endPosition, referenceTarget, reportName, transformPoint } from '@cablewire/core';
+import {
+  endPosition,
+  masterRef,
+  referenceTarget,
+  reportName,
+  slaveLabel,
+  transformPoint,
+} from '@cablewire/core';
 import type {
   Element,
   Junction,
@@ -48,7 +55,11 @@ function computeScene(doc: ProjectDoc, sheetId: SheetId): Scene {
         key: `element:${element.id}`,
         layer: 'elements',
         node: buildElementNode(
-          symbol.kind === 'report' ? { ...element, info: reportInfo(doc, element) } : element,
+          symbol.kind === 'report'
+            ? { ...element, info: reportInfo(doc, element) }
+            : symbol.kind === 'slave'
+              ? { ...element, info: slaveInfo(doc, element) }
+              : element,
           symbol,
         ),
       });
@@ -77,6 +88,15 @@ export function reportInfo(doc: ProjectDoc, element: Element): Record<string, st
     label: element.info['label'] || name,
     ref_name: name,
     ref_target: referenceTarget(doc, element),
+  };
+}
+
+/** Info of a contact: its coil's label and `{master_ref}` (where the coil is). */
+export function slaveInfo(doc: ProjectDoc, element: Element): Record<string, string> {
+  return {
+    ...element.info,
+    label: slaveLabel(doc, element),
+    master_ref: masterRef(doc, element),
   };
 }
 

@@ -78,7 +78,10 @@ export const pasteFragment = defineCommand<{
     const element: Element = { ...e, id: map<ElementId>(e.id), sheetId, x: e.x + dx, y: e.y + dy };
     if (e.link !== undefined) {
       if (ids[e.link]) element.link = map<ElementId>(e.link);
-      else delete element.link;
+      // A contact pasted without its coil stays linked to the same coil, if still there.
+      else if (symbol.kind !== 'slave' || !doc.elements[e.link]) {
+        delete element.link;
+      }
     }
     if (symbol.kind === 'report') {
       // A pasted reference is a new one: it gets its own id.

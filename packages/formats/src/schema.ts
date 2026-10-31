@@ -80,6 +80,7 @@ export const symbolSchema = v.object({
   author: v.exactOptional(v.string()),
   license: v.exactOptional(v.string()),
   report: v.exactOptional(v.picklist(['in', 'out'])),
+  contact: v.exactOptional(v.picklist(['no', 'nc', 'changeover', 'power'])),
 });
 
 const sheet = v.object({
@@ -145,6 +146,7 @@ export const projectSchema = v.object({
       }),
     ),
     referencePattern: v.exactOptional(v.string()),
+    masterRefPattern: v.exactOptional(v.string()),
   }),
   sheetOrder: v.array(id<SheetId>()),
   sheets: table<SheetId, typeof sheet>(sheet),

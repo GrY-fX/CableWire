@@ -6,6 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Potenza",
+    "contact": "power",
     "defaultInfo": { "label": "KM" },
     "graphics": [
       {
@@ -108,6 +109,13 @@
         "type": "text",
         "x": 6,
         "y": 0
+      },
+      {
+        "size": 2,
+        "text": "{master_ref}",
+        "type": "text",
+        "x": 6,
+        "y": 2.8
       }
     ],
     "id": "base-contattore-tripolare",
@@ -158,6 +166,6 @@
         "y": 5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }
