@@ -4,6 +4,7 @@ import {
   referenceTarget,
   reportName,
   slaveLabel,
+  textLayout,
   textRotation,
   terminalLabel,
   transformPoint,
@@ -19,6 +20,7 @@ import type {
   Primitive,
   ProjectDoc,
   SheetId,
+  SheetText,
   SymbolDef,
   Wire,
   XrefLayout,
@@ -81,6 +83,10 @@ function computeScene(doc: ProjectDoc, sheetId: SheetId): Scene {
     if (layout)
       items.push({ key: `xref:${element.id}`, layer: 'elements', node: buildXref(layout) });
   }
+  for (const t of Object.values(doc.texts)) {
+    if (t.sheetId !== sheetId) continue;
+    items.push({ key: `text:${t.id}`, layer: 'elements', node: buildText(doc, t) });
+  }
   for (const junction of Object.values(doc.junctions)) {
     if (junction.sheetId !== sheetId) continue;
     items.push({
@@ -113,6 +119,34 @@ export function slaveInfo(doc: ProjectDoc, element: Element): Record<string, str
     ...element.info,
     label: slaveLabel(doc, element),
     master_ref: masterRef(doc, element),
+  };
+}
+
+/** A free text, one text node per line (see textLayout in core). */
+export function buildText(doc: ProjectDoc, t: SheetText): SceneNode {
+  const { lines, angle, anchor, bounds } = textLayout(doc, t);
+  const b = bounds;
+  return {
+    kind: 'group',
+    children: [
+      ...lines.map((l): SceneNode => ({
+        kind: 'text',
+        x: round(l.x),
+        y: round(l.y),
+        text: l.text,
+        size: t.size,
+        anchor,
+        ...(angle ? { angle } : {}),
+        classes: ['text'],
+      })),
+      // Invisible box so the whole text can be clicked, between its letters too.
+      {
+        kind: 'path',
+        d: `M${round(b.minX)} ${round(b.minY)}H${round(b.maxX)}V${round(b.maxY)}H${round(b.minX)}Z`,
+        classes: ['hit'],
+        screenOnly: true,
+      },
+    ],
   };
 }
 
@@ -152,7 +186,18 @@ export function buildXref(layout: XrefLayout): SceneNode {
   };
 }
 
+/** A shape with its line style (width and dash, as classes). */
 export function primitivePath(p: Exclude<Primitive, { type: 'text' }>): SceneNode {
+  const node = basePath(p);
+  const style = [
+    ...(p.lineWidth ? [wireWidthClass(p.lineWidth)] : []),
+    ...(p.dash ? [`dash-${p.dash}`] : []),
+  ];
+  if (!style.length || node.kind === 'group' || node.kind === 'text') return node;
+  return { ...node, classes: [...(node.classes ?? []), ...style] };
+}
+
+function basePath(p: Exclude<Primitive, { type: 'text' }>): SceneNode {
   switch (p.type) {
     case 'line':
       return { kind: 'path', d: `M${p.x1} ${p.y1}L${p.x2} ${p.y2}`, classes: ['stroke'] };

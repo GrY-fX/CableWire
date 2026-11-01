@@ -1,5 +1,13 @@
 import { newId } from './ids.ts';
-import type { ElementId, JunctionId, SheetId, SymbolId, TerminalId, WireId } from './ids.ts';
+import type {
+  ElementId,
+  JunctionId,
+  SheetId,
+  SymbolId,
+  TerminalId,
+  TextId,
+  WireId,
+} from './ids.ts';
 
 /** Coordinates are millimetres, origin top-left, Y pointing down (as in SVG). */
 export interface Point {
@@ -22,13 +30,28 @@ export interface Sheet {
   cols: number;
 }
 
+/** How the outline of a shape is drawn; a solid 0.25 mm line when missing. */
+export interface LineStyle {
+  /** Line width in mm (the same widths as wires). */
+  lineWidth?: number;
+  /** Dashed, or dash-dot (axis line, mechanical link between contacts). */
+  dash?: 'dashed' | 'dashdot';
+}
+
 export type Primitive =
-  | { type: 'line'; x1: number; y1: number; x2: number; y2: number }
-  | { type: 'polyline'; points: Point[]; closed: boolean; filled?: boolean }
+  | ({ type: 'line'; x1: number; y1: number; x2: number; y2: number } & LineStyle)
+  | ({ type: 'polyline'; points: Point[]; closed: boolean; filled?: boolean } & LineStyle)
   /** Angles in degrees, clockwise from the positive X axis. */
-  | { type: 'arc'; cx: number; cy: number; r: number; start: number; sweep: number }
-  | { type: 'circle'; cx: number; cy: number; r: number; filled?: boolean }
-  | { type: 'rect'; x: number; y: number; width: number; height: number; filled?: boolean }
+  | ({ type: 'arc'; cx: number; cy: number; r: number; start: number; sweep: number } & LineStyle)
+  | ({ type: 'circle'; cx: number; cy: number; r: number; filled?: boolean } & LineStyle)
+  | ({
+      type: 'rect';
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      filled?: boolean;
+    } & LineStyle)
   /**
    * (x, y) is the anchor point, vertically centred. `{field}` placeholders are replaced
    * with the element's info values when drawn.
@@ -127,6 +150,22 @@ export interface Junction {
   sheetId: SheetId;
   x: number;
   y: number;
+}
+
+/** A free text on a sheet (notes, legends); may span lines and use placeholders. */
+export interface SheetText {
+  id: TextId;
+  sheetId: SheetId;
+  /** Point of the first line, vertically centred (as symbol texts). */
+  x: number;
+  y: number;
+  /** Text; `\n` starts a new line. */
+  text: string;
+  /** Height in mm. */
+  size: number;
+  anchor?: 'start' | 'middle' | 'end';
+  /** Clockwise turn; drawn kept readable. */
+  rotation?: Rotation;
 }
 
 export type WireEnd = { element: ElementId; terminal: TerminalId } | { junction: JunctionId };
@@ -257,6 +296,7 @@ export interface ProjectDoc {
   elements: Record<ElementId, Element>;
   wires: Record<WireId, Wire>;
   junctions: Record<JunctionId, Junction>;
+  texts: Record<TextId, SheetText>;
 }
 
 export const DEFAULT_GRID_STEP = 2.5;
@@ -297,6 +337,7 @@ export function createEmptyProject(
     elements: {},
     wires: {},
     junctions: {},
+    texts: {},
   };
 }
 

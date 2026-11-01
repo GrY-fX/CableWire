@@ -81,6 +81,11 @@ export function validate(doc: ProjectDoc): Problem[] {
     }
   }
 
+  for (const text of Object.values(doc.texts)) {
+    if (!doc.sheets[text.sheetId]) {
+      report('missing-sheet', `text ${text.id} is on a missing sheet`, 'texts', text.id);
+    }
+  }
   for (const junction of Object.values(doc.junctions)) {
     if (!doc.sheets[junction.sheetId]) {
       report(

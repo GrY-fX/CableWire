@@ -1,4 +1,4 @@
-import type { Element, Junction, ProjectDoc, Sheet, SymbolDef, Wire } from './model.ts';
+import type { Element, Junction, ProjectDoc, Sheet, SheetText, SymbolDef, Wire } from './model.ts';
 
 export interface TableTypes {
   sheets: Sheet;
@@ -6,10 +6,18 @@ export interface TableTypes {
   elements: Element;
   wires: Wire;
   junctions: Junction;
+  texts: SheetText;
 }
 
 export type Table = keyof TableTypes;
-export const TABLES: readonly Table[] = ['sheets', 'symbols', 'elements', 'wires', 'junctions'];
+export const TABLES: readonly Table[] = [
+  'sheets',
+  'symbols',
+  'elements',
+  'wires',
+  'junctions',
+  'texts',
+];
 
 /** Field updates; a field set to `undefined` is removed. */
 export type Patch<T> = { [K in Exclude<keyof T, 'id'>]?: T[K] | undefined };

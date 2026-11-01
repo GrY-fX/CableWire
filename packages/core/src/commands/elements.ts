@@ -1,5 +1,5 @@
 import { defineCommand, fail, ok } from '../command.ts';
-import type { ElementId, JunctionId, SheetId, SymbolId } from '../ids.ts';
+import type { ElementId, JunctionId, SheetId, SymbolId, TextId } from '../ids.ts';
 import { newId } from '../ids.ts';
 import { addRotation, endPosition } from '../geometry.ts';
 import type { Element, Point, ProjectDoc, Rotation, Wire, WireEnd } from '../model.ts';
@@ -103,9 +103,10 @@ export function stretchWire(
 export const moveItems = defineCommand<{
   elements?: readonly ElementId[];
   junctions?: readonly JunctionId[];
+  texts?: readonly TextId[];
   dx: number;
   dy: number;
-}>('Sposta', (doc, { elements = [], junctions = [], dx, dy }) => {
+}>('Sposta', (doc, { elements = [], junctions = [], texts = [], dx, dy }) => {
   if (dx === 0 && dy === 0) return ok([]);
   const movedElements = new Set<string>();
   const movedJunctions = new Set<string>();
@@ -121,6 +122,11 @@ export const moveItems = defineCommand<{
     if (!j) return fail('not-found', `Junction ${id} not found`);
     movedJunctions.add(id);
     ops.push(patch('junctions', id, { x: j.x + dx, y: j.y + dy }));
+  }
+  for (const id of texts) {
+    const t = doc.texts[id];
+    if (!t) return fail('not-found', `Text ${id} not found`);
+    ops.push(patch('texts', id, { x: t.x + dx, y: t.y + dy }));
   }
   const moved = (end: WireEnd) =>
     isJunctionEnd(end) ? movedJunctions.has(end.junction) : movedElements.has(end.element);

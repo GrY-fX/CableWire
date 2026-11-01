@@ -3,6 +3,7 @@ import {
   distanceToSegment,
   elementBounds,
   endPosition,
+  textLayout,
   xrefLayout,
 } from '@cablewire/core';
 import type { Bounds, ElementId, Point, ProjectDoc, SheetId, Wire } from '@cablewire/core';
@@ -14,14 +15,14 @@ export { elementBounds } from '@cablewire/core';
 export const elementKey = (id: string) => `element:${id}`;
 export const wireKey = (id: string) => `wire:${id}`;
 export const junctionKey = (id: string) => `junction:${id}`;
+export const textKey = (id: string) => `text:${id}`;
 
-export type ParsedKey =
-  { kind: 'element'; id: string } | { kind: 'wire'; id: string } | { kind: 'junction'; id: string };
+export type ParsedKey = { kind: 'element' | 'wire' | 'junction' | 'text'; id: string };
 
 export function parseItemKey(key: string): ParsedKey | undefined {
   const i = key.indexOf(':');
   const kind = key.slice(0, i);
-  if (kind === 'element' || kind === 'wire' || kind === 'junction')
+  if (kind === 'element' || kind === 'wire' || kind === 'junction' || kind === 'text')
     return { kind, id: key.slice(i + 1) };
   return undefined;
 }
@@ -65,6 +66,11 @@ export function hitSheet(
     const path = wirePath(doc, w);
     if (path && distanceToPath(p, path) <= tolerance) return wireKey(w.id);
   }
+  for (const t of Object.values(doc.texts)) {
+    if (t.sheetId === sheetId && inside(p, textLayout(doc, t).bounds, tolerance)) {
+      return textKey(t.id);
+    }
+  }
   const elements = Object.values(doc.elements).filter((e) => e.sheetId === sheetId);
   for (let i = elements.length - 1; i >= 0; i--) {
     const e = elements[i]!;
@@ -98,6 +104,9 @@ export function itemsInside(doc: ProjectDoc, sheetId: SheetId, rect: Bounds): st
     const symbol = doc.symbols[e.symbolId];
     if (e.sheetId === sheetId && symbol && contained(elementBounds(e, symbol)))
       keys.push(elementKey(e.id));
+  }
+  for (const t of Object.values(doc.texts)) {
+    if (t.sheetId === sheetId && contained(textLayout(doc, t).bounds)) keys.push(textKey(t.id));
   }
   for (const j of Object.values(doc.junctions)) {
     if (j.sheetId === sheetId && contained({ minX: j.x, maxX: j.x, minY: j.y, maxY: j.y })) {

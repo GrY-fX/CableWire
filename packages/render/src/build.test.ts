@@ -277,3 +277,22 @@ describe('title block from the template', () => {
     expect(rowF.y).toBeLessThan(277);
   });
 });
+
+describe('line style of shapes', () => {
+  it('adds width and dash classes, nothing for the default solid line', () => {
+    const line = { type: 'line' as const, x1: 0, y1: 0, x2: 10, y2: 0 };
+    expect(primitivePath(line)).toMatchObject({ classes: ['stroke'] });
+    expect(primitivePath({ ...line, lineWidth: 0.5, dash: 'dashdot' })).toMatchObject({
+      classes: ['stroke', 'ww-50', 'dash-dashdot'],
+    });
+    const rect = {
+      type: 'rect' as const,
+      x: 0,
+      y: 0,
+      width: 5,
+      height: 5,
+      dash: 'dashed' as const,
+    };
+    expect(primitivePath(rect)).toMatchObject({ classes: ['stroke', 'dash-dashed'] });
+  });
+});

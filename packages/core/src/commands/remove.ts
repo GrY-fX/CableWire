@@ -1,5 +1,5 @@
 import { defineCommand, ok } from '../command.ts';
-import type { ElementId, JunctionId, WireId } from '../ids.ts';
+import type { ElementId, JunctionId, TextId, WireId } from '../ids.ts';
 import type { ProjectDoc } from '../model.ts';
 import { isJunctionEnd } from '../model.ts';
 import type { Op } from '../ops.ts';
@@ -9,6 +9,7 @@ export interface RemoveArgs {
   elements?: readonly ElementId[];
   wires?: readonly WireId[];
   junctions?: readonly JunctionId[];
+  texts?: readonly TextId[];
 }
 
 /**
@@ -49,6 +50,7 @@ export function removeOps(doc: ProjectDoc, args: RemoveArgs): Op[] {
   for (const id of wires) ops.push(del('wires', id));
   for (const id of junctions) ops.push(del('junctions', id));
   for (const id of elements) ops.push(del('elements', id));
+  for (const id of args.texts ?? []) if (doc.texts[id]) ops.push(del('texts', id));
   return ops;
 }
 

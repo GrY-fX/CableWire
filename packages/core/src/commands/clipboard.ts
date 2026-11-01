@@ -1,7 +1,15 @@
 import { defineCommand, fail, ok } from '../command.ts';
-import type { ElementId, JunctionId, SheetId, WireId } from '../ids.ts';
+import type { ElementId, JunctionId, SheetId, TextId, WireId } from '../ids.ts';
 import { newId } from '../ids.ts';
-import type { Element, Junction, ProjectDoc, SymbolDef, Wire, WireEnd } from '../model.ts';
+import type {
+  Element,
+  Junction,
+  ProjectDoc,
+  SheetText,
+  SymbolDef,
+  Wire,
+  WireEnd,
+} from '../model.ts';
 import { isJunctionEnd } from '../model.ts';
 import { withNumber } from '../numbering.ts';
 import type { Op } from '../ops.ts';
@@ -16,6 +24,7 @@ export interface Fragment {
   elements: Element[];
   wires: Wire[];
   junctions: Junction[];
+  texts: SheetText[];
 }
 
 /**
@@ -24,7 +33,11 @@ export interface Fragment {
  */
 export function copyFragment(
   doc: ProjectDoc,
-  selection: { elements?: readonly ElementId[]; junctions?: readonly JunctionId[] },
+  selection: {
+    elements?: readonly ElementId[];
+    junctions?: readonly JunctionId[];
+    texts?: readonly TextId[];
+  },
 ): Fragment {
   const elements = (selection.elements ?? []).flatMap((id) => doc.elements[id] ?? []);
   const junctions = (selection.junctions ?? []).flatMap((id) => doc.junctions[id] ?? []);
@@ -35,17 +48,23 @@ export function copyFragment(
   const wires = Object.values(doc.wires).filter((w) => inside(w.from) && inside(w.to));
   const symbolIds = new Set(elements.map((e) => e.symbolId));
   const symbols = [...symbolIds].flatMap((id) => doc.symbols[id] ?? []);
-  return { symbols, elements, wires, junctions };
+  const texts = (selection.texts ?? []).flatMap((id) => doc.texts[id] ?? []);
+  return { symbols, elements, wires, junctions, texts };
 }
 
 export function isEmptyFragment(f: Fragment): boolean {
-  return f.elements.length === 0 && f.junctions.length === 0;
+  return f.elements.length === 0 && f.junctions.length === 0 && f.texts.length === 0;
 }
 
 /** New ids for everything in a fragment (old id → new id). */
 export function freshIds(fragment: Fragment): Record<string, string> {
   const ids: Record<string, string> = {};
-  for (const item of [...fragment.elements, ...fragment.wires, ...fragment.junctions]) {
+  for (const item of [
+    ...fragment.elements,
+    ...fragment.wires,
+    ...fragment.junctions,
+    ...fragment.texts,
+  ]) {
     ids[item.id] = newId();
   }
   return ids;
@@ -114,6 +133,9 @@ export const pasteFragment = defineCommand<{
       element.info = { ...element.info, [key]: label };
     }
     ops.push(put('elements', element));
+  }
+  for (const t of fragment.texts) {
+    ops.push(put('texts', { ...t, id: map<TextId>(t.id), sheetId, x: t.x + dx, y: t.y + dy }));
   }
   for (const j of fragment.junctions) {
     ops.push(

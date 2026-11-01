@@ -7,6 +7,7 @@ import type {
   SymbolDef,
   SymbolId,
   TerminalId,
+  TextId,
   WireId,
 } from '@cablewire/core';
 
@@ -29,21 +30,36 @@ const num = v.pipe(v.number(), v.finite());
 const point = v.object({ x: num, y: num });
 const strings = v.record(v.string(), v.string());
 
+const lineStyle = {
+  lineWidth: v.exactOptional(v.pipe(num, v.minValue(0.05))),
+  dash: v.exactOptional(v.picklist(['dashed', 'dashdot'])),
+};
+
 const primitive = v.variant('type', [
-  v.object({ type: v.literal('line'), x1: num, y1: num, x2: num, y2: num }),
+  v.object({ type: v.literal('line'), x1: num, y1: num, x2: num, y2: num, ...lineStyle }),
   v.object({
     type: v.literal('polyline'),
     points: v.array(point),
     closed: v.boolean(),
     filled: v.exactOptional(v.boolean()),
+    ...lineStyle,
   }),
-  v.object({ type: v.literal('arc'), cx: num, cy: num, r: num, start: num, sweep: num }),
+  v.object({
+    type: v.literal('arc'),
+    cx: num,
+    cy: num,
+    r: num,
+    start: num,
+    sweep: num,
+    ...lineStyle,
+  }),
   v.object({
     type: v.literal('circle'),
     cx: num,
     cy: num,
     r: num,
     filled: v.exactOptional(v.boolean()),
+    ...lineStyle,
   }),
   v.object({
     type: v.literal('rect'),
@@ -52,6 +68,7 @@ const primitive = v.variant('type', [
     width: num,
     height: num,
     filled: v.exactOptional(v.boolean()),
+    ...lineStyle,
   }),
   v.object({
     type: v.literal('text'),
@@ -93,6 +110,17 @@ export const symbolSchema = v.object({
 });
 
 const xrefStyle = v.picklist(['table', 'contacts']);
+
+const sheetText = v.object({
+  id: id<TextId>(),
+  sheetId: id<SheetId>(),
+  x: num,
+  y: num,
+  text: v.string(),
+  size: v.pipe(num, v.minValue(0.5)),
+  anchor: v.exactOptional(v.picklist(['start', 'middle', 'end'])),
+  rotation: v.exactOptional(v.picklist([0, 90, 180, 270])),
+});
 
 const sheet = v.object({
   id: id<SheetId>(),
@@ -195,6 +223,8 @@ export const projectSchema = v.object({
   elements: table<ElementId, typeof element>(element),
   wires: table<WireId, typeof wire>(wire),
   junctions: table<JunctionId, typeof junction>(junction),
+  // Missing in files written before free texts existed.
+  texts: v.optional(table<TextId, typeof sheetText>(sheetText), {}),
 });
 
 // Compile-time guarantee that the schemas produce exactly core's types.

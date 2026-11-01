@@ -56,6 +56,8 @@
     setPotentialLock,
     setPotentialNumber,
     setPotentialStyle,
+    TEXT_SIZES,
+    updateText,
     DEFAULT_WIRE_WIDTH,
     WIRE_COLORS,
     WIRE_WIDTHS,
@@ -70,6 +72,10 @@
   } from '@cablewire/core';
   import type {
     BindingMargin,
+    Patch,
+    Rotation,
+    SheetText,
+    TextId,
     SymbolDef,
     Command,
     ContactType,
@@ -102,7 +108,9 @@
     const single = keys.length === 1 ? parseItemKey(keys[0]!) : undefined;
     const element = single?.kind === 'element' ? doc.elements[single.id as ElementId] : undefined;
     const wire = single?.kind === 'wire' ? doc.wires[single.id as WireId] : undefined;
+    const freeText = single?.kind === 'text' ? doc.texts[single.id as TextId] : undefined;
     return {
+      freeText,
       doc,
       count: keys.length,
       element,
@@ -448,6 +456,30 @@
 
   let labelInput: HTMLInputElement | undefined = $state();
   /** Puts the cursor in the label field (double click on an element). */
+  let textArea: HTMLTextAreaElement | undefined = $state();
+  /** Puts the cursor in the text of the selected free text (double click). */
+  export async function focusText() {
+    await tick();
+    // After the click on the sheet has finished, or it would take the focus back.
+    setTimeout(() => {
+      textArea?.focus();
+      textArea?.select();
+    });
+  }
+  // A text just placed (still "Testo") is ready to be typed over.
+  let lastText: string | undefined;
+  $effect(() => {
+    const t = view.freeText;
+    if (t && t.id !== lastText && t.text === 'Testo') void focusText();
+    lastText = t?.id;
+  });
+
+  function setText(set: Partial<Record<keyof SheetText, unknown>>) {
+    const t = view.freeText;
+    if (!t) return;
+    editor.store.run(updateText, { id: t.id, set: set as Patch<SheetText> });
+  }
+
   export async function focusLabel() {
     await tick();
     labelInput?.focus();
@@ -741,6 +773,64 @@
         .element.mirrored
         ? ' · specchiato'
         : ''}. R ruota, M specchia.
+    </p>
+  {:else if view.freeText}
+    {@const t = view.freeText}
+    <h3>Testo</h3>
+    <div class="grid">
+      <label class="wide"
+        >Testo
+        <textarea
+          bind:this={textArea}
+          rows="4"
+          value={t.text}
+          onchange={(e) => setText({ text: e.currentTarget.value })}></textarea>
+      </label>
+      <label
+        >Altezza
+        <select value={String(t.size)} onchange={(e) => setText({ size: num(e) })}>
+          {#each TEXT_SIZES as size (size)}
+            <option value={String(size)}>{String(size).replace('.', ',')} mm</option>
+          {/each}
+          {#if !TEXT_SIZES.includes(t.size)}
+            <option value={String(t.size)}>{String(t.size).replace('.', ',')} mm</option>
+          {/if}
+        </select>
+      </label>
+      <label
+        >Allineamento
+        <select
+          value={t.anchor ?? 'start'}
+          onchange={(e) => {
+            const anchor = text(e) as 'start' | 'middle' | 'end';
+            setText({ anchor: anchor === 'start' ? undefined : anchor });
+          }}
+        >
+          <option value="start">A sinistra</option>
+          <option value="middle">Al centro</option>
+          <option value="end">A destra</option>
+        </select>
+      </label>
+      <label
+        >Rotazione
+        <select
+          value={String(t.rotation ?? 0)}
+          onchange={(e) => {
+            const rotation = num(e) as Rotation;
+            setText({ rotation: rotation || undefined });
+          }}
+        >
+          <option value="0">0° (orizzontale)</option>
+          <option value="90">90° (verticale)</option>
+          <option value="180">180°</option>
+          <option value="270">270°</option>
+        </select>
+      </label>
+    </div>
+    <p class="hint">
+      Invio per andare a capo. Segnaposto come nel cartiglio: {'{titolo}'}, {'{foglio}'},
+      {'{fogli}'}, {'{titolo_foglio}'}, {'{cliente}'}… R ruota, Canc elimina, doppio clic per
+      modificarlo.
     </p>
   {:else if view.wire}
     <h3>Filo</h3>
@@ -1399,7 +1489,8 @@
     grid-column: 1 / -1;
   }
   input,
-  select {
+  select,
+  textarea {
     width: 100%;
     box-sizing: border-box;
     padding: 0.2rem 0.35rem;

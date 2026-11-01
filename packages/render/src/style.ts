@@ -25,6 +25,8 @@ export const PAPER_CSS = `
 .cw-frame { stroke-width: 0.5; }
 .cw-text { fill: #000; font-family: ${FONT_FAMILY}, sans-serif; dominant-baseline: central; }
 .cw-credit { fill: #6b6b6b; }
+.cw-dash-dashed { stroke-dasharray: 1.5 1; stroke-linecap: butt; }
+.cw-dash-dashdot { stroke-dasharray: 3 0.8 0.1 0.8; }
 ${WIRE_CSS}
 `;
 

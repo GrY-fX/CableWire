@@ -1,7 +1,14 @@
 <script lang="ts">
-  import { DEFAULT_TITLE_BLOCK_LAYOUT, TITLE_FIELDS, TITLE_PLACEHOLDERS } from '@cablewire/core';
+  import {
+    DEFAULT_TITLE_BLOCK_LAYOUT,
+    DEFAULT_WIRE_WIDTH,
+    TITLE_FIELDS,
+    TITLE_PLACEHOLDERS,
+    WIRE_WIDTHS,
+  } from '@cablewire/core';
   import type {
     ContactType,
+    LineStyle,
     MasterType,
     Primitive,
     Rotation,
@@ -73,6 +80,14 @@
     if (shapeIndex === undefined || !shape) return;
     set(replaceShape(symbol, shapeIndex, { ...shape, ...patch } as Primitive));
   };
+  /** Width or dash of the selected shape; undefined goes back to the default. */
+  function setLineStyle<K extends 'lineWidth' | 'dash'>(key: K, value: LineStyle[K] | undefined) {
+    if (shapeIndex === undefined || !shape || shape.type === 'text') return;
+    const next: Record<string, unknown> = { ...shape };
+    if (value === undefined) delete next[key];
+    else next[key] = value;
+    set(replaceShape(symbol, shapeIndex, next as Primitive));
+  }
   /** Sets an optional text field, removing it when empty. */
   function withOptional(s: SymbolDef, key: 'author' | 'license', value: string): SymbolDef {
     const next = { ...s };
@@ -314,6 +329,36 @@
           >Il testo resta leggibile dal basso o da destra: a 180° e 270° non si capovolge ma cambia
           il lato dell'allineamento.</span
         >
+      {/if}
+      {#if shape.type !== 'text'}
+        <label
+          >Spessore
+          <select
+            value={String(shape.lineWidth ?? DEFAULT_WIRE_WIDTH)}
+            onchange={(e) => {
+              const width = Number(text(e));
+              setLineStyle('lineWidth', width === DEFAULT_WIRE_WIDTH ? undefined : width);
+            }}
+          >
+            {#each WIRE_WIDTHS as w (w.width)}
+              <option value={String(w.width)}
+                >{w.name} · {String(w.width).replace('.', ',')} mm</option
+              >
+            {/each}
+          </select>
+        </label>
+        <label
+          >Tipo di linea
+          <select
+            value={shape.dash ?? ''}
+            onchange={(e) =>
+              setLineStyle('dash', (text(e) || undefined) as 'dashed' | 'dashdot' | undefined)}
+          >
+            <option value="">Continua</option>
+            <option value="dashed">Tratteggiata</option>
+            <option value="dashdot">Tratto-punto</option>
+          </select>
+        </label>
       {/if}
       {#if shape.type === 'rect' || shape.type === 'circle' || (shape.type === 'polyline' && shape.closed)}
         <label class="check wide"

@@ -6,6 +6,7 @@ export type SymbolId = Id<'symbol'>;
 export type ElementId = Id<'element'>;
 export type WireId = Id<'wire'>;
 export type JunctionId = Id<'junction'>;
+export type TextId = Id<'text'>;
 /** Terminal ids are unique only within their symbol. */
 export type TerminalId = Id<'terminal'>;
 

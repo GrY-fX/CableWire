@@ -1,5 +1,5 @@
 import { defineCommand, fail, ok } from '../command.ts';
-import type { ElementId, JunctionId, SheetId, WireId } from '../ids.ts';
+import type { ElementId, JunctionId, SheetId, TextId, WireId } from '../ids.ts';
 import { newId } from '../ids.ts';
 import type { Sheet, SheetFormat, TerminalStrip } from '../model.ts';
 import { createSheet } from '../model.ts';
@@ -32,6 +32,7 @@ export const removeSheet = defineCommand<{ id: SheetId }>('Elimina foglio', (doc
     elements: on(doc.elements) as ElementId[],
     wires: on(doc.wires) as WireId[],
     junctions: on(doc.junctions) as JunctionId[],
+    texts: on(doc.texts) as TextId[],
   });
   // Strips named after this sheet: kept with their name if used elsewhere, else removed.
   const strips = getStrips(doc).flatMap((strip): TerminalStrip[] => {

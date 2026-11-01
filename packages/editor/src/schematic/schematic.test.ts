@@ -11,7 +11,7 @@ import {
   setXrefStyle,
   xrefLayout,
 } from '@cablewire/core';
-import type { ElementId, SheetId, SymbolDef, SymbolId, TerminalId } from '@cablewire/core';
+import type { ElementId, SheetId, SymbolDef, SymbolId, TerminalId, TextId } from '@cablewire/core';
 import { SchematicEditor } from './controller.ts';
 import { elementBounds, hitSheet, parseItemKey } from './hit.ts';
 
@@ -359,5 +359,33 @@ describe('terminals placed', () => {
     // One undo removes the terminal; the first one's strip went with its own step.
     store.undo();
     expect(elementIds(editor)).toHaveLength(2);
+  });
+});
+
+describe('free texts in the editor', () => {
+  it('are placed with the text tool, then moved, turned, copied and removed', () => {
+    const { editor, store } = setup();
+    editor.key('t');
+    expect(editor.tool).toBe('text');
+    click(editor, 51.2, 40.1);
+    const [id] = Object.keys(editor.doc.texts) as TextId[];
+    expect(editor.doc.texts[id!]).toMatchObject({ x: 50, y: 40, text: 'Testo' });
+    expect([...editor.selection]).toEqual([`text:${id}`]);
+    expect(editor.tool).toBe('select');
+    // Drag it by its letters.
+    editor.pointerDown({ x: 52, y: 40 });
+    editor.pointerMove({ x: 62, y: 45 });
+    editor.pointerUp({ x: 62, y: 45 });
+    expect(editor.doc.texts[id!]).toMatchObject({ x: 60, y: 45 });
+    editor.key('r');
+    expect(editor.doc.texts[id!]!.rotation).toBe(90);
+    editor.key('c', { ctrl: true });
+    editor.key('v', { ctrl: true });
+    expect(Object.keys(editor.doc.texts)).toHaveLength(2);
+    editor.select([`text:${id}`]);
+    editor.key('Delete');
+    expect(Object.keys(editor.doc.texts)).toHaveLength(1);
+    store.undo();
+    expect(Object.keys(editor.doc.texts)).toHaveLength(2);
   });
 });

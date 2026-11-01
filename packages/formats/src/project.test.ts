@@ -26,6 +26,13 @@ describe('project files', () => {
     expect(Object.keys(doc.wires)).toHaveLength(3);
   });
 
+  it('opens files written before free texts, with no texts', () => {
+    const json = JSON.parse(sampleV1) as Record<string, unknown>;
+    delete json['texts'];
+    const doc = ok(parseProject(JSON.stringify(json)));
+    expect(doc.texts).toEqual({});
+  });
+
   it('round-trips and is stable', () => {
     const doc = sampleProject();
     const text = serializeProject(doc);

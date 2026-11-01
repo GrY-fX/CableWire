@@ -131,6 +131,7 @@
       "version": 3
     }
   },
+  "texts": {},
   "wires": {
     "w1": {
       "bends": [],

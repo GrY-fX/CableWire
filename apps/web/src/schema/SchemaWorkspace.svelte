@@ -221,6 +221,10 @@
    */
   function dblElement(key: string) {
     const item = parseItemKey(key);
+    if (item?.kind === 'text') {
+      void properties?.focusText();
+      return;
+    }
     const element =
       item?.kind === 'element' ? editor.doc.elements[item.id as ElementId] : undefined;
     const partner = element && (linkedReport(editor.doc, element) ?? masterOf(editor.doc, element));
@@ -479,6 +483,11 @@
         class:active={view.tool === 'wire'}
         title="Filo (W)"
         onclick={() => editor.setTool('wire')}>⌐ Filo</button
+      >
+      <button
+        class:active={view.tool === 'text'}
+        title="Testo libero (T): clic sul foglio, poi scrivi nel pannello"
+        onclick={() => editor.setTool('text')}>T Testo</button
       >
       <span class="sep"></span>
       <button

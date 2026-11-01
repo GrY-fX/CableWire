@@ -1,5 +1,6 @@
 import {
   addStrip,
+  addText,
   addWire,
   autoConnections,
   autoNumberPotential,
@@ -24,6 +25,7 @@ import {
   removeItems,
   resolveDefaultInfo,
   rotateElements,
+  rotateTexts,
   routeOrthogonal,
   setWireBends,
   setXrefOffset,
@@ -45,6 +47,7 @@ import type {
   SheetId,
   Store,
   SymbolDef,
+  TextId,
   WireId,
 } from '@cablewire/core';
 import { rectFromPoints } from '../hit.ts';
@@ -56,13 +59,14 @@ import {
   itemsInside,
   junctionKey,
   parseItemKey,
+  textKey,
   wireKey,
   wirePath,
 } from './hit.ts';
 import { anchorAt, resolveAnchor, sameAnchor, wiresAt } from './wiring.ts';
 import type { Anchor } from './wiring.ts';
 
-export type SchematicTool = 'select' | 'place' | 'wire';
+export type SchematicTool = 'select' | 'place' | 'wire' | 'text';
 
 /** Editable points of the selected wire: middle of inner segments, and the two ends. */
 export interface WireHandle {
@@ -265,7 +269,7 @@ export class SchematicEditor {
     return { keys, wires: wires.length, sheets: new Set(wires.map((w) => w.sheetId)).size };
   }
 
-  setTool(tool: 'select' | 'wire'): void {
+  setTool(tool: 'select' | 'wire' | 'text'): void {
     this.cancelDrag();
     this.wiring = undefined;
     this.placing = undefined;
@@ -332,6 +336,16 @@ export class SchematicEditor {
     }
     if (this.currentTool === 'wire') {
       this.wireDown(raw);
+      this.emit();
+      return;
+    }
+    if (this.currentTool === 'text') {
+      // One text per click, then back to selecting: the panel takes the typing.
+      const id = newId<'text'>() as TextId;
+      if (this.run(addText, { id, sheetId: this.sheet, x: this.cursor.x, y: this.cursor.y })) {
+        this.selected = new Set([textKey(id)]);
+      }
+      this.currentTool = 'select';
       this.emit();
       return;
     }
@@ -459,7 +473,7 @@ export class SchematicEditor {
       return undefined;
     }
     const hit = hitSheet(this.doc, this.sheet, raw, this.tolerance);
-    if (!hit?.startsWith('element:')) return undefined;
+    if (!hit?.startsWith('element:') && !hit?.startsWith('text:')) return undefined;
     this.select([hit]);
     return hit;
   }
@@ -516,6 +530,10 @@ export class SchematicEditor {
     }
     if (k === 's') {
       this.setTool('select');
+      return true;
+    }
+    if (k === 't') {
+      this.setTool('text');
       return true;
     }
     return false;
@@ -641,9 +659,12 @@ export class SchematicEditor {
       this.emit();
       return true;
     }
-    const { elements } = this.split(this.selected);
-    if (!elements.length) return false;
-    this.run(rotateElements, { ids: elements, by: 90 });
+    const { elements, texts } = this.split(this.selected);
+    if (!elements.length && !texts.length) return false;
+    this.store.begin('Ruota');
+    if (elements.length) this.run(rotateElements, { ids: elements, by: 90 });
+    if (texts.length) this.run(rotateTexts, { ids: texts, by: 90 });
+    this.store.commit();
     return true;
   }
 
@@ -660,8 +681,8 @@ export class SchematicEditor {
   }
 
   copy(): void {
-    const { elements, junctions } = this.split(this.selected);
-    const fragment = copyFragment(this.doc, { elements, junctions });
+    const { elements, junctions, texts } = this.split(this.selected);
+    const fragment = copyFragment(this.doc, { elements, junctions, texts });
     if (!isEmptyFragment(fragment)) this.clipboard = { fragment, sheet: this.sheet, pasted: 0 };
     this.emit();
   }
@@ -714,6 +735,7 @@ export class SchematicEditor {
       ...onSheet(this.doc.elements).map((e) => elementKey(e.id)),
       ...onSheet(this.doc.wires).map((w) => wireKey(w.id)),
       ...onSheet(this.doc.junctions).map((j) => junctionKey(j.id)),
+      ...onSheet(this.doc.texts).map((t) => textKey(t.id)),
     ]);
   }
 
@@ -811,13 +833,15 @@ export class SchematicEditor {
     const elements: ElementId[] = [];
     const wires: WireId[] = [];
     const junctions: JunctionId[] = [];
+    const texts: TextId[] = [];
     for (const key of keys) {
       const k = parseItemKey(key);
       if (k?.kind === 'element') elements.push(k.id as ElementId);
       else if (k?.kind === 'wire') wires.push(k.id as WireId);
       else if (k?.kind === 'junction') junctions.push(k.id as JunctionId);
+      else if (k?.kind === 'text') texts.push(k.id as TextId);
     }
-    return { elements, wires, junctions };
+    return { elements, wires, junctions, texts };
   }
 
   private cancelDrag(): void {
@@ -837,9 +861,11 @@ export class SchematicEditor {
           ? doc.elements[k.id as ElementId]
           : k?.kind === 'wire'
             ? doc.wires[k.id as WireId]
-            : k
-              ? doc.junctions[k.id as JunctionId]
-              : undefined;
+            : k?.kind === 'text'
+              ? doc.texts[k.id as TextId]
+              : k
+                ? doc.junctions[k.id as JunctionId]
+                : undefined;
       return row?.sheetId === this.sheet;
     });
     if (keep.length !== this.selected.size) this.selected = new Set(keep);
