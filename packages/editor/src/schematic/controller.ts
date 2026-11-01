@@ -23,6 +23,7 @@ import {
   setXrefOffset,
   simplifyPath,
   xrefLayout,
+  xrefStyleOf,
 } from '@cablewire/core';
 import type {
   Bounds,
@@ -91,7 +92,7 @@ type Drag =
   | { kind: 'marquee'; origin: Point; additive: boolean }
   | { kind: 'segment'; wire: WireId; index: number; base: Point[] }
   | { kind: 'wire-end'; wire: WireId; end: 'from' | 'to' }
-  | { kind: 'xref'; master: ElementId; origin: Point; base: number };
+  | { kind: 'xref'; master: ElementId; origin: Point; base: { dx: number; dy: number } };
 
 const same = (a: Point, b: Point) => a.x === b.x && a.y === b.y;
 
@@ -338,13 +339,14 @@ export class SchematicEditor {
       this.emit();
       return;
     }
-    // A coil's contact table: dragging moves the table up or down only (it stays on the
-    // coil's X axis); the coil gets selected.
+    // A master's contacts: dragging moves them (a table only up or down: it stays on the
+    // master's X axis); the master gets selected.
     const xref = mods.shift ? undefined : hitXref(this.doc, this.sheet, raw, this.tolerance);
     if (xref) {
       this.selected = new Set([elementKey(xref)]);
-      this.store.begin('Sposta tabellina');
-      const base = this.doc.elements[xref]?.xrefOffset ?? 0;
+      this.store.begin('Sposta riferimenti');
+      const master = this.doc.elements[xref];
+      const base = { dx: master?.xrefOffsetX ?? 0, dy: master?.xrefOffset ?? 0 };
       this.drag = { kind: 'xref', master: xref, origin: raw, base };
       this.emit();
       return;
@@ -384,8 +386,11 @@ export class SchematicEditor {
     } else if (drag?.kind === 'marquee') {
       this.marqueeRect = rectFromPoints(drag.origin, raw);
     } else if (drag?.kind === 'xref') {
-      const dy = snapPoint({ x: 0, y: raw.y - drag.origin.y }, this.grid).y;
-      this.run(setXrefOffset, { id: drag.master, offset: drag.base + dy });
+      const delta = snapPoint({ x: raw.x - drag.origin.x, y: raw.y - drag.origin.y }, this.grid);
+      const master = this.doc.elements[drag.master];
+      const free = master && xrefStyleOf(this.doc, master) === 'contacts';
+      const offset = { dx: drag.base.dx + (free ? delta.x : 0), dy: drag.base.dy + delta.y };
+      this.run(setXrefOffset, { id: drag.master, offset });
     }
     this.emit();
   }

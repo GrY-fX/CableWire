@@ -129,8 +129,9 @@
       }
     ],
     "id": "base-salvamotore",
-    "kind": "simple",
+    "kind": "master",
     "license": "CC0-1.0",
+    "master": "device",
     "name": "Salvamotore tripolare",
     "terminals": [
       {
@@ -176,6 +177,6 @@
         "y": 5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

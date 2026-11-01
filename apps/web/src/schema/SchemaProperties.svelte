@@ -10,8 +10,11 @@
     masterOf,
     mastersWithLabel,
     setSlaveLabel,
+    projectXrefStyle,
     setXrefOffset,
+    setXrefStyle,
     showsXref,
+    xrefStyleOf,
     slaveLabel,
     slavesOf,
     unlinkedSlaves,
@@ -46,6 +49,8 @@
   import type {
     ContactType,
     Element,
+    MasterType,
+    XrefStyle,
     ProjectDoc,
     ElementId,
     NumberingSettings,
@@ -248,6 +253,24 @@
   });
   let contactWarning = $state('');
 
+  const XREF_STYLE_NAMES: Record<XrefStyle, string> = {
+    table: 'Tabellina NA | NC',
+    contacts: 'Contatti disegnati',
+  };
+
+  /** Moves the selected master's contacts; the other coordinate stays. */
+  function setXref(set: { dx?: number; dy?: number }) {
+    const element = view.element;
+    if (!element) return;
+    const offset = { dx: element.xrefOffsetX ?? 0, dy: element.xrefOffset ?? 0, ...set };
+    editor.store.run(setXrefOffset, { id: element.id, offset });
+  }
+
+  function setProjectXrefStyle(type: MasterType, style: XrefStyle) {
+    const xrefStyles = { ...view.doc.settings.xrefStyles, [type]: style };
+    editor.store.run(updateSettings, { set: { xrefStyles } });
+  }
+
   /** A coil's label links the contact to it; several coils with that label do not. */
   function setContactLabel(label: string) {
     const element = view.element;
@@ -373,13 +396,13 @@
     <button class="link" onclick={addField}>+ Aggiungi campo</button>
     {#if contactWarning && contact}<p class="warning">{contactWarning}</p>{/if}
     {#if contact}
-      <h4>Bobina</h4>
+      <h4>Comandato da (bobina o dispositivo)</h4>
       {#if contact.master}
         <p class="hint">
           Collegato a <strong>{contact.master.label}</strong> · {contact.master.where}.
         </p>
         <div class="actions">
-          <button onclick={() => goTo(contact.master!.id)}>Vai alla bobina</button>
+          <button onclick={() => goTo(contact.master!.id)}>Vai al comando</button>
           <button onclick={() => editor.store.run(unlinkSlave, { slave: view.element!.id })}
             >Scollega</button
           >
@@ -404,7 +427,9 @@
           {/each}
         </ul>
       {:else}
-        <p class="warning">Non collegato: nel progetto non ci sono ancora bobine.</p>
+        <p class="warning">
+          Non collegato: nel progetto non ci sono ancora bobine o dispositivi di comando.
+        </p>
       {/if}
     {/if}
     {#if coil}
@@ -430,32 +455,79 @@
           {/each}
         </ul>
       {/if}
-      {#if coil.linked.length > 0 && showsXref(view.doc)}
-        <h4>Tabellina dei contatti</h4>
+      {#if showsXref(view.doc)}
+        <h4>Riferimenti dei contatti</h4>
         <label
-          >Spostamento verticale (mm, positivo verso il basso)
-          <input
-            type="number"
-            step={view.doc.settings.gridStep}
-            value={view.element.xrefOffset ?? 0}
+          >Stile
+          <select
+            value={view.element.xrefStyle ?? ''}
             onchange={(e) =>
-              editor.store.run(setXrefOffset, { id: view.element!.id, offset: num(e) })}
-          /></label
-        >
-        <button
-          class="link"
-          disabled={view.element.xrefOffset === undefined}
-          onclick={() =>
-            editor.store.run(setXrefOffset, { id: view.element!.id, offset: undefined })}
-          >Posizione predefinita (sotto la bobina)</button
-        >
-        <p class="hint">
-          Resta centrata sotto la bobina; si può anche trascinare in su o in giù nello schema.
-        </p>
+              editor.store.run(setXrefStyle, {
+                id: view.element!.id,
+                style: (text(e) || undefined) as XrefStyle | undefined,
+              })}
+          >
+            <option value=""
+              >Come il progetto ({XREF_STYLE_NAMES[
+                projectXrefStyle(view.doc, view.symbol.master ?? 'coil')
+              ]})</option
+            >
+            <option value="table">{XREF_STYLE_NAMES.table}</option>
+            <option value="contacts">{XREF_STYLE_NAMES.contacts}</option>
+          </select>
+        </label>
+        {#if coil.linked.length > 0}
+          {#if xrefStyleOf(view.doc, view.element) === 'contacts'}
+            <div class="grid">
+              <label
+                >Spostamento X (mm)
+                <input
+                  type="number"
+                  step={view.doc.settings.gridStep}
+                  value={view.element.xrefOffsetX ?? 0}
+                  onchange={(e) => setXref({ dx: num(e) })}
+                /></label
+              >
+              <label
+                >Spostamento Y (mm)
+                <input
+                  type="number"
+                  step={view.doc.settings.gridStep}
+                  value={view.element.xrefOffset ?? 0}
+                  onchange={(e) => setXref({ dy: num(e) })}
+                /></label
+              >
+            </div>
+          {:else}
+            <label
+              >Spostamento verticale (mm, positivo verso il basso)
+              <input
+                type="number"
+                step={view.doc.settings.gridStep}
+                value={view.element.xrefOffset ?? 0}
+                onchange={(e) => setXref({ dy: num(e) })}
+              /></label
+            >
+          {/if}
+          <button
+            class="link"
+            disabled={view.element.xrefOffset === undefined &&
+              view.element.xrefOffsetX === undefined}
+            onclick={() =>
+              editor.store.run(setXrefOffset, { id: view.element!.id, offset: undefined })}
+            >Posizione predefinita</button
+          >
+          <p class="hint">
+            {xrefStyleOf(view.doc, view.element) === 'contacts'
+              ? 'A destra del simbolo; si possono anche trascinare nello schema.'
+              : 'Resta centrata sotto il simbolo; si può anche trascinare in su o in giù.'}
+            Doppio clic su un contatto per andare al suo foglio.
+          </p>
+        {/if}
       {/if}
       {#if coil.free.length > 0}
         <h4>Contatti liberi ({coil.free.length})</h4>
-        <p class="hint">Non collegati a nessuna bobina: un clic li collega a questa.</p>
+        <p class="hint">Non collegati a nessun comando: un clic li collega a questo.</p>
         <ul class="partners">
           {#each coil.free as c (c.id)}
             <li>
@@ -690,8 +762,31 @@
         checked={showsXref(view.doc)}
         onchange={(e) =>
           editor.store.run(updateSettings, { set: { showXref: e.currentTarget.checked } })}
-      /> Mostra la tabellina dei contatti sotto le bobine</label
+      /> Mostra i contatti accanto ai simboli master</label
     >
+    <div class="grid">
+      <label
+        >Bobine
+        <select
+          value={projectXrefStyle(view.doc, 'coil')}
+          onchange={(e) => setProjectXrefStyle('coil', text(e) as XrefStyle)}
+        >
+          <option value="table">{XREF_STYLE_NAMES.table}</option>
+          <option value="contacts">{XREF_STYLE_NAMES.contacts}</option>
+        </select>
+      </label>
+      <label
+        >Dispositivi di comando
+        <select
+          value={projectXrefStyle(view.doc, 'device')}
+          onchange={(e) => setProjectXrefStyle('device', text(e) as XrefStyle)}
+        >
+          <option value="table">{XREF_STYLE_NAMES.table}</option>
+          <option value="contacts">{XREF_STYLE_NAMES.contacts}</option>
+        </select>
+      </label>
+    </div>
+    <p class="hint">Si può cambiare anche per un singolo simbolo, nelle sue proprietà.</p>
     <label
       >Testo sotto il contatto (posizione della bobina)
       <input

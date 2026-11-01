@@ -5,6 +5,7 @@ import {
   createEmptyProject,
   createStore,
   linkSlave,
+  setXrefStyle,
   xrefLayout,
 } from '@cablewire/core';
 import type { ElementId, SheetId, SymbolDef, SymbolId, TerminalId } from '@cablewire/core';
@@ -214,7 +215,7 @@ describe('contact table', () => {
     // Only the vertical part counts: the table stays on the coil's X axis.
     expect(editor.doc.elements[coil!]).toMatchObject({ x: 50, y: 50, xrefOffset: 5 });
     expect([...editor.selection]).toEqual([`element:${coil}`]);
-    expect(store.undoLabel).toBe('Sposta tabellina');
+    expect(store.undoLabel).toBe('Sposta riferimenti');
     store.undo();
     expect(editor.doc.elements[coil!]!.xrefOffset).toBeUndefined();
   });
@@ -304,5 +305,26 @@ describe('automatic connections', () => {
     store.undo();
     expect(wires(editor)).toHaveLength(0);
     expect(editor.doc.elements[elementIds(editor)[1]!]).toMatchObject({ x: 80, y: 100 });
+  });
+});
+
+describe('drawn contacts', () => {
+  it('drag on both axes', () => {
+    const { editor, store } = setup();
+    const contact: SymbolDef = { ...COIL, id: 'no' as SymbolId, kind: 'slave', contact: 'no' };
+    editor.startPlacing(COIL);
+    click(editor, 50, 50);
+    editor.startPlacing(contact);
+    click(editor, 100, 100);
+    editor.key('Escape');
+    const [coil, slave] = elementIds(editor);
+    store.run(linkSlave, { slave: slave!, master: coil! });
+    store.run(setXrefStyle, { id: coil!, style: 'contacts' });
+    const box = xrefLayout(editor.doc, editor.doc.elements[coil!]!)!.box;
+    const inBox = { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 };
+    editor.pointerDown(inBox);
+    editor.pointerMove({ x: inBox.x + 11.2, y: inBox.y + 4.9 });
+    editor.pointerUp({ x: inBox.x + 11.2, y: inBox.y + 4.9 });
+    expect(editor.doc.elements[coil!]).toMatchObject({ xrefOffsetX: 10, xrefOffset: 5 });
   });
 });

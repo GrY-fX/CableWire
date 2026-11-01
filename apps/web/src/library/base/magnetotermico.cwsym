@@ -52,8 +52,9 @@
       }
     ],
     "id": "base-magnetotermico",
-    "kind": "simple",
+    "kind": "master",
     "license": "CC0-1.0",
+    "master": "device",
     "name": "Interruttore magnetotermico",
     "terminals": [
       {
@@ -71,6 +72,6 @@
         "y": 5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

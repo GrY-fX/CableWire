@@ -45,8 +45,9 @@
       }
     ],
     "id": "base-sezionatore",
-    "kind": "simple",
+    "kind": "master",
     "license": "CC0-1.0",
+    "master": "device",
     "name": "Sezionatore",
     "terminals": [
       {
@@ -64,6 +65,6 @@
         "y": 5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

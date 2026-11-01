@@ -5,6 +5,7 @@ import {
   reportName,
   slaveLabel,
   transformPoint,
+  drawingBounds,
   XREF_TEXT_SIZE,
   xrefLayout,
 } from '@cablewire/core';
@@ -112,10 +113,25 @@ export function slaveInfo(doc: ProjectDoc, element: Element): Record<string, str
 /** The contact table of a coil (see xrefLayout in core). */
 export function buildXref(layout: XrefLayout): SceneNode {
   const d = layout.lines.map((l) => `M${l.x1} ${l.y1}L${l.x2} ${l.y2}`).join('');
+  // Drawn contacts: their symbol's graphics (texts left out), scaled into place.
+  const glyphs = layout.glyphs.flatMap((g): SceneNode[] => {
+    const b = drawingBounds(g.symbol);
+    if (!b) return [];
+    const tx = round(g.x - b.minX * g.scale);
+    const ty = round(g.y - b.minY * g.scale);
+    return [
+      {
+        kind: 'group',
+        transform: `translate(${tx} ${ty}) scale(${round(g.scale)})`,
+        children: g.symbol.graphics.flatMap((p) => (p.type === 'text' ? [] : [primitivePath(p)])),
+      },
+    ];
+  });
   return {
     kind: 'group',
     children: [
-      { kind: 'path', d, classes: ['stroke'] },
+      ...(d ? [{ kind: 'path' as const, d, classes: ['stroke'] }] : []),
+      ...glyphs,
       ...layout.texts.map((t): SceneNode => ({
         kind: 'text',
         x: round(t.x),
@@ -123,6 +139,7 @@ export function buildXref(layout: XrefLayout): SceneNode {
         text: t.text,
         size: XREF_TEXT_SIZE,
         anchor: t.anchor,
+        ...(t.angle ? { angle: t.angle } : {}),
         classes: ['text'],
       })),
     ],

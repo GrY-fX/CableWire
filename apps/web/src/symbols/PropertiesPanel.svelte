@@ -1,5 +1,12 @@
 <script lang="ts">
-  import type { ContactType, Primitive, SymbolDef, SymbolKind, TerminalId } from '@cablewire/core';
+  import type {
+    ContactType,
+    MasterType,
+    Primitive,
+    SymbolDef,
+    SymbolKind,
+    TerminalId,
+  } from '@cablewire/core';
   import {
     checkSymbol,
     parseKey,
@@ -73,6 +80,8 @@
     else delete next.report;
     if (kind === 'slave') next.contact = s.contact ?? 'no';
     else delete next.contact;
+    if (kind === 'master') next.master = s.master ?? 'coil';
+    else delete next.master;
     return next;
   }
   const num = (e: Event) => Number((e.currentTarget as HTMLInputElement).value);
@@ -358,6 +367,22 @@
         <span class="wide hint"
           >Nei testi usa <code>{'{ref_name}'}</code> per il numero del filo (o l'ID N/C_n) e
           <code>{'{ref_target}'}</code> per il foglio e la colonna del rimando collegato.</span
+        >
+      {/if}
+      {#if symbol.kind === 'master'}
+        <label class="wide"
+          >Tipo di master
+          <select
+            value={symbol.master ?? 'coil'}
+            onchange={(e) => set({ ...symbol, master: text(e) as MasterType })}
+          >
+            <option value="coil">Bobina</option>
+            <option value="device">Dispositivo di comando (interruttore, sezionatore…)</option>
+          </select>
+        </label>
+        <span class="wide hint"
+          >Nelle proprietà del progetto si sceglie come mostrare i contatti per bobine e dispositivi
+          di comando (tabellina o contatti disegnati).</span
         >
       {/if}
       {#if symbol.kind === 'slave'}

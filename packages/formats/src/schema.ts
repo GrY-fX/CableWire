@@ -81,7 +81,10 @@ export const symbolSchema = v.object({
   license: v.exactOptional(v.string()),
   report: v.exactOptional(v.picklist(['in', 'out'])),
   contact: v.exactOptional(v.picklist(['no', 'nc', 'changeover', 'power'])),
+  master: v.exactOptional(v.picklist(['coil', 'device'])),
 });
+
+const xrefStyle = v.picklist(['table', 'contacts']);
 
 const sheet = v.object({
   id: id<SheetId>(),
@@ -103,6 +106,8 @@ const element = v.object({
   info: strings,
   link: v.exactOptional(id<ElementId>()),
   xrefOffset: v.exactOptional(num),
+  xrefOffsetX: v.exactOptional(num),
+  xrefStyle: v.exactOptional(xrefStyle),
 });
 
 const junction = v.object({ id: id<JunctionId>(), sheetId: id<SheetId>(), x: num, y: num });
@@ -149,6 +154,9 @@ export const projectSchema = v.object({
     referencePattern: v.exactOptional(v.string()),
     masterRefPattern: v.exactOptional(v.string()),
     showXref: v.exactOptional(v.boolean()),
+    xrefStyles: v.exactOptional(
+      v.object({ coil: v.exactOptional(xrefStyle), device: v.exactOptional(xrefStyle) }),
+    ),
   }),
   sheetOrder: v.array(id<SheetId>()),
   sheets: table<SheetId, typeof sheet>(sheet),

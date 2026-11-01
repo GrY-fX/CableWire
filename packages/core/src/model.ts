@@ -72,9 +72,14 @@ export interface SymbolDef {
   report?: 'in' | 'out';
   /** Contacts (kind `slave`): normally open, normally closed, changeover or power. */
   contact?: ContactType;
+  /** Masters: a coil or a command device (breaker, switch...); coil when missing. */
+  master?: MasterType;
 }
 
 export type ContactType = 'no' | 'nc' | 'changeover' | 'power';
+export type MasterType = 'coil' | 'device';
+/** How a master shows its contacts: an NA | NC table, or the contacts drawn small. */
+export type XrefStyle = 'table' | 'contacts';
 
 export interface Element {
   id: ElementId;
@@ -89,10 +94,14 @@ export interface Element {
   /** Partner element for sheet references and master/slave links. */
   link?: ElementId;
   /**
-   * Coils: vertical shift of the contact table from its default place under the
-   * coil, in mm. The table always stays centred on the coil's X axis.
+   * Masters: vertical shift of the contacts (table or drawn) from their default place,
+   * in mm. A table always stays centred on the master's X axis.
    */
   xrefOffset?: number;
+  /** Masters with drawn contacts: horizontal shift from their place on the right, in mm. */
+  xrefOffsetX?: number;
+  /** Masters: style of the contacts, instead of the project's for this kind of master. */
+  xrefStyle?: XrefStyle;
 }
 
 export interface Junction {
@@ -173,8 +182,10 @@ export interface ProjectSettings {
    * see DEFAULT_MASTER_REF_PATTERN.
    */
   masterRefPattern?: string;
-  /** Contact table under each coil; shown unless set to false. */
+  /** Contacts of masters (table or drawn); shown unless set to false. */
   showXref?: boolean;
+  /** Style of the contacts per kind of master; see DEFAULT_XREF_STYLES. */
+  xrefStyles?: Partial<Record<MasterType, XrefStyle>>;
 }
 
 export function getNumbering(doc: ProjectDoc): NumberingSettings {

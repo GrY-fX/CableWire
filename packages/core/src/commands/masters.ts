@@ -1,6 +1,7 @@
 import { defineCommand, fail, ok } from '../command.ts';
 import type { ElementId } from '../ids.ts';
 import { isMaster, isSlave, mastersWithLabel } from '../masters.ts';
+import type { XrefStyle } from '../model.ts';
 import { patch } from '../ops.ts';
 
 /** Links a contact to a coil; the contact takes the coil's label. */
@@ -49,19 +50,30 @@ export const setSlaveLabel = defineCommand<{ slave: ElementId; label: string }>(
 );
 
 /**
- * Moves a coil's contact table up or down from its default place (it stays on the
- * coil's X axis); no offset, or 0, puts it back.
+ * Moves a master's contacts (table or drawn) from their default place; no offset,
+ * or 0, puts them back. A table only uses `dy`: it stays on the master's X axis.
  */
-export const setXrefOffset = defineCommand<{ id: ElementId; offset: number | undefined }>(
-  'Sposta tabellina',
-  (doc, { id, offset }) => {
+export const setXrefOffset = defineCommand<{
+  id: ElementId;
+  offset: { dx: number; dy: number } | undefined;
+}>('Sposta riferimenti', (doc, { id, offset }) => {
+  const e = doc.elements[id];
+  if (!e) return fail('not-found', 'Element not found');
+  if (offset && (!Number.isFinite(offset.dx) || !Number.isFinite(offset.dy))) {
+    return fail('invalid-offset', 'Spostamento non valido');
+  }
+  const dy = offset?.dy || undefined;
+  const dx = offset?.dx || undefined;
+  if (dy === e.xrefOffset && dx === e.xrefOffsetX) return ok([]);
+  return ok([patch('elements', id, { xrefOffset: dy, xrefOffsetX: dx })]);
+});
+
+/** Style of one master's contacts; undefined follows the project. */
+export const setXrefStyle = defineCommand<{ id: ElementId; style: XrefStyle | undefined }>(
+  'Stile riferimenti',
+  (doc, { id, style }) => {
     const e = doc.elements[id];
     if (!e) return fail('not-found', 'Element not found');
-    if (offset !== undefined && !Number.isFinite(offset)) {
-      return fail('invalid-offset', 'Spostamento non valido');
-    }
-    const value = offset || undefined;
-    if (value === e.xrefOffset) return ok([]);
-    return ok([patch('elements', id, { xrefOffset: value })]);
+    return ok(style === e.xrefStyle ? [] : [patch('elements', id, { xrefStyle: style })]);
   },
 );

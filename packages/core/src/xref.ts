@@ -1,13 +1,16 @@
 import type { ElementId } from './ids.ts';
 import type { Bounds } from './geometry.ts';
-import { elementBounds, TEXT_WIDTH_RATIO } from './geometry.ts';
+import { elementBounds, symbolBounds, TEXT_WIDTH_RATIO } from './geometry.ts';
 import { contactType, slavesOf } from './masters.ts';
-import type { Element, ProjectDoc } from './model.ts';
+import type { Element, MasterType, Primitive, ProjectDoc, SymbolDef, XrefStyle } from './model.ts';
 import { referenceValues } from './references.ts';
 
-// The contact table under a coil: NA and NC columns, one row per contact with its
-// terminals and where it is (sheet.column), power contacts in rows below. Its place
-// is computed here, so the drawing, the editor (dragging) and the PDF (links) agree.
+// The contacts of a master, in one of two styles: a table under it (NA and NC
+// columns, one row per contact with its terminals and where it is, power contacts in
+// rows below), or the contacts drawn small side by side on its right, each with where
+// it is underneath. Their
+// place is computed here, so the drawing, the editor (dragging) and the PDF (links)
+// agree.
 
 export interface XrefRow {
   slave: ElementId;
@@ -28,11 +31,10 @@ export function xrefContacts(doc: ProjectDoc, master: Element): XrefContacts {
   const result: XrefContacts = { no: [], nc: [], power: [] };
   for (const slave of slavesOf(doc, master)) {
     const names = (doc.symbols[slave.symbolId]?.terminals ?? []).map((t) => t.name);
-    const values = referenceValues(doc, slave);
     const row = (terminals: string): XrefRow => ({
       slave: slave.id,
       terminals,
-      ref: `${values['foglio']}.${values['colonna']}`,
+      ref: shortRef(doc, slave),
     });
     switch (contactType(doc, slave)) {
       case 'nc':
@@ -60,46 +62,96 @@ export function xrefContacts(doc: ProjectDoc, master: Element): XrefContacts {
   return result;
 }
 
+/** Where an element is, as sheet.column (e.g. `2.5`). */
+function shortRef(doc: ProjectDoc, element: Element): string {
+  const values = referenceValues(doc, element);
+  return `${values['foglio']}.${values['colonna']}`;
+}
+
 export interface XrefText {
   x: number;
   y: number;
   text: string;
   anchor: 'start' | 'middle' | 'end';
+  /** Clockwise rotation in degrees around (x, y); 90 reads from top to bottom. */
+  angle?: number;
+}
+
+/** A contact drawn small: its symbol's graphics scaled by `scale`, top-left at (x, y). */
+export interface XrefGlyph {
+  slave: ElementId;
+  symbol: SymbolDef;
+  x: number;
+  y: number;
+  scale: number;
 }
 
 export interface XrefLayout {
-  /** Whole table, for hit testing and dragging. */
+  style: XrefStyle;
+  /** Whole table or column of contacts, for hit testing and dragging. */
   box: Bounds;
   lines: { x1: number; y1: number; x2: number; y2: number }[];
   texts: XrefText[];
-  /** Area of each row, for links to its contact. */
+  /** Contacts drawn small (style `contacts`). */
+  glyphs: XrefGlyph[];
+  /** Area of each row or drawn contact, for links to its contact. */
   rows: { slave: ElementId; rect: Bounds }[];
 }
 
-/** Text height in the table, in mm. */
+/** Text height of the references, in mm. */
 export const XREF_TEXT_SIZE = 2;
 const HEADER = 3.5;
 const ROW = 3;
 const PAD = 1.5;
 const GAP = 2;
-/** Space between the coil and the table in its default place. */
+/** Space between the master and its contacts in their default place. */
 const MARGIN = 2;
+/** Height of a drawn contact, space between two of them and above the reference. */
+const GLYPH_HEIGHT = 6;
+const GLYPH_GAP = 3;
+const TEXT_GAP = 1;
+
+/** Styles per kind of master when the project does not say. */
+export const DEFAULT_XREF_STYLES: Record<MasterType, XrefStyle> = {
+  coil: 'table',
+  device: 'contacts',
+};
 
 const width = (text: string) => text.length * XREF_TEXT_SIZE * TEXT_WIDTH_RATIO;
 
-/** Whether the project shows contact tables. */
+/** Whether the project shows the contacts of masters. */
 export function showsXref(doc: ProjectDoc): boolean {
   return doc.settings.showXref !== false;
 }
 
+/** Style of the project for a kind of master. */
+export function projectXrefStyle(doc: ProjectDoc, type: MasterType): XrefStyle {
+  return doc.settings.xrefStyles?.[type] ?? DEFAULT_XREF_STYLES[type];
+}
+
+/** Style used by a master: its own choice, else the project's for its kind. */
+export function xrefStyleOf(doc: ProjectDoc, master: Element): XrefStyle {
+  const type = doc.symbols[master.symbolId]?.master ?? 'coil';
+  return master.xrefStyle ?? projectXrefStyle(doc, type);
+}
+
 /**
- * Lines and texts of a coil's table at its place: under the coil, centred on its X
- * axis, moved up or down by the coil's `xrefOffset`. Undefined when the coil has no
- * contacts or tables are off.
+ * Where a master's contacts are drawn, in its style: a table under the master,
+ * centred on its X axis and moved up or down by `xrefOffset`; or the contacts drawn
+ * small side by side on its right, each with its reference underneath, moved by
+ * `xrefOffsetX` and `xrefOffset`.
+ * Undefined when the master has no contacts or the project hides them.
  */
 export function xrefLayout(doc: ProjectDoc, master: Element): XrefLayout | undefined {
   const symbol = doc.symbols[master.symbolId];
   if (!symbol || symbol.kind !== 'master' || !showsXref(doc)) return undefined;
+  const bounds = elementBounds(master, withFilledTexts(symbol, master.info));
+  return xrefStyleOf(doc, master) === 'contacts'
+    ? contactsLayout(doc, master, bounds)
+    : tableLayout(doc, master, bounds);
+}
+
+function tableLayout(doc: ProjectDoc, master: Element, bounds: Bounds): XrefLayout | undefined {
   const { no, nc, power } = xrefContacts(doc, master);
   if (no.length + nc.length + power.length === 0) return undefined;
 
@@ -110,7 +162,6 @@ export function xrefLayout(doc: ProjectDoc, master: Element): XrefLayout | undef
   const tableRows = Math.max(no.length, nc.length);
   const height = HEADER + tableRows * ROW + (power.length ? power.length * ROW + 0.5 : 0);
 
-  const bounds = elementBounds(master, symbol);
   const left = round(master.x - total / 2);
   const top = round(bounds.maxY + MARGIN + (master.xrefOffset ?? 0));
   const right = left + total;
@@ -138,7 +189,61 @@ export function xrefLayout(doc: ProjectDoc, master: Element): XrefLayout | undef
     lines.push({ x1: left, y1: tableBottom, x2: right, y2: tableBottom });
     power.forEach((r, i) => addRow(r, left, right, start + i * ROW));
   }
-  return { box: { minX: left, minY: top, maxX: right, maxY: top + height }, lines, texts, rows };
+  const box = { minX: left, minY: top, maxX: right, maxY: top + height };
+  return { style: 'table', box, lines, texts, glyphs: [], rows };
+}
+
+/**
+ * The symbol with its texts as drawn for an element (`{label}` → `KM1`), so its
+ * bounds follow what is on the sheet, not the length of the placeholders.
+ */
+function withFilledTexts(symbol: SymbolDef, info: Record<string, string>): SymbolDef {
+  const graphics = symbol.graphics.flatMap((g): Primitive[] => {
+    if (g.type !== 'text') return [g];
+    const text = g.text.replace(/\{(\w+)\}/g, (_, key: string) => info[key] ?? '');
+    return text.trim() ? [{ ...g, text }] : [];
+  });
+  return { ...symbol, graphics };
+}
+
+/** Bounds of a symbol's drawing (graphics and terminals, texts left out). */
+export function drawingBounds(symbol: SymbolDef): Bounds | undefined {
+  return symbolBounds({ ...symbol, graphics: symbol.graphics.filter((g) => g.type !== 'text') });
+}
+
+function contactsLayout(doc: ProjectDoc, master: Element, bounds: Bounds): XrefLayout | undefined {
+  const left = round(bounds.maxX + MARGIN + (master.xrefOffsetX ?? 0));
+  const top = round(bounds.minY + (master.xrefOffset ?? 0));
+  const texts: XrefText[] = [];
+  const glyphs: XrefGlyph[] = [];
+  const rows: XrefLayout['rows'] = [];
+  // Contacts side by side, left to right, each with its reference underneath, turned
+  // a quarter clockwise (it reads from top to bottom).
+  const textY = top + GLYPH_HEIGHT + TEXT_GAP;
+  let bottom = textY;
+  let x = left;
+  for (const slave of slavesOf(doc, master)) {
+    const symbol = doc.symbols[slave.symbolId];
+    const b = symbol && drawingBounds(symbol);
+    if (!symbol || !b) continue;
+    const ref = shortRef(doc, slave);
+    const scale = GLYPH_HEIGHT / Math.max(b.maxY - b.minY, 1);
+    const glyphWidth = (b.maxX - b.minX) * scale;
+    const itemWidth = Math.max(glyphWidth, XREF_TEXT_SIZE);
+    const centre = x + itemWidth / 2;
+    const itemBottom = textY + width(ref);
+    glyphs.push({ slave: slave.id, symbol, x: round(centre - glyphWidth / 2), y: top, scale });
+    texts.push({ x: round(centre), y: round(textY), text: ref, anchor: 'start', angle: 90 });
+    rows.push({
+      slave: slave.id,
+      rect: { minX: x, minY: top, maxX: x + itemWidth, maxY: itemBottom },
+    });
+    bottom = Math.max(bottom, itemBottom);
+    x += itemWidth + GLYPH_GAP;
+  }
+  if (glyphs.length === 0) return undefined;
+  const box = { minX: left, minY: top, maxX: x - GLYPH_GAP, maxY: bottom };
+  return { style: 'contacts', box, lines: [], texts, glyphs, rows };
 }
 
 function round(v: number): number {

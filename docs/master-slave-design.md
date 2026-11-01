@@ -91,6 +91,28 @@ spostamenti di lato, che creerebbero sovrapposizioni con altre colonne):
   lo spostamento; resta sempre orizzontale e leggibile;
 - copia/incolla e annulla/ripeti portano con sé lo spostamento.
 
+### 2.6 Contatti disegnati (secondo stile)
+
+In alternativa alla tabellina, i contatti si possono mostrare **disegnati in
+piccolo** accanto al master, come in QET: ogni contatto è il suo simbolo
+rimpicciolito (alto 6 mm, testi esclusi) con il riferimento foglio.colonna
+scritto sotto, ruotato di 90° in senso orario (si legge dall'alto in basso); i
+contatti stanno uno accanto all'altro, verso destra.
+
+- Il simbolo master dice se è una **bobina** o un **dispositivo di comando**
+  (campo `master: 'coil' | 'device'`, scelto nell'editor di simboli). Tra i
+  simboli di base: bobina = bobina; magnetotermico, salvamotore e sezionatore
+  = dispositivi di comando.
+- Il progetto sceglie lo stile per ciascun tipo (`xrefStyles`, predefiniti:
+  bobine → tabellina, dispositivi → contatti disegnati); ogni master può avere
+  il suo (`xrefStyle`), nel pannello «Riferimenti dei contatti».
+- I contatti disegnati stanno di default **a destra** del simbolo, in fila
+  all'altezza del suo bordo superiore, e si spostano **sia in X sia in Y** (trascinamento o campi del
+  pannello, `xrefOffsetX` / `xrefOffset`). La tabellina resta vincolata
+  all'asse X.
+- Doppio clic su un contatto disegnato e link nel PDF come per le righe della
+  tabellina.
+
 ## 3. Interazione
 
 - **Doppio clic su una riga della tabellina**: si va al foglio del contatto e

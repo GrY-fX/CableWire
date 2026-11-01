@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { ElementId, SymbolId, TerminalId } from './ids.ts';
 import type { ContactType, SymbolDef } from './model.ts';
 import { moveItems, placeElement, rotateElements } from './commands/elements.ts';
-import { linkSlave, setXrefOffset } from './commands/masters.ts';
+import { linkSlave, setXrefOffset, setXrefStyle } from './commands/masters.ts';
 import { updateSettings } from './commands/project.ts';
 import { importSymbol } from './commands/symbols.ts';
 import { must, setup, twoTerminalSymbol } from './test-utils.ts';
-import { xrefContacts, xrefLayout } from './xref.ts';
+import { xrefContacts, xrefLayout, xrefStyleOf } from './xref.ts';
 
 const id = (s: string) => s as never;
 const COIL = twoTerminalSymbol('coil', { kind: 'master', defaultInfo: { label: 'KM1' } });
@@ -78,7 +78,7 @@ describe('contact table', () => {
   it('moves only up or down, staying centred on the coil, also when the coil moves', () => {
     const ctx = project();
     const base = xrefLayout(ctx.store.doc, coil(ctx))!.box;
-    must(ctx.store, setXrefOffset, { id: id('km1'), offset: 15 });
+    must(ctx.store, setXrefOffset, { id: id('km1'), offset: { dx: 0, dy: 15 } });
     const shifted = xrefLayout(ctx.store.doc, coil(ctx))!.box;
     expect(shifted.minY - base.minY).toBeCloseTo(15);
     expect(shifted.minX).toBeCloseTo(base.minX);
@@ -88,7 +88,7 @@ describe('contact table', () => {
     expect(after.minY - shifted.minY).toBeCloseTo(10);
     must(ctx.store, rotateElements, { ids: [id('km1')], by: 90 });
     expect(coil(ctx).xrefOffset).toBe(15);
-    must(ctx.store, setXrefOffset, { id: id('km1'), offset: 0 });
+    must(ctx.store, setXrefOffset, { id: id('km1'), offset: { dx: 0, dy: 0 } });
     expect(coil(ctx).xrefOffset).toBeUndefined();
   });
 
@@ -104,5 +104,56 @@ describe('contact table', () => {
     expect(xrefLayout(ctx.store.doc, ctx.store.doc.elements['km2' as ElementId]!)).toBeUndefined();
     must(ctx.store, updateSettings, { set: { showXref: false } });
     expect(xrefLayout(ctx.store.doc, coil(ctx))).toBeUndefined();
+  });
+
+  it('draws the contacts small, side by side on the right, references underneath', () => {
+    const ctx = project();
+    must(ctx.store, setXrefStyle, { id: id('km1'), style: 'contacts' });
+    const layout = xrefLayout(ctx.store.doc, coil(ctx))!;
+    expect(layout.style).toBe('contacts');
+    // The coil's drawing ends at x = 100: the column starts 2 mm to its right, at its top.
+    expect(layout.box).toMatchObject({ minX: 102, minY: 45 });
+    expect(layout.glyphs.map((g) => g.slave)).toEqual(['c-sw', 'c-no', 'c-nc', 'c-pw']);
+    // Left to right, all at the same height, each reference centred under its contact.
+    const xs = layout.glyphs.map((g) => g.x);
+    expect([...xs].sort((a, b) => a - b)).toEqual(xs);
+    expect(layout.glyphs.every((g) => g.scale > 0 && g.y === 45)).toBe(true);
+    expect(layout.texts.map((t) => t.text)).toEqual(['1.8', '1.5', '1.7', '1.2']);
+    // Under the contact, turned a quarter clockwise.
+    expect(layout.texts.every((t) => t.y > 45 + 6 && t.angle === 90)).toBe(true);
+    layout.rows.forEach((r, i) => {
+      expect((r.rect.minX + r.rect.maxX) / 2).toBeCloseTo(layout.texts[i]!.x);
+    });
+    expect(layout.rows.map((r) => r.slave)).toEqual(['c-sw', 'c-no', 'c-nc', 'c-pw']);
+  });
+
+  it('drawn contacts move on both axes; a table only up or down', () => {
+    const ctx = project();
+    must(ctx.store, setXrefOffset, { id: id('km1'), offset: { dx: 10, dy: 5 } });
+    const table = xrefLayout(ctx.store.doc, coil(ctx))!.box;
+    expect((table.minX + table.maxX) / 2).toBeCloseTo(100);
+    must(ctx.store, setXrefStyle, { id: id('km1'), style: 'contacts' });
+    expect(xrefLayout(ctx.store.doc, coil(ctx))!.box).toMatchObject({ minX: 112, minY: 50 });
+  });
+
+  it('takes the style from the project for its kind of master, unless it has its own', () => {
+    const ctx = project();
+    expect(xrefStyleOf(ctx.store.doc, coil(ctx))).toBe('table');
+    must(ctx.store, updateSettings, { set: { xrefStyles: { coil: 'contacts' } } });
+    expect(xrefStyleOf(ctx.store.doc, coil(ctx))).toBe('contacts');
+    must(ctx.store, setXrefStyle, { id: id('km1'), style: 'table' });
+    expect(xrefStyleOf(ctx.store.doc, coil(ctx))).toBe('table');
+    // A command device shows drawn contacts by default.
+    must(ctx.store, importSymbol, {
+      symbol: { ...COIL, id: 'breaker' as SymbolId, master: 'device' },
+    });
+    must(ctx.store, placeElement, {
+      id: id('q1'),
+      sheetId: ctx.sheet,
+      symbolId: id('breaker'),
+      x: 300,
+      y: 50,
+    });
+    expect(xrefStyleOf(ctx.store.doc, ctx.store.doc.elements['q1' as ElementId]!)).toBe('contacts');
   });
 });
