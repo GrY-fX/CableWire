@@ -263,3 +263,35 @@ describe('SymbolEditor', () => {
     expect(e.selection.size).toBe(0);
   });
 });
+
+describe('symbol clipboard', () => {
+  it('copies and pastes with Ctrl+C / Ctrl+V, each paste a step further', () => {
+    const editor = new SymbolEditor(contact());
+    editor.select([shapeKey(0), terminalKey(T1)]);
+    expect(editor.key('c', { ctrl: true })).toBe(true);
+    expect(editor.canPaste).toBe(true);
+    editor.key('v', { ctrl: true });
+    editor.key('v', { ctrl: true });
+    const s = editor.symbol;
+    expect(s.graphics).toHaveLength(4);
+    expect(s.graphics[2]).toEqual({ type: 'line', x1: 2.5, y1: -2.5, x2: 2.5, y2: 0 });
+    expect(s.graphics[3]).toEqual({ type: 'line', x1: 5, y1: 0, x2: 5, y2: 2.5 });
+    // Pasted terminals get new ids; their name is kept only when free.
+    const names = s.terminals.map((t) => t.name);
+    expect(new Set(s.terminals.map((t) => t.id)).size).toBe(4);
+    expect(new Set(names).size).toBe(4);
+    expect(editor.selection.size).toBe(2);
+  });
+
+  it('cuts, then pastes back in place, also into another symbol', () => {
+    const editor = new SymbolEditor(contact());
+    editor.select([shapeKey(1)]);
+    editor.key('x', { ctrl: true });
+    expect(editor.symbol.graphics).toHaveLength(1);
+    editor.load(newSymbol());
+    editor.key('v', { ctrl: true });
+    expect(editor.symbol.graphics).toEqual([
+      { type: 'text', x: 2, y: 0, text: '{label}', size: 2.5 },
+    ]);
+  });
+});

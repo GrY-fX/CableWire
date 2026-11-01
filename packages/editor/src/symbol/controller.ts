@@ -8,17 +8,19 @@ import {
   TERMINAL_GRID,
   addShape,
   addTerminal,
+  copyItems,
   duplicateItems,
   hasTerminals,
   moveItems,
   newSymbol,
   parseKey,
+  pasteItems,
   removeItems,
   replaceShape,
   shapeKey,
   terminalKey,
 } from './document.ts';
-import type { ItemKey } from './document.ts';
+import type { ItemKey, SymbolClip } from './document.ts';
 import { applyHandle, clockwiseSweep, handlesOf } from './handles.ts';
 
 export type ToolName =
@@ -61,6 +63,8 @@ export class SymbolEditor {
 
   private readonly history: SnapshotHistory<SymbolDef>;
   private selected = new Set<ItemKey>();
+  /** Copied items; kept when another symbol is opened, to paste them there. */
+  private clipboard: { clip: SymbolClip; pasted: number } | undefined;
   private currentTool: ToolName = 'select';
   /** Points clicked so far by a drawing tool. */
   private points: Point[] = [];
@@ -320,6 +324,9 @@ export class SymbolEditor {
       if (k === 'z' && !mods.shift) this.undo();
       else if (k === 'y' || (k === 'z' && mods.shift)) this.redo();
       else if (k === 'd') this.duplicate();
+      else if (k === 'c') this.copy();
+      else if (k === 'x') this.cut();
+      else if (k === 'v') this.paste();
       else if (k === 'a') this.select(this.allKeys());
       else return false;
       return true;
@@ -443,6 +450,42 @@ export class SymbolEditor {
       (p) => p.type === 'text' && p.text.includes('{label}'),
     );
     return hasLabel ? 'Testo' : '{label}';
+  }
+
+  get canPaste(): boolean {
+    return !!this.clipboard;
+  }
+
+  /** Copies the selection; nothing selected keeps the previous copy. */
+  copy(): void {
+    if (this.selected.size === 0) return;
+    this.clipboard = { clip: copyItems(this.symbol, this.selected), pasted: 1 };
+    this.emit();
+  }
+
+  cut(): void {
+    if (this.selected.size === 0) return;
+    this.copy();
+    this.clipboard!.pasted = 0;
+    this.history.set(removeItems(this.symbol, this.selected));
+    this.selected = new Set();
+    this.emit();
+  }
+
+  /**
+   * Pastes the copied items, each paste a step further down and to the right of the
+   * originals (after a cut the first one goes back where they were); the copies get
+   * selected.
+   */
+  paste(): void {
+    const clipboard = this.clipboard;
+    if (!clipboard) return;
+    const step = TERMINAL_GRID * clipboard.pasted;
+    clipboard.pasted++;
+    const result = pasteItems(this.symbol, clipboard.clip, step, step);
+    this.history.set(result.symbol);
+    this.selected = new Set(result.keys);
+    this.emit();
   }
 
   private duplicate(): void {

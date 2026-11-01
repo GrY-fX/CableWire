@@ -183,6 +183,49 @@ export function duplicateItems(
   return { symbol: result, keys: copies };
 }
 
+/** Shapes and terminals copied from a symbol, ready to paste into any symbol. */
+export interface SymbolClip {
+  shapes: Primitive[];
+  terminals: SymbolTerminal[];
+}
+
+/** Copies the selected items (shapes in drawing order). */
+export function copyItems(symbol: SymbolDef, keys: Iterable<ItemKey>): SymbolClip {
+  const { shapes, terminals } = splitKeys(keys);
+  return {
+    shapes: symbol.graphics.filter((_, i) => shapes.has(i)),
+    terminals: symbol.terminals.filter((t) => terminals.has(t.id)),
+  };
+}
+
+/**
+ * Pastes copied items moved by (dx, dy); returns the keys of the pasted items.
+ * Terminals get new ids, and keep their name unless the symbol already uses it.
+ */
+export function pasteItems(
+  symbol: SymbolDef,
+  clip: SymbolClip,
+  dx: number,
+  dy: number,
+): { symbol: SymbolDef; keys: ItemKey[] } {
+  let result = symbol;
+  const keys: ItemKey[] = [];
+  for (const shape of clip.shapes) {
+    result = addShape(result, translatePrimitive(shape, dx, dy));
+    keys.push(shapeKey(result.graphics.length - 1));
+  }
+  for (const t of clip.terminals) {
+    const added = addTerminal(result, move(t, dx, dy));
+    const taken = result.terminals.some((x) => x.name === t.name);
+    result = updateTerminal(added.symbol, added.terminal.id, {
+      dir: t.dir,
+      ...(taken ? {} : { name: t.name }),
+    });
+    keys.push(terminalKey(added.terminal.id));
+  }
+  return { symbol: result, keys };
+}
+
 export function toggleBridge(symbol: SymbolDef, a: TerminalId, b: TerminalId): SymbolDef {
   if (a === b) return symbol;
   const same = ([x, y]: [TerminalId, TerminalId]) => (x === a && y === b) || (x === b && y === a);
