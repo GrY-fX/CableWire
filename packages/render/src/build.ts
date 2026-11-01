@@ -4,6 +4,7 @@ import {
   referenceTarget,
   reportName,
   slaveLabel,
+  terminalLabel,
   transformPoint,
   drawingBounds,
   XREF_TEXT_SIZE,
@@ -63,7 +64,9 @@ function computeScene(doc: ProjectDoc, sheetId: SheetId): Scene {
             ? { ...element, info: reportInfo(doc, element) }
             : symbol.kind === 'slave'
               ? { ...element, info: slaveInfo(doc, element) }
-              : element,
+              : symbol.kind === 'terminal'
+                ? { ...element, info: { ...element.info, label: terminalLabel(doc, element) } }
+                : element,
           symbol,
         ),
       });

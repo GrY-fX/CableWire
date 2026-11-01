@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   addSheet,
+  addStrip,
+  getStrips,
+  terminalLabel,
   addWire,
   createEmptyProject,
   createStore,
@@ -326,5 +329,35 @@ describe('drawn contacts', () => {
     editor.pointerMove({ x: inBox.x + 11.2, y: inBox.y + 4.9 });
     editor.pointerUp({ x: inBox.x + 11.2, y: inBox.y + 4.9 });
     expect(editor.doc.elements[coil!]).toMatchObject({ xrefOffsetX: 10, xrefOffset: 5 });
+  });
+});
+
+describe('terminals placed', () => {
+  const TERMINAL: SymbolDef = { ...COIL, id: 'term' as SymbolId, kind: 'terminal' };
+
+  it('go to a strip: the first one is created on the sheet, then the last used', () => {
+    const { editor, store } = setup();
+    editor.autoConnect = false;
+    editor.startPlacing(TERMINAL);
+    click(editor, 50, 50);
+    click(editor, 70, 50);
+    editor.pointerMove({ x: 90, y: 50 });
+    expect(editor.ghost?.info?.['label']).toBe('1X1:3');
+    editor.key('Escape');
+    const [a, b] = elementIds(editor).map((id) => editor.doc.elements[id]!);
+    expect(getStrips(editor.doc)).toHaveLength(1);
+    expect([terminalLabel(editor.doc, a!), terminalLabel(editor.doc, b!)]).toEqual([
+      '1X1:1',
+      '1X1:2',
+    ]);
+    store.run(addStrip, { id: 'pump', mode: 'custom', name: 'XPOMPA' });
+    editor.lastStrip = 'pump';
+    editor.startPlacing(TERMINAL);
+    click(editor, 110, 50);
+    const c = editor.doc.elements[elementIds(editor)[2]!]!;
+    expect(terminalLabel(editor.doc, c)).toBe('XPOMPA:1');
+    // One undo removes the terminal; the first one's strip went with its own step.
+    store.undo();
+    expect(elementIds(editor)).toHaveLength(2);
   });
 });

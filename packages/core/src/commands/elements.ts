@@ -8,6 +8,7 @@ import { isJunctionEnd } from '../model.ts';
 import type { Op } from '../ops.ts';
 import { patch, put } from '../ops.ts';
 import { resolveDefaultInfo } from '../labels.ts';
+import { findStrip, nextTerminalNo } from '../strips.ts';
 import { nextReferenceId } from '../references.ts';
 
 export interface PlaceElementArgs {
@@ -19,6 +20,8 @@ export interface PlaceElementArgs {
   rotation?: Rotation;
   mirrored?: boolean;
   info?: Record<string, string>;
+  /** Terminals: strip to put them in (they get its first free number). */
+  strip?: string;
 }
 
 export const placeElement = defineCommand<PlaceElementArgs>('Inserisci elemento', (doc, args) => {
@@ -37,6 +40,11 @@ export const placeElement = defineCommand<PlaceElementArgs>('Inserisci elemento'
     mirrored,
     info: { ...resolveDefaultInfo(doc, sheetId, symbol, { x, y }), ...args.info },
   };
+  if (symbol.kind === 'terminal' && args.strip !== undefined) {
+    if (!findStrip(doc, args.strip)) return fail('not-found', 'Strip not found');
+    element.strip = args.strip;
+    element.terminalNo = nextTerminalNo(doc, args.strip);
+  }
   if (symbol.kind === 'report' && !element.info['ref_id']) {
     element.info['ref_id'] = nextReferenceId(doc);
   }

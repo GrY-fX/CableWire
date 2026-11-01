@@ -7,6 +7,7 @@ import { withNumber } from '../numbering.ts';
 import type { Op } from '../ops.ts';
 import { put } from '../ops.ts';
 import { followsPattern, labelPatterns, nextLabel } from '../labels.ts';
+import { findStrip, nextTerminalNo } from '../strips.ts';
 import { nextReferenceId } from '../references.ts';
 
 /** A self-contained piece of a sheet, as copied to the clipboard. */
@@ -73,6 +74,7 @@ export const pasteFragment = defineCommand<{
   const map = <T extends string>(id: string) => ids[id] as T;
   const refIds: string[] = [];
   const takenLabels: Record<string, string[]> = {};
+  const takenNumbers: Record<string, string[]> = {};
 
   for (const e of fragment.elements) {
     const symbol = symbols.get(e.symbolId);
@@ -90,6 +92,18 @@ export const pasteFragment = defineCommand<{
       const refId = nextReferenceId(doc, refIds);
       refIds.push(refId);
       element.info = { ...e.info, ref_id: refId };
+    }
+    // Terminals stay in their strip with a new number; a strip not in this project is dropped.
+    if (element.strip !== undefined) {
+      if (findStrip(doc, element.strip)) {
+        const taken = (takenNumbers[element.strip] ??= []);
+        const no = nextTerminalNo(doc, element.strip, taken);
+        taken.push(no);
+        element.terminalNo = no;
+      } else {
+        delete element.strip;
+        delete element.terminalNo;
+      }
     }
     // Automatic labels (e.g. {foglio}K{n}) get the next free number on this sheet.
     for (const { key, tokens } of labelPatterns(symbol)) {

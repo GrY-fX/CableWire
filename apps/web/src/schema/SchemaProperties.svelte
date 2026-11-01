@@ -12,6 +12,19 @@
     setSlaveLabel,
     projectXrefStyle,
     setXrefOffset,
+    addStrip,
+    DEFAULT_STRIP_PATTERN,
+    getStripPattern,
+    getStrips,
+    newStripId,
+    removeStrip,
+    setTerminalNo,
+    setTerminalStrip,
+    stripName,
+    stripOf,
+    terminalLabel,
+    terminalsOf,
+    updateStrip,
     setXrefStyle,
     showsXref,
     xrefStyleOf,
@@ -47,6 +60,7 @@
     updateSheet,
   } from '@cablewire/core';
   import type {
+    Command,
     ContactType,
     Element,
     MasterType,
@@ -233,6 +247,62 @@
     };
   });
   // Coils: their contacts, and the free contacts (linked to no coil) to add.
+  // Terminal strips of the project, and the selected terminal's.
+  const strips = $derived.by(() => {
+    void version;
+    const doc = view.doc;
+    return getStrips(doc).map((s) => ({
+      id: s.id,
+      mode: s.mode,
+      name: stripName(doc, s),
+      sheet: s.sheetId ? doc.sheetOrder.indexOf(s.sheetId) + 1 : 0,
+      count: terminalsOf(doc, s.id).length,
+    }));
+  });
+  const stripPattern = $derived(getStripPattern(view.doc));
+  const terminal = $derived.by(() => {
+    const { doc, element, symbol } = view;
+    if (!element || symbol?.kind !== 'terminal') return undefined;
+    return {
+      strip: stripOf(doc, element)?.id,
+      no: element.terminalNo ?? '',
+      label: terminalLabel(doc, element),
+    };
+  });
+  let stripError = $state('');
+
+  function runStrip<A>(command: Command<A>, args: A): boolean {
+    const result = editor.store.run(command, args);
+    stripError = result.ok ? '' : result.error.message;
+    return result.ok;
+  }
+
+  /** Creates a strip; returns its id. */
+  function newStrip(mode: 'sheet' | 'custom'): string | undefined {
+    const id = newStripId(editor.doc);
+    if (mode === 'sheet') {
+      return runStrip(addStrip, { id, mode, sheetId: editor.sheetId }) ? id : undefined;
+    }
+    const name = prompt('Nome della morsettiera (es. -X1, XPOMPA):')?.trim();
+    if (!name) return undefined;
+    return runStrip(addStrip, { id, mode, name }) ? id : undefined;
+  }
+
+  /** Strip chosen for the selected terminal (or a new one); new terminals follow it. */
+  function chooseStrip(value: string) {
+    const element = view.element;
+    if (!element) return;
+    const strip =
+      value === 'new-sheet'
+        ? newStrip('sheet')
+        : value === 'new-custom'
+          ? newStrip('custom')
+          : value || undefined;
+    if ((value === 'new-sheet' || value === 'new-custom') && !strip) return;
+    runStrip(setTerminalStrip, { id: element.id, strip });
+    if (strip) editor.lastStrip = strip;
+  }
+
   const coil = $derived.by(() => {
     const { doc, element, symbol } = view;
     if (!element || symbol?.kind !== 'master') return undefined;
@@ -369,6 +439,8 @@
               value={report.name}
               onchange={(e) => setReportName(text(e))}
             />
+          {:else if key === 'label' && terminal?.strip}
+            <input type="text" value={terminal.label} readonly title="Dalla morsettiera" />
           {:else if key === 'label' && contact}
             <input
               bind:this={labelInput}
@@ -395,6 +467,46 @@
     </div>
     <button class="link" onclick={addField}>+ Aggiungi campo</button>
     {#if contactWarning && contact}<p class="warning">{contactWarning}</p>{/if}
+    {#if terminal}
+      <h4>Morsettiera</h4>
+      <div class="grid">
+        <label
+          >Morsettiera
+          <select
+            value={terminal.strip ?? ''}
+            onchange={(e) => {
+              const select = e.currentTarget;
+              chooseStrip(select.value);
+              // Back to the strip in use when a new one was not created.
+              select.value = terminal.strip ?? '';
+            }}
+          >
+            <option value="">Nessuna (sigla scritta a mano)</option>
+            {#each strips as s (s.id)}<option value={s.id}>{s.name}</option>{/each}
+            <option value="new-sheet">+ Nuova, per questo foglio</option>
+            <option value="new-custom">+ Nuova, con un nome…</option>
+          </select>
+        </label>
+        {#if terminal.strip}
+          <label
+            >Numero
+            <input
+              type="text"
+              value={terminal.no}
+              placeholder="primo libero"
+              onchange={(e) =>
+                editor.store.run(setTerminalNo, { id: view.element!.id, no: text(e) })}
+            /></label
+          >
+        {/if}
+      </div>
+      {#if terminal.strip}
+        <p class="hint">
+          Sigla: <strong>{terminal.label}</strong>. I morsetti nuovi vanno nell'ultima morsettiera
+          scelta.
+        </p>
+      {/if}
+    {/if}
     {#if contact}
       <h4>Comandato da (bobina o dispositivo)</h4>
       {#if contact.master}
@@ -755,6 +867,70 @@
         {/each}
       </div>
     {/if}
+    <h3>Morsettiere</h3>
+    {#if strips.length === 0}
+      <p class="hint">
+        Nessuna morsettiera: la prima viene creata inserendo un morsetto, oppure qui sotto.
+      </p>
+    {:else}
+      <ul class="strips">
+        {#each strips as s (s.id)}
+          <li>
+            {#if s.mode === 'custom'}
+              <input
+                type="text"
+                value={s.name}
+                aria-label="Nome della morsettiera"
+                onchange={(e) => runStrip(updateStrip, { id: s.id, name: text(e) })}
+              />
+            {:else}
+              <span class="strip-name" title="Nome dal modello, foglio {s.sheet}">{s.name}</span>
+            {/if}
+            <select
+              value={s.mode}
+              aria-label="Tipo di nome"
+              onchange={(e) =>
+                runStrip(updateStrip, {
+                  id: s.id,
+                  mode: text(e) as 'sheet' | 'custom',
+                  sheetId: editor.sheetId,
+                })}
+            >
+              <option value="sheet">Per foglio</option>
+              <option value="custom">Personalizzata</option>
+            </select>
+            <span class="count" title="Morsetti">{s.count}</span>
+            <button
+              class="icon"
+              title="Elimina la morsettiera (i morsetti tengono la sigla attuale)"
+              onclick={() => runStrip(removeStrip, { id: s.id })}>×</button
+            >
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    {#if stripError}<p class="error">{stripError}</p>{/if}
+    <div class="actions">
+      <button onclick={() => newStrip('sheet')}>+ Per questo foglio</button>
+      <button onclick={() => newStrip('custom')}>+ Con un nome…</button>
+    </div>
+    <label
+      >Nome delle morsettiere per foglio
+      <input
+        type="text"
+        value={stripPattern}
+        placeholder={DEFAULT_STRIP_PATTERN}
+        onchange={(e) =>
+          editor.store.run(updateSettings, {
+            set: { stripPattern: text(e) || DEFAULT_STRIP_PATTERN },
+          })}
+      />
+    </label>
+    <p class="hint">
+      {'{foglio}'} = numero del foglio, {'{n}'} = prima, seconda… morsettiera di quel foglio. Una morsettiera
+      personalizzata ha un nome suo e si usa su tutti i fogli.
+    </p>
+
     <h3>Bobine e contatti</h3>
     <label class="check"
       ><input
@@ -1103,6 +1279,36 @@
   }
   .partners span {
     color: var(--muted);
+  }
+  .strips {
+    list-style: none;
+    margin: 0.3rem 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .strips li {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .strips input,
+  .strip-name {
+    flex: 1;
+    min-width: 0;
+  }
+  .strips select {
+    width: auto;
+  }
+  .strip-name {
+    font-size: 0.85rem;
+  }
+  .count {
+    font-size: 0.75rem;
+    color: var(--muted);
+    min-width: 1.5rem;
+    text-align: right;
   }
   .partners li {
     display: flex;

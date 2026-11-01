@@ -1,4 +1,5 @@
 import {
+  addStrip,
   addWire,
   autoConnections,
   autoNumberPotential,
@@ -6,13 +7,17 @@ import {
   copyFragment,
   endDirection,
   endPosition,
+  findStrip,
   freshIds,
   getPotentials,
+  getStrips,
   importSymbol,
   isEmptyFragment,
   mirrorElements,
   moveItems,
   newId,
+  newStripId,
+  nextTerminalNo,
   pasteFragment,
   placeElement,
   reconnectWire,
@@ -23,6 +28,7 @@ import {
   setWireBends,
   setXrefOffset,
   simplifyPath,
+  stripName,
   xrefLayout,
   xrefStyleOf,
 } from '@cablewire/core';
@@ -122,6 +128,8 @@ export class SchematicEditor {
    * aligned free terminals facing them (see autoConnections in core).
    */
   autoConnect = true;
+  /** Strip new terminals go to: the last one used (see stripForNewTerminal). */
+  lastStrip: string | undefined;
 
   private sheet: SheetId;
   private selected = new Set<string>();
@@ -166,7 +174,12 @@ export class SchematicEditor {
   }
   get ghost(): Ghost | undefined {
     if (!this.placing || !this.cursor) return undefined;
-    const info = resolveDefaultInfo(this.doc, this.sheet, this.placing.symbol, this.cursor);
+    const { symbol } = this.placing;
+    const info = resolveDefaultInfo(this.doc, this.sheet, symbol, this.cursor);
+    // A terminal shows the label it will get in its strip.
+    const strip = symbol.kind === 'terminal' ? this.existingStripForTerminal() : undefined;
+    const found = strip && findStrip(this.doc, strip);
+    if (found) info['label'] = `${stripName(this.doc, found)}:${nextTerminalNo(this.doc, strip)}`;
     return { ...this.placing, ...this.cursor, info };
   }
   get canPaste(): boolean {
@@ -710,8 +723,11 @@ export class SchematicEditor {
     const existing = this.doc.symbols[symbol.id];
     const id = newId<'element'>() as ElementId;
     this.store.begin(`Inserisci ${symbol.name}`);
+    const imported =
+      existing && sameJson(existing, symbol) ? true : this.run(importSymbol, { symbol });
+    const strip = imported && symbol.kind === 'terminal' ? this.stripForNewTerminal() : undefined;
     const ok =
-      (existing && sameJson(existing, symbol) ? true : this.run(importSymbol, { symbol })) &&
+      imported &&
       this.run(placeElement, {
         id,
         sheetId: this.sheet,
@@ -720,7 +736,9 @@ export class SchematicEditor {
         y: at.y,
         rotation: placing.rotation,
         mirrored: placing.mirrored,
+        ...(strip ? { strip } : {}),
       });
+    if (ok && strip) this.lastStrip = strip;
     if (ok) {
       if (this.autoConnect) this.connectAligned([id]);
       this.store.commit();
@@ -728,6 +746,20 @@ export class SchematicEditor {
     } else {
       this.store.rollback();
     }
+  }
+
+  /** The last strip used if it still exists, else the project's newest one. */
+  private existingStripForTerminal(): string | undefined {
+    if (findStrip(this.doc, this.lastStrip)) return this.lastStrip;
+    return getStrips(this.doc).at(-1)?.id;
+  }
+
+  /** Strip for a terminal being placed; the project's first one is created on this sheet. */
+  private stripForNewTerminal(): string | undefined {
+    const existing = this.existingStripForTerminal();
+    if (existing) return existing;
+    const id = newStripId(this.doc);
+    return this.run(addStrip, { id, mode: 'sheet', sheetId: this.sheet }) ? id : undefined;
   }
 
   /** Element ids among selection keys. */

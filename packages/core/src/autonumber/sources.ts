@@ -2,6 +2,7 @@ import type { ElementId, TerminalId, WireId } from '../ids.ts';
 import type { NumberingSettings, NumberSource, ProjectDoc } from '../model.ts';
 import { DEFAULT_NUMBERING, getNumbering } from '../model.ts';
 import { getPotentials } from '../potentials.ts';
+import { terminalLabel } from '../strips.ts';
 import { formatPlcAddress } from './rule.ts';
 
 /** A candidate number found on an element reached by a potential. */
@@ -62,8 +63,11 @@ function valueAt(
   const element = doc.elements[at.element];
   const symbol = element && doc.symbols[element.symbolId];
   if (!element || !symbol) return undefined;
-  const label = element.info.label?.trim() ?? '';
   const kind = symbol.kind;
+  // Terminals in a strip are labelled strip:number (X1:5).
+  const label = (
+    kind === 'terminal' ? terminalLabel(doc, element) : (element.info.label ?? '')
+  ).trim();
   if (source === 'plc') {
     const address = element.info.plc_address?.trim() ?? '';
     if (!address) return undefined;

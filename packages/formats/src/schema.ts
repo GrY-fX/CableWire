@@ -108,6 +108,8 @@ const element = v.object({
   xrefOffset: v.exactOptional(num),
   xrefOffsetX: v.exactOptional(num),
   xrefStyle: v.exactOptional(xrefStyle),
+  strip: v.exactOptional(v.string()),
+  terminalNo: v.exactOptional(v.string()),
 });
 
 const junction = v.object({ id: id<JunctionId>(), sheetId: id<SheetId>(), x: num, y: num });
@@ -154,6 +156,17 @@ export const projectSchema = v.object({
     referencePattern: v.exactOptional(v.string()),
     masterRefPattern: v.exactOptional(v.string()),
     showXref: v.exactOptional(v.boolean()),
+    terminalStrips: v.exactOptional(
+      v.array(
+        v.object({
+          id: v.string(),
+          mode: v.picklist(['sheet', 'custom']),
+          name: v.exactOptional(v.string()),
+          sheetId: v.exactOptional(id<SheetId>()),
+        }),
+      ),
+    ),
+    stripPattern: v.exactOptional(v.string()),
     xrefStyles: v.exactOptional(
       v.object({ coil: v.exactOptional(xrefStyle), device: v.exactOptional(xrefStyle) }),
     ),

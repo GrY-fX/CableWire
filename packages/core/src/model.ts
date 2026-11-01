@@ -102,6 +102,10 @@ export interface Element {
   xrefOffsetX?: number;
   /** Masters: style of the contacts, instead of the project's for this kind of master. */
   xrefStyle?: XrefStyle;
+  /** Terminals: id of their terminal strip (see ProjectSettings.terminalStrips). */
+  strip?: string;
+  /** Terminals: number within the strip (text: `PE` or `5a` are allowed). */
+  terminalNo?: string;
 }
 
 export interface Junction {
@@ -167,6 +171,19 @@ export const DEFAULT_NUMBERING: NumberingSettings = {
   plcPattern: '{byte}.{morsetto}',
 };
 
+/**
+ * A terminal strip: named from the project's pattern on its sheet (`sheet`), or with
+ * a name of its own usable on every sheet (`custom`).
+ */
+export interface TerminalStrip {
+  id: string;
+  mode: 'sheet' | 'custom';
+  /** Custom strips: their name. */
+  name?: string;
+  /** Sheet strips: the sheet they belong to. */
+  sheetId?: SheetId;
+}
+
 export interface ProjectSettings {
   /** Snap grid step in millimetres. */
   gridStep: number;
@@ -186,6 +203,10 @@ export interface ProjectSettings {
   showXref?: boolean;
   /** Style of the contacts per kind of master; see DEFAULT_XREF_STYLES. */
   xrefStyles?: Partial<Record<MasterType, XrefStyle>>;
+  /** Terminal strips, in order of creation. */
+  terminalStrips?: TerminalStrip[];
+  /** Name of strips that belong to a sheet, e.g. `{foglio}X{n}`; see DEFAULT_STRIP_PATTERN. */
+  stripPattern?: string;
 }
 
 export function getNumbering(doc: ProjectDoc): NumberingSettings {

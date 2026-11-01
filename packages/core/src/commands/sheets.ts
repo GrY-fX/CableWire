@@ -1,10 +1,11 @@
 import { defineCommand, fail, ok } from '../command.ts';
 import type { ElementId, JunctionId, SheetId, WireId } from '../ids.ts';
 import { newId } from '../ids.ts';
-import type { Sheet, SheetFormat } from '../model.ts';
+import type { Sheet, SheetFormat, TerminalStrip } from '../model.ts';
 import { createSheet } from '../model.ts';
 import type { Patch } from '../ops.ts';
 import { del, meta, patch, put } from '../ops.ts';
+import { getStrips, stripName, terminalsOf } from '../strips.ts';
 import { removeOps } from './remove.ts';
 
 export const addSheet = defineCommand<{
@@ -32,10 +33,19 @@ export const removeSheet = defineCommand<{ id: SheetId }>('Elimina foglio', (doc
     wires: on(doc.wires) as WireId[],
     junctions: on(doc.junctions) as JunctionId[],
   });
+  // Strips named after this sheet: kept with their name if used elsewhere, else removed.
+  const strips = getStrips(doc).flatMap((strip): TerminalStrip[] => {
+    if (strip.mode !== 'sheet' || strip.sheetId !== id) return [strip];
+    const elsewhere = terminalsOf(doc, strip.id).some((t) => t.sheetId !== id);
+    return elsewhere ? [{ id: strip.id, mode: 'custom', name: stripName(doc, strip) }] : [];
+  });
+  const changedStrips =
+    strips.length !== getStrips(doc).length || strips.some((s, i) => s !== getStrips(doc)[i]);
   return ok([
     ...contents,
     del('sheets', id),
     meta({ sheetOrder: doc.sheetOrder.filter((s) => s !== id) }),
+    ...(changedStrips ? [meta({ settings: { ...doc.settings, terminalStrips: strips } })] : []),
   ]);
 });
 

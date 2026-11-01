@@ -9,6 +9,8 @@
     numberingConflicts,
     renumber,
     renumberLabels,
+    renumberTerminals,
+    stripOf,
   } from '@cablewire/core';
   import type { ElementId, SheetId, SymbolDef, SymbolId } from '@cablewire/core';
   import { parseItemKey, SchematicEditor } from '@cablewire/editor';
@@ -239,6 +241,36 @@
     notice = { kind: 'info', lines };
   }
 
+  /** Strip of the selected terminal, for "Ricalcola morsetti". */
+  const selectedStrip = $derived.by(() => {
+    void version;
+    const keys = [...editor.selection];
+    const item = keys.length === 1 ? parseItemKey(keys[0]!) : undefined;
+    const element =
+      item?.kind === 'element' ? editor.doc.elements[item.id as ElementId] : undefined;
+    return element && stripOf(editor.doc, element)?.id;
+  });
+
+  /** Renumbers terminals 1, 2, 3… in reading order; text numbers (PE) are kept. */
+  function recalcTerminals(strip: string | undefined) {
+    renumberMenu = false;
+    const before = store.undoLabel;
+    const result = store.run(renumberTerminals, strip === undefined ? {} : { strip });
+    if (!result.ok) {
+      notice = { kind: 'error', lines: [result.error.message] };
+      return;
+    }
+    notice = {
+      kind: 'info',
+      lines: [
+        store.undoLabel === before
+          ? 'I morsetti sono già in ordine: nessun numero cambiato.'
+          : "Morsetti rinumerati in ordine di lettura (foglio, colonna, dall'alto in basso).",
+        'I numeri scritti come testo (es. PE) restano come sono.',
+      ],
+    };
+  }
+
   /** Renumbers automatic labels; labels written by hand are kept. */
   function recalcLabels(sheetId: SheetId | undefined) {
     renumberMenu = false;
@@ -426,6 +458,14 @@
             <div class="menu-label">Numeri dei fili</div>
             <button onclick={() => recalc(editor.sheetId)}>Foglio corrente</button>
             <button onclick={() => recalc(undefined)}>Tutto il progetto</button>
+            <div class="menu-label">Morsetti</div>
+            <button
+              disabled={!selectedStrip}
+              onclick={() => recalcTerminals(selectedStrip)}
+              title="Seleziona un morsetto per scegliere la morsettiera"
+              >Morsettiera del morsetto selezionato</button
+            >
+            <button onclick={() => recalcTerminals(undefined)}>Tutte le morsettiere</button>
             <div class="menu-label">Sigle automatiche (es. {'{foglio}'}K{'{n}'})</div>
             <button onclick={() => recalcLabels(editor.sheetId)}>Foglio corrente</button>
             <button onclick={() => recalcLabels(undefined)}>Tutto il progetto</button>
