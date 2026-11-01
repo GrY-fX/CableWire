@@ -253,3 +253,56 @@ describe('contact table rows', () => {
     expect(editor.doc.elements[coil]!.xrefOffset).toBeUndefined();
   });
 });
+
+describe('automatic connections', () => {
+  const wires = (e: SchematicEditor) => Object.values(e.doc.wires);
+
+  it('placing a symbol aligned under another wires them, in the same undo step', () => {
+    const { editor, store } = setup();
+    editor.startPlacing(COIL);
+    click(editor, 50, 50);
+    editor.pointerMove({ x: 50, y: 100 });
+    // Preview while placing: from the new top terminal to the coil's bottom one.
+    expect(editor.autoLinks).toEqual([
+      [
+        { x: 50, y: 95 },
+        { x: 50, y: 55 },
+      ],
+    ]);
+    click(editor, 50, 100);
+    expect(wires(editor)).toHaveLength(1);
+    expect(wires(editor)[0]).toMatchObject({ bends: [] });
+    store.undo();
+    expect(wires(editor)).toHaveLength(0);
+    expect(elementIds(editor)).toHaveLength(1);
+  });
+
+  it('can be turned off', () => {
+    const { editor } = setup();
+    editor.autoConnect = false;
+    editor.startPlacing(COIL);
+    click(editor, 50, 50);
+    editor.pointerMove({ x: 50, y: 100 });
+    expect(editor.autoLinks).toEqual([]);
+    click(editor, 50, 100);
+    expect(wires(editor)).toHaveLength(0);
+  });
+
+  it('moving a symbol into line wires it when released', () => {
+    const { editor, store } = setup();
+    editor.startPlacing(COIL);
+    click(editor, 50, 50);
+    click(editor, 80, 100);
+    editor.key('Escape');
+    expect(wires(editor)).toHaveLength(0);
+    editor.pointerDown({ x: 80, y: 100 });
+    editor.pointerMove({ x: 50, y: 100 });
+    expect(editor.autoLinks).toHaveLength(1);
+    editor.pointerUp({ x: 50, y: 100 });
+    expect(wires(editor)).toHaveLength(1);
+    expect(store.undoLabel).toBe('Sposta');
+    store.undo();
+    expect(wires(editor)).toHaveLength(0);
+    expect(editor.doc.elements[elementIds(editor)[1]!]).toMatchObject({ x: 80, y: 100 });
+  });
+});

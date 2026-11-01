@@ -1,5 +1,6 @@
 import {
   addWire,
+  autoConnections,
   autoNumberPotential,
   autoRoute,
   copyFragment,
@@ -112,6 +113,11 @@ export class SchematicEditor {
   tolerance = 1;
   /** Message of the last command that could not be applied, for the UI. */
   lastError: string | undefined;
+  /**
+   * Automatic connections: placing or moving a symbol wires its free terminals to the
+   * aligned free terminals facing them (see autoConnections in core).
+   */
+  autoConnect = true;
 
   private sheet: SheetId;
   private selected = new Set<string>();
@@ -190,6 +196,16 @@ export class SchematicEditor {
       return from ? [from, target] : undefined;
     }
     return undefined;
+  }
+
+  /** Connections automatic wiring would make now (placing or moving), for the overlay. */
+  get autoLinks(): [Point, Point][] {
+    if (!this.autoConnect) return [];
+    const ghost = this.ghost;
+    if (ghost) return autoConnections(this.doc, this.sheet, ghost).map((c) => c.points);
+    const drag = this.drag;
+    if (drag?.kind !== 'move' || (drag.applied.x === 0 && drag.applied.y === 0)) return [];
+    return this.alignedConnections(this.movedElements(drag.keys)).map((c) => c.points);
   }
 
   /** Handles of the single selected wire. */
@@ -377,7 +393,11 @@ export class SchematicEditor {
   pointerUp(raw: Point): void {
     const drag = this.drag;
     this.drag = undefined;
-    if (drag?.kind === 'move' || drag?.kind === 'segment') {
+    if (drag?.kind === 'move') {
+      const moved = drag.applied.x !== 0 || drag.applied.y !== 0;
+      if (moved && this.autoConnect) this.connectAligned(this.movedElements(drag.keys));
+      this.store.commit();
+    } else if (drag?.kind === 'segment') {
       this.store.commit();
     } else if (drag?.kind === 'xref') {
       this.store.commit();
@@ -692,10 +712,49 @@ export class SchematicEditor {
         mirrored: placing.mirrored,
       });
     if (ok) {
+      if (this.autoConnect) this.connectAligned([id]);
       this.store.commit();
       this.selected = new Set([elementKey(id)]);
     } else {
       this.store.rollback();
+    }
+  }
+
+  /** Element ids among selection keys. */
+  private movedElements(keys: readonly string[]): ElementId[] {
+    return keys.flatMap((key) => {
+      const k = parseItemKey(key);
+      return k?.kind === 'element' ? [k.id as ElementId] : [];
+    });
+  }
+
+  /**
+   * Connections of the given elements to aligned terminals of the others (not between
+   * themselves: they moved together). Later elements see the earlier ones' wires.
+   */
+  private alignedConnections(ids: readonly ElementId[]) {
+    const exclude = new Set(ids);
+    return ids.flatMap((id) => {
+      const element = this.doc.elements[id];
+      const symbol = element && this.doc.symbols[element.symbolId];
+      return element && symbol
+        ? autoConnections(this.doc, this.sheet, { ...element, symbol }, exclude)
+        : [];
+    });
+  }
+
+  /** Wires the given elements to the aligned terminals facing them, numbering the wires. */
+  private connectAligned(ids: readonly ElementId[]): void {
+    const exclude = new Set(ids);
+    for (const elementId of ids) {
+      const element = this.doc.elements[elementId];
+      const symbol = element && this.doc.symbols[element.symbolId];
+      if (!element || !symbol) continue;
+      for (const c of autoConnections(this.doc, this.sheet, { ...element, symbol }, exclude)) {
+        const id = newId<'wire'>() as WireId;
+        const from = { element: elementId, terminal: c.from.terminal };
+        if (this.run(addWire, { id, from, to: c.to })) this.run(autoNumberPotential, { id });
+      }
     }
   }
 

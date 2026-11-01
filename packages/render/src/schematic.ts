@@ -15,12 +15,14 @@ export interface SchematicOverlayOptions {
   hot?: Point | undefined;
   /** Handles of the selected wire. */
   handles?: readonly Point[] | undefined;
+  /** Wires that automatic connection would create, drawn dashed. */
+  autoLinks?: readonly (readonly [Point, Point])[] | undefined;
 }
 
 /** Editing aids drawn above a sheet scene, in the overlay layer. */
 export function buildSchematicOverlay(options: SchematicOverlayOptions): SceneItem[] {
   const items: SceneItem[] = [];
-  const { ghost, marquee, preview, hot, handles, pixel } = options;
+  const { ghost, marquee, preview, hot, handles, autoLinks, pixel } = options;
   if (ghost) {
     items.push({
       key: 'ghost',
@@ -29,6 +31,17 @@ export function buildSchematicOverlay(options: SchematicOverlayOptions): SceneIt
         kind: 'group',
         classes: ['ghost'],
         children: [buildElementNode({ ...ghost, info: ghost.symbol.defaultInfo }, ghost.symbol)],
+      },
+    });
+  }
+  if (autoLinks?.length) {
+    items.push({
+      key: 'auto-links',
+      layer: 'overlay',
+      node: {
+        kind: 'path',
+        d: autoLinks.map(([a, b]) => `M${a.x} ${a.y}L${b.x} ${b.y}`).join(''),
+        classes: ['preview'],
       },
     });
   }

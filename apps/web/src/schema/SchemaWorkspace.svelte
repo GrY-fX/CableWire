@@ -24,6 +24,7 @@
   import ConflictsPanel from './ConflictsPanel.svelte';
   import SchematicCanvas from './SchematicCanvas.svelte';
   import SchemaProperties from './SchemaProperties.svelte';
+  import { loadAutoConnect, saveAutoConnect } from './preferences.ts';
   import { loadSheetFormat } from './sheetFormat.ts';
   import SheetTabs from './SheetTabs.svelte';
 
@@ -34,6 +35,11 @@
   let version = $state(0);
   let scale = $state(2);
   let showGrid = $state(true);
+  let autoConnect = $state(loadAutoConnect());
+  $effect(() => {
+    editor.autoConnect = autoConnect;
+    saveAutoConnect(autoConnect);
+  });
   let canvas: SchematicCanvas | undefined = $state();
   let properties: SchemaProperties | undefined = $state();
   let autosave: ProjectAutosave | undefined;
@@ -383,6 +389,11 @@
       <button title="Ingrandisci (+)" onclick={() => canvas?.zoom(1.2)}>+</button>
       <button title="Adatta al foglio (0)" onclick={() => canvas?.fit()}>Adatta</button>
       <label class="check"><input type="checkbox" bind:checked={showGrid} /> Griglia</label>
+      <label
+        class="check"
+        title="Inserendo o spostando un simbolo, i suoi terminali liberi si collegano ai terminali allineati e rivolti verso di lui"
+        ><input type="checkbox" bind:checked={autoConnect} /> Collegamenti automatici</label
+      >
       <span class="sep"></span>
       <div class="menu">
         <button

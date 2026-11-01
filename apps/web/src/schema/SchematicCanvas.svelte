@@ -87,6 +87,7 @@
       preview: editor.preview,
       hot: editor.hot?.point,
       handles: editor.wireHandles.map((h) => h.point),
+      autoLinks: editor.autoLinks,
     });
     renderer.render({ ...scene, items: [...scene.items, ...overlay] });
     renderer.setState({ selected: editor.selection, highlighted: editor.highlight?.keys ?? [] });
