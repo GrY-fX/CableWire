@@ -30,17 +30,19 @@
         "y": -2.5
       },
       {
-        "size": 2.5,
+        "anchor": "end",
+        "size": 4,
         "text": "{label}",
         "type": "text",
-        "x": 4.5,
+        "x": -5.5,
         "y": 0
       },
       {
+        "anchor": "end",
         "size": 2,
         "text": "{function}",
         "type": "text",
-        "x": 4.5,
+        "x": -6,
         "y": 3
       }
     ],

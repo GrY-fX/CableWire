@@ -102,8 +102,8 @@ export interface XrefLayout {
 export const XREF_TEXT_SIZE = 2;
 const HEADER = 3.5;
 const ROW = 3;
-const PAD = 1.5;
-const GAP = 2;
+const PAD = 0.5;
+const GAP = 0.1;
 /** Space between the master and its contacts in their default place. */
 const MARGIN = 2;
 /** Height of a drawn contact, space between two of them and above the reference. */
