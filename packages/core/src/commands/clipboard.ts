@@ -6,6 +6,7 @@ import { isJunctionEnd } from '../model.ts';
 import { withNumber } from '../numbering.ts';
 import type { Op } from '../ops.ts';
 import { put } from '../ops.ts';
+import { followsPattern, labelPatterns, nextLabel } from '../labels.ts';
 import { nextReferenceId } from '../references.ts';
 
 /** A self-contained piece of a sheet, as copied to the clipboard. */
@@ -71,6 +72,7 @@ export const pasteFragment = defineCommand<{
   }
   const map = <T extends string>(id: string) => ids[id] as T;
   const refIds: string[] = [];
+  const takenLabels: Record<string, string[]> = {};
 
   for (const e of fragment.elements) {
     const symbol = symbols.get(e.symbolId);
@@ -88,6 +90,14 @@ export const pasteFragment = defineCommand<{
       const refId = nextReferenceId(doc, refIds);
       refIds.push(refId);
       element.info = { ...e.info, ref_id: refId };
+    }
+    // Automatic labels (e.g. {foglio}K{n}) get the next free number on this sheet.
+    for (const { key, tokens } of labelPatterns(symbol)) {
+      if (!followsPattern(element.info[key] ?? '', tokens)) continue;
+      const taken = (takenLabels[key] ??= []);
+      const label = nextLabel(doc, sheetId, key, tokens, element, taken);
+      taken.push(label);
+      element.info = { ...element.info, [key]: label };
     }
     ops.push(put('elements', element));
   }

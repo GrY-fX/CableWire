@@ -423,7 +423,11 @@
       <span class="wide hint">Versione {symbol.version}</span>
     </div>
     <h4>Campi predefiniti</h4>
-    <p class="hint">Valori iniziali dei campi quando il simbolo viene inserito nello schema.</p>
+    <p class="hint">
+      Valori iniziali dei campi quando il simbolo viene inserito nello schema. Per le sigle
+      automatiche usa {'{foglio}'} e {'{n}'} (es. {'{foglio}'}K{'{n}'} → 1K1, 1K2… sul foglio 1),
+      {'{n:2}'} per due cifre.
+    </p>
     {#each infoRows as [key, value], i (key + i)}
       <div class="row">
         <input

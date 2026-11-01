@@ -17,6 +17,7 @@ import {
   placeElement,
   reconnectWire,
   removeItems,
+  resolveDefaultInfo,
   rotateElements,
   routeOrthogonal,
   setWireBends,
@@ -85,6 +86,8 @@ export interface Ghost {
   y: number;
   rotation: Rotation;
   mirrored: boolean;
+  /** Fields the element would get here (automatic labels already numbered). */
+  info?: Record<string, string>;
 }
 
 type Drag =
@@ -162,7 +165,9 @@ export class SchematicEditor {
     return this.cursor;
   }
   get ghost(): Ghost | undefined {
-    return this.placing && this.cursor ? { ...this.placing, ...this.cursor } : undefined;
+    if (!this.placing || !this.cursor) return undefined;
+    const info = resolveDefaultInfo(this.doc, this.sheet, this.placing.symbol, this.cursor);
+    return { ...this.placing, ...this.cursor, info };
   }
   get canPaste(): boolean {
     return !!this.clipboard;

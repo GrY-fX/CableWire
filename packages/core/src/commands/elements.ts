@@ -7,6 +7,7 @@ import { endDirection, routeOrthogonal } from '../route.ts';
 import { isJunctionEnd } from '../model.ts';
 import type { Op } from '../ops.ts';
 import { patch, put } from '../ops.ts';
+import { resolveDefaultInfo } from '../labels.ts';
 import { nextReferenceId } from '../references.ts';
 
 export interface PlaceElementArgs {
@@ -34,7 +35,7 @@ export const placeElement = defineCommand<PlaceElementArgs>('Inserisci elemento'
     y,
     rotation,
     mirrored,
-    info: { ...symbol.defaultInfo, ...args.info },
+    info: { ...resolveDefaultInfo(doc, sheetId, symbol, { x, y }), ...args.info },
   };
   if (symbol.kind === 'report' && !element.info['ref_id']) {
     element.info['ref_id'] = nextReferenceId(doc);

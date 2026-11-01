@@ -13,6 +13,7 @@ export * from './references.ts';
 export * from './masters.ts';
 export * from './xref.ts';
 export * from './autoconnect.ts';
+export * from './labels.ts';
 export * from './commands/project.ts';
 export * from './commands/sheets.ts';
 export * from './commands/symbols.ts';

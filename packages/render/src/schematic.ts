@@ -7,7 +7,15 @@ export interface SchematicOverlayOptions {
   pixel: number;
   /** Symbol following the cursor while placing. */
   ghost?:
-    { symbol: SymbolDef; x: number; y: number; rotation: Rotation; mirrored: boolean } | undefined;
+    | {
+        symbol: SymbolDef;
+        x: number;
+        y: number;
+        rotation: Rotation;
+        mirrored: boolean;
+        info?: Record<string, string> | undefined;
+      }
+    | undefined;
   marquee?: Bounds | undefined;
   /** Path of the wire being drawn or reconnected. */
   preview?: readonly Point[] | undefined;
@@ -30,7 +38,12 @@ export function buildSchematicOverlay(options: SchematicOverlayOptions): SceneIt
       node: {
         kind: 'group',
         classes: ['ghost'],
-        children: [buildElementNode({ ...ghost, info: ghost.symbol.defaultInfo }, ghost.symbol)],
+        children: [
+          buildElementNode(
+            { ...ghost, info: ghost.info ?? ghost.symbol.defaultInfo },
+            ghost.symbol,
+          ),
+        ],
       },
     });
   }

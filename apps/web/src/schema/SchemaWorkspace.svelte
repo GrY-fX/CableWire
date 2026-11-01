@@ -8,6 +8,7 @@
     masterOf,
     numberingConflicts,
     renumber,
+    renumberLabels,
   } from '@cablewire/core';
   import type { ElementId, SheetId, SymbolDef, SymbolId } from '@cablewire/core';
   import { parseItemKey, SchematicEditor } from '@cablewire/editor';
@@ -238,6 +239,26 @@
     notice = { kind: 'info', lines };
   }
 
+  /** Renumbers automatic labels; labels written by hand are kept. */
+  function recalcLabels(sheetId: SheetId | undefined) {
+    renumberMenu = false;
+    const before = store.undoLabel;
+    const result = store.run(renumberLabels, sheetId === undefined ? {} : { sheetId });
+    if (!result.ok) {
+      notice = { kind: 'error', lines: [result.error.message] };
+      return;
+    }
+    notice = {
+      kind: 'info',
+      lines: [
+        store.undoLabel === before
+          ? 'Le sigle sono già in ordine: nessuna sigla cambiata.'
+          : "Sigle ricalcolate in ordine di lettura (foglio, colonna, dall'alto in basso).",
+        'Le sigle scritte a mano, che non seguono il modello del simbolo, restano come sono.',
+      ],
+    };
+  }
+
   // Project file on disk (open/save) and its "changed since saved" state.
   const files = new ProjectFiles(store, (kind, lines) => (notice = { kind, lines }));
   const dirty = $derived.by(() => {
@@ -402,8 +423,12 @@
         >
         {#if renumberMenu}
           <div class="menu-items">
+            <div class="menu-label">Numeri dei fili</div>
             <button onclick={() => recalc(editor.sheetId)}>Foglio corrente</button>
             <button onclick={() => recalc(undefined)}>Tutto il progetto</button>
+            <div class="menu-label">Sigle automatiche (es. {'{foglio}'}K{'{n}'})</div>
+            <button onclick={() => recalcLabels(editor.sheetId)}>Foglio corrente</button>
+            <button onclick={() => recalcLabels(undefined)}>Tutto il progetto</button>
           </div>
         {/if}
       </div>

@@ -4,6 +4,7 @@ import { defineCommand, fail, ok } from '../command.ts';
 import type { SheetId, WireId } from '../ids.ts';
 import type { NumberingSettings } from '../model.ts';
 import { getNumbering } from '../model.ts';
+import { renumberLabelsOps } from '../labels.ts';
 import { meta } from '../ops.ts';
 
 /** Changes the project's numbering settings; an invalid pattern is refused. */
@@ -24,6 +25,15 @@ export const autoNumberPotential = defineCommand<{ id: WireId }>('Numera filo', 
   if (!doc.wires[id]) return fail('not-found', 'Wire not found');
   return ok(autoNumberOps(doc, id));
 });
+
+/** Renumbers automatic labels (e.g. {foglio}K{n}) on a sheet or in the whole project. */
+export const renumberLabels = defineCommand<{ sheetId?: SheetId }>(
+  'Ricalcola sigle',
+  (doc, { sheetId }) => {
+    if (sheetId !== undefined && !doc.sheets[sheetId]) return fail('not-found', 'Sheet not found');
+    return ok(renumberLabelsOps(doc, sheetId));
+  },
+);
 
 /** Renumbers a sheet (or the whole project), keeping locked numbers. */
 export const renumber = defineCommand<{ sheetId?: SheetId }>(
