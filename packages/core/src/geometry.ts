@@ -86,11 +86,55 @@ export function primitiveBounds(p: Primitive): Bounds {
     }
     case 'text': {
       const width = p.text.length * p.size * TEXT_WIDTH_RATIO;
-      const anchor = p.anchor ?? 'start';
-      const minX = anchor === 'start' ? p.x : anchor === 'middle' ? p.x - width / 2 : p.x - width;
-      return { minX, minY: p.y - p.size / 2, maxX: minX + width, maxY: p.y + p.size / 2 };
+      const { angle, anchor } = readableText(p.rotation ?? 0, false, p.anchor ?? 'start');
+      const start = anchor === 'start' ? 0 : anchor === 'middle' ? -width / 2 : -width;
+      // Along the text from `start` to `start + width`, across ±size/2; turned when vertical.
+      if (angle === 90) {
+        return {
+          minX: p.x - p.size / 2,
+          minY: p.y + start,
+          maxX: p.x + p.size / 2,
+          maxY: p.y + start + width,
+        };
+      }
+      return {
+        minX: p.x + start,
+        minY: p.y - p.size / 2,
+        maxX: p.x + start + width,
+        maxY: p.y + p.size / 2,
+      };
     }
   }
+}
+
+type TextAnchor = 'start' | 'middle' | 'end';
+
+/**
+ * Keeps a text turned by `rotation` (and mirrored) readable from the bottom or the
+ * right (ISO convention): it turns at most 90° and swaps its anchor instead of being
+ * drawn upside down or mirrored.
+ */
+export function readableText(
+  rotation: Rotation,
+  mirrored: boolean,
+  anchor: TextAnchor,
+): { angle: 0 | 90; anchor: TextAnchor } {
+  const flipped = rotation >= 180 !== mirrored;
+  const swapped: TextAnchor = anchor === 'start' ? 'end' : anchor === 'end' ? 'start' : 'middle';
+  return { angle: (rotation % 180) as 0 | 90, anchor: flipped ? swapped : anchor };
+}
+
+/**
+ * Turn of a symbol's text on a placed element: its own rotation (reversed when the
+ * element is mirrored) plus the element's.
+ */
+export function textRotation(
+  textTurn: Rotation | undefined,
+  rotation: Rotation,
+  mirrored: boolean,
+): Rotation {
+  const own = textTurn ?? 0;
+  return (((mirrored ? 360 - own : own) + rotation) % 360) as Rotation;
 }
 
 /** Bounds of a symbol's graphics and terminals, relative to its insertion point. */

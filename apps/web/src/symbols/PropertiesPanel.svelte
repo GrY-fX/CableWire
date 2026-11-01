@@ -3,6 +3,7 @@
     ContactType,
     MasterType,
     Primitive,
+    Rotation,
     SymbolDef,
     SymbolKind,
     TerminalId,
@@ -276,6 +277,22 @@
             <option value="end">A destra</option>
           </select>
         </label>
+        <label
+          >Rotazione
+          <select
+            value={String(shape.rotation ?? 0)}
+            onchange={(e) => setShape({ rotation: Number(text(e)) as Rotation })}
+          >
+            <option value="0">0° (orizzontale)</option>
+            <option value="90">90° (verticale)</option>
+            <option value="180">180°</option>
+            <option value="270">270°</option>
+          </select>
+        </label>
+        <span class="wide hint"
+          >Il testo resta leggibile dal basso o da destra: a 180° e 270° non si capovolge ma cambia
+          il lato dell'allineamento.</span
+        >
       {/if}
       {#if shape.type === 'rect' || shape.type === 'circle' || (shape.type === 'polyline' && shape.closed)}
         <label class="check wide"

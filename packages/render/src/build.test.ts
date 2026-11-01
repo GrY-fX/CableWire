@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Element, ProjectDoc, Sheet, SymbolDef } from '@cablewire/core';
-import { buildScene, primitivePath, wireNumber } from './build.ts';
+import { buildElementNode, buildScene, primitivePath, wireNumber } from './build.ts';
 import type { SceneNode } from './scene.ts';
 import { rowLabel, sheetLayout } from './sheet.ts';
 import { fillPlaceholders, readableText } from './text.ts';
@@ -203,5 +203,27 @@ describe('contacts', () => {
     const item = buildScene(withContact, sheet).items.find((i) => i.key === 'element:c1')!;
     // K1 is KM1 at (50, 50): sheet 1, column 1 of the A3 frame.
     expect(texts(item.node).map((t) => t.text)).toEqual(['KM1', '/1.1']);
+  });
+});
+
+describe('rotated symbol texts', () => {
+  it('turn with the element and stay readable', () => {
+    const symbol = {
+      id: 's',
+      name: 's',
+      category: 't',
+      kind: 'simple',
+      graphics: [{ type: 'text', x: 2, y: 0, text: 'K', size: 2.5, rotation: 90 }],
+      terminals: [],
+      bridges: [],
+      defaultInfo: {},
+      version: 1,
+    } as unknown as SymbolDef;
+    const at = (rotation: 0 | 90) =>
+      texts(buildElementNode({ x: 0, y: 0, rotation, mirrored: false, info: {} }, symbol))[0]!;
+    expect(at(0)).toMatchObject({ angle: 90, anchor: 'start' });
+    // 90° of its own plus 90° of the element: horizontal again, anchored on the other side.
+    expect(at(90).angle).toBeUndefined();
+    expect(at(90).anchor).toBe('end');
   });
 });

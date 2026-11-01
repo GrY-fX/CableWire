@@ -60,6 +60,7 @@ const primitive = v.variant('type', [
     text: v.string(),
     size: num,
     anchor: v.exactOptional(v.picklist(['start', 'middle', 'end'])),
+    rotation: v.exactOptional(v.picklist([0, 90, 180, 270])),
   }),
 ]);
 

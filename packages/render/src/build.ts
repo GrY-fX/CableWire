@@ -4,6 +4,7 @@ import {
   referenceTarget,
   reportName,
   slaveLabel,
+  textRotation,
   terminalLabel,
   transformPoint,
   drawingBounds,
@@ -215,7 +216,8 @@ export function buildElementNode(
     if (!value) continue;
     // Texts are placed outside the rotated group so they stay readable.
     const at = transformPoint(p, rotation, mirrored);
-    const { angle, anchor } = readableText(rotation, mirrored, p.anchor ?? 'start');
+    const turn = textRotation(p.rotation, rotation, mirrored);
+    const { angle, anchor } = readableText(turn, mirrored, p.anchor ?? 'start');
     texts.push({
       kind: 'text',
       x: round(x + at.x),

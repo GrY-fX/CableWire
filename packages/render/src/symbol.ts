@@ -1,3 +1,4 @@
+import { readableText } from '@cablewire/core';
 import type { Bounds, Point, Primitive, SymbolDef } from '@cablewire/core';
 import { primitivePath } from './build.ts';
 import type { Scene, SceneItem, SceneNode } from './scene.ts';
@@ -23,13 +24,15 @@ const DIRECTION: Record<string, Point> = {
 /** A shape as drawn in the editors; texts show their raw content, placeholders included. */
 export function shapeNode(p: Primitive, classes?: string[]): SceneNode {
   if (p.type === 'text') {
+    const { angle, anchor } = readableText(p.rotation ?? 0, false, p.anchor ?? 'start');
     return {
       kind: 'text',
       x: p.x,
       y: p.y,
       text: p.text,
       size: p.size,
-      anchor: p.anchor ?? 'start',
+      anchor,
+      ...(angle ? { angle } : {}),
       classes: classes ?? ['text'],
     };
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { angleOnArc, primitiveBounds, symbolBounds } from './geometry.ts';
+import { angleOnArc, primitiveBounds, symbolBounds, textRotation } from './geometry.ts';
 import { CONTACT } from './test-utils.ts';
 
 describe('bounds', () => {
@@ -40,5 +40,34 @@ describe('bounds', () => {
 
   it('includes terminals in symbol bounds', () => {
     expect(symbolBounds(CONTACT)).toEqual({ minX: 0, minY: -5, maxX: 0, maxY: 5 });
+  });
+});
+
+describe('rotated texts', () => {
+  it('turn their box when vertical, anchored at their point', () => {
+    const text = {
+      type: 'text' as const,
+      x: 10,
+      y: 20,
+      text: 'ABCD',
+      size: 2.5,
+      rotation: 90 as const,
+    };
+    // Four characters: 4 × 2.5 × 0.6 = 6 mm long, running down from (10, 20).
+    expect(primitiveBounds(text)).toEqual({ minX: 8.75, minY: 20, maxX: 11.25, maxY: 26 });
+    // At 270° it stays readable (turned 90°) and runs up to the anchor point instead.
+    expect(primitiveBounds({ ...text, rotation: 270 })).toEqual({
+      minX: 8.75,
+      minY: 14,
+      maxX: 11.25,
+      maxY: 20,
+    });
+  });
+
+  it('add up with the element rotation, reversed when mirrored', () => {
+    expect(textRotation(90, 0, false)).toBe(90);
+    expect(textRotation(90, 90, false)).toBe(180);
+    expect(textRotation(90, 0, true)).toBe(270);
+    expect(textRotation(undefined, 270, false)).toBe(270);
   });
 });

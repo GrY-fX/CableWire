@@ -40,6 +40,8 @@ export type Primitive =
       text: string;
       size: number;
       anchor?: 'start' | 'middle' | 'end';
+      /** Clockwise turn; drawn kept readable (see readableText). */
+      rotation?: Rotation;
     };
 
 export interface SymbolTerminal {
