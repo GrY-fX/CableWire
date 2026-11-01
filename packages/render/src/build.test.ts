@@ -95,7 +95,7 @@ describe('buildScene', () => {
       d: 'M50 55L50 75L80 75L80 75',
     });
     expect(texts(wire)).toEqual([
-      expect.objectContaining({ text: '12', x: 65, y: 73.5, anchor: 'middle' }),
+      expect.objectContaining({ text: '12', x: 65, y: 73.288, anchor: 'middle' }),
     ]);
   });
 
@@ -108,7 +108,7 @@ describe('buildScene', () => {
       ],
       '7',
     );
-    expect(node).toMatchObject({ x: -1.5, y: 20, angle: 90 });
+    expect(node).toMatchObject({ x: -2.537, y: 20, angle: 90 });
   });
 
   it('turns arcs into SVG arcs', () => {

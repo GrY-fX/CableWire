@@ -1,5 +1,5 @@
 import type { Scene, SceneNode } from './scene.ts';
-import { CLASS_PREFIX, PAPER_CSS } from './style.ts';
+import { CLASS_PREFIX, PAPER_CSS, TEXT_BASELINE_SHIFT } from './style.ts';
 
 export interface SvgOptions {
   /** Include on-screen-only nodes (terminal marks). Default false. */
@@ -31,8 +31,10 @@ export function nodeToSvg(node: SceneNode, options: SvgOptions = {}): string {
       return `<circle cx="${node.cx}" cy="${node.cy}" r="${node.r}"${classAttr(node.classes, node.filled ? `${CLASS_PREFIX}filled` : undefined)}/>`;
     case 'text': {
       const rotate = node.angle ? ` transform="rotate(${node.angle} ${node.x} ${node.y})"` : '';
+      // Baseline below the middle, inside the rotation: same place on screen and in PDF.
+      const baseline = Math.round((node.y + node.size * TEXT_BASELINE_SHIFT) * 1000) / 1000;
       return (
-        `<text x="${node.x}" y="${node.y}" font-size="${node.size}" text-anchor="${node.anchor}"` +
+        `<text x="${node.x}" y="${baseline}" font-size="${node.size}" text-anchor="${node.anchor}"` +
         `${rotate}${classAttr(node.classes)}>${escape(node.text)}</text>`
       );
     }

@@ -3,6 +3,14 @@ import { GNYE_STRIPE, WIRE_COLORS, WIRE_WIDTHS } from '@cablewire/core';
 export const CLASS_PREFIX = 'cw-';
 
 export const FONT_FAMILY = 'osifont';
+/**
+ * Texts are placed by their vertical middle: the baseline goes this many font sizes
+ * below y (half of osifont's ascent 0.75 minus descent 0.34, the browser's `central`).
+ * Written into the SVG instead of `dominant-baseline`, which svg2pdf ignores.
+ */
+export const TEXT_BASELINE_SHIFT = 0.205;
+/** Height of osifont's capitals and digits, in font sizes. */
+export const CAP_HEIGHT = 0.74;
 
 /** Class of a wire colour code (`wc-BU`) and of a line width (`ww-35` for 0.35 mm). */
 export const wireColorClass = (code: string) => `wc-${code}`;
@@ -23,7 +31,7 @@ export const PAPER_CSS = `
 .cw-stroke { fill: none; stroke: #000; stroke-width: 0.25; stroke-linecap: round; stroke-linejoin: round; }
 .cw-filled { fill: #000; }
 .cw-frame { stroke-width: 0.5; }
-.cw-text { fill: #000; font-family: ${FONT_FAMILY}, sans-serif; dominant-baseline: central; }
+.cw-text { fill: #000; font-family: ${FONT_FAMILY}, sans-serif; }
 .cw-credit { fill: #6b6b6b; }
 .cw-dash-dashed { stroke-dasharray: 1.5 1; stroke-linecap: butt; }
 .cw-dash-dashdot { stroke-dasharray: 3 0.8 0.1 0.8; }
@@ -43,10 +51,10 @@ export const SCREEN_CSS = `
 .cw-grid-major { fill: #8c96a3; }
 .cw-origin { fill: none; stroke: #2a9d8f; stroke-width: 1; vector-effect: non-scaling-stroke; }
 .cw-terminal { fill: none; stroke: #d33; stroke-width: 0.2; }
-.cw-terminal-name { fill: #d33; font-family: sans-serif; dominant-baseline: central; }
+.cw-terminal-name { fill: #d33; font-family: sans-serif; }
 .cw-item.cw-selected .cw-terminal { stroke: #1d6fe0; stroke-width: 0.35; }
 .cw-preview { fill: none; stroke: #1d6fe0; stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
-.cw-preview-text { fill: #1d6fe0; font-family: ${FONT_FAMILY}, sans-serif; dominant-baseline: central; }
+.cw-preview-text { fill: #1d6fe0; font-family: ${FONT_FAMILY}, sans-serif; }
 .cw-wire-preview { fill: none; stroke: #1d6fe0; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .cw-hot { fill: rgb(29 111 224 / 0.15); stroke: #1d6fe0; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .cw-ghost { opacity: 0.6; }

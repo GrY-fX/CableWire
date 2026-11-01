@@ -27,13 +27,14 @@ import type {
 } from '@cablewire/core';
 import type { Scene, SceneItem, SceneNode } from './scene.ts';
 import { buildFrame, sheetLayout } from './sheet.ts';
-import { wireColorClass, wireWidthClass } from './style.ts';
+import { CAP_HEIGHT, TEXT_BASELINE_SHIFT, wireColorClass, wireWidthClass } from './style.ts';
 import { fillPlaceholders, readableText } from './text.ts';
 
 export const JUNCTION_RADIUS = 0.5;
 export const TERMINAL_MARK = 0.75;
 export const WIRE_NUMBER_SIZE = 2.5;
-const WIRE_NUMBER_OFFSET = 1.5;
+/** Clear space between a wire and the digits of its number. */
+const WIRE_NUMBER_GAP = 1.2;
 
 const cache = new WeakMap<ProjectDoc, Map<SheetId, Scene>>();
 
@@ -342,10 +343,15 @@ export function wireNumber(points: Point[], number: string): SceneNode {
   const b = points[best + 1]!;
   const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
   const vertical = Math.abs(b.y - a.y) > Math.abs(b.x - a.x);
+  // Above, the baseline faces the wire; on the left (turned clockwise) the tops do.
+  const s = WIRE_NUMBER_SIZE;
+  const offset = vertical
+    ? WIRE_NUMBER_GAP + (CAP_HEIGHT - TEXT_BASELINE_SHIFT) * s
+    : WIRE_NUMBER_GAP + TEXT_BASELINE_SHIFT * s;
   return {
     kind: 'text',
-    x: round(vertical ? mid.x - WIRE_NUMBER_OFFSET : mid.x),
-    y: round(vertical ? mid.y : mid.y - WIRE_NUMBER_OFFSET),
+    x: round(vertical ? mid.x - offset : mid.x),
+    y: round(vertical ? mid.y : mid.y - offset),
     text: number,
     size: WIRE_NUMBER_SIZE,
     anchor: 'middle',
