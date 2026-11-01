@@ -150,6 +150,8 @@ const element = v.object({
 
 const junction = v.object({ id: id<JunctionId>(), sheetId: id<SheetId>(), x: num, y: num });
 
+const numberMode = v.picklist(['each', 'once']);
+
 const wireEnd = v.union([
   v.object({ element: id<ElementId>(), terminal: id<TerminalId>() }),
   v.object({ junction: id<JunctionId>() }),
@@ -167,6 +169,7 @@ const wire = v.object({
     section: v.exactOptional(v.string()),
     color: v.exactOptional(v.string()),
     width: v.exactOptional(v.pipe(num, v.minValue(0.05))),
+    numberMode: v.exactOptional(numberMode),
   }),
 });
 
@@ -191,6 +194,7 @@ export const projectSchema = v.object({
         plcPattern: v.exactOptional(v.string()),
       }),
     ),
+    wireNumberMode: v.exactOptional(numberMode),
     referencePattern: v.exactOptional(v.string()),
     masterRefPattern: v.exactOptional(v.string()),
     showCredit: v.exactOptional(v.boolean()),

@@ -89,6 +89,7 @@
     SheetFormat,
     SheetSize,
     WireId,
+    WireNumberMode,
   } from '@cablewire/core';
   import { parseItemKey } from '@cablewire/editor';
   import type { SchematicEditor } from '@cablewire/editor';
@@ -120,6 +121,11 @@
       sheet: doc.sheets[editor.sheetId]!,
     };
   });
+
+  const NUMBER_MODES: Record<WireNumberMode, string> = {
+    each: 'Su ogni tratto',
+    once: 'Uno per potenziale in ogni foglio',
+  };
 
   /** Common fields first, in this order, then any other field of the element. */
   const FIELDS: [string, string][] = [
@@ -920,7 +926,26 @@
           {/each}
         </select>
       </label>
-      <p class="wide hint">Colore e spessore valgono per tutto il potenziale, come il numero.</p>
+      <label class="wide"
+        >Numero sui fili
+        <select
+          value={view.wire.props.numberMode ?? ''}
+          onchange={(e) =>
+            editor.store.run(setPotentialStyle, {
+              id: view.wire!.id,
+              set: { numberMode: (text(e) || undefined) as WireNumberMode | undefined },
+            })}
+        >
+          <option value=""
+            >Come il progetto ({NUMBER_MODES[view.doc.settings.wireNumberMode ?? 'each']})</option
+          >
+          <option value="each">{NUMBER_MODES.each}</option>
+          <option value="once">{NUMBER_MODES.once}</option>
+        </select>
+      </label>
+      <p class="wide hint">
+        Colore, spessore e posizione del numero valgono per tutto il potenziale, come il numero.
+      </p>
     </div>
   {:else if view.count > 1}
     <h3>{view.count} oggetti selezionati</h3>
@@ -1293,6 +1318,21 @@
           onchange={(e) => setNumbering({ start: Math.max(0, Math.round(num(e))) })}
         /></label
       >
+      <label class="wide"
+        >Numero sui fili
+        <select
+          value={view.doc.settings.wireNumberMode ?? 'each'}
+          onchange={(e) => {
+            const mode = text(e) as WireNumberMode;
+            editor.store.run(updateSettings, {
+              set: { wireNumberMode: mode === 'each' ? undefined : mode },
+            });
+          }}
+        >
+          <option value="each">{NUMBER_MODES.each}</option>
+          <option value="once">{NUMBER_MODES.once}</option>
+        </select>
+      </label>
     </div>
     <p class="hint">
       {'{n}'} contatore · {'{n:2}'} con almeno 2 cifre · {'{foglio}'} numero del foglio · {'{colonna}'}

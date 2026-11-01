@@ -178,7 +178,12 @@ export interface WireProps {
   color?: string;
   /** Line width in mm; 0.25 when missing. */
   width?: number;
+  /** Where the potential shows its number; the project's choice when missing. */
+  numberMode?: WireNumberMode;
 }
+
+/** A potential's number on each of its wires, or once per sheet (on its longest wire). */
+export type WireNumberMode = 'each' | 'once';
 
 export interface Wire {
   id: WireId;
@@ -253,6 +258,8 @@ export interface ProjectSettings {
   gridStep: number;
   /** Wire numbering; missing in older files, see getNumbering(). */
   numbering?: NumberingSettings;
+  /** Where potentials show their number; `each` when missing. */
+  wireNumberMode?: WireNumberMode;
   /**
    * Text next to a sheet reference telling where the wire continues, e.g.
    * `→ {foglio}.{colonna}`; see DEFAULT_REFERENCE_PATTERN.

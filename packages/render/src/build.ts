@@ -9,6 +9,7 @@ import {
   terminalLabel,
   transformPoint,
   wireColor,
+  wiresShowingNumber,
   drawingBounds,
   XREF_TEXT_SIZE,
   xrefLayout,
@@ -53,9 +54,10 @@ function computeScene(doc: ProjectDoc, sheetId: SheetId): Scene {
   const { width, height } = sheetLayout(sheet);
   const items: SceneItem[] = [{ key: 'frame', layer: 'frame', node: buildFrame(doc, sheet) }];
 
+  const numbered = wiresShowingNumber(doc, sheetId);
   for (const wire of Object.values(doc.wires)) {
     if (wire.sheetId !== sheetId) continue;
-    const node = buildWire(doc, wire);
+    const node = buildWire(doc, wire, numbered.has(wire.id));
     if (node) items.push({ key: `wire:${wire.id}`, layer: 'wires', node });
   }
   for (const element of Object.values(doc.elements)) {
@@ -301,7 +303,7 @@ export function buildElementNode(
   };
 }
 
-function buildWire(doc: ProjectDoc, wire: Wire): SceneNode | undefined {
+function buildWire(doc: ProjectDoc, wire: Wire, showNumber: boolean): SceneNode | undefined {
   const start = endPosition(doc, wire.from);
   const end = endPosition(doc, wire.to);
   if (!start || !end) return undefined;
@@ -320,7 +322,7 @@ function buildWire(doc: ProjectDoc, wire: Wire): SceneNode | undefined {
     const stripe = width ? [wireWidthClass(width)] : [];
     children.push({ kind: 'path', d, classes: ['stroke', 'gnye-stripe', ...stripe] });
   }
-  if (wire.props.number) children.push(wireNumber(points, wire.props.number));
+  if (wire.props.number && showNumber) children.push(wireNumber(points, wire.props.number));
   // Wider invisible stroke so thin wires are easy to click.
   children.push({ kind: 'path', d, classes: ['hit'], screenOnly: true });
   return { kind: 'group', children };

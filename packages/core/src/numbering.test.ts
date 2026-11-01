@@ -9,6 +9,8 @@ import {
   setWireProps,
   splitWire,
 } from './commands/wires.ts';
+import { updateSettings } from './commands/project.ts';
+import { numberModeOf, wiresShowingNumber } from './numbering.ts';
 import { CONTACT, T1, T2, TERMINAL, must, setup } from './test-utils.ts';
 
 const id = (s: string) => s as never;
@@ -153,5 +155,50 @@ describe('wire colour and width follow the potential', () => {
     // Undefined removes them everywhere, keeping the other properties.
     must(ctx.store, setPotentialStyle, { id: id('bc'), set: { width: undefined } });
     expect(wire(ctx, 'ax').props).toEqual({ number: '5', section: '1.5', color: 'bu' });
+  });
+});
+
+describe('where a potential shows its number', () => {
+  /** Potential "5" on a-x and x-b (the longer, with a detour), "7" on b-c. */
+  function wired() {
+    const ctx = circuit();
+    must(ctx.store, addWire, {
+      id: id('xb'),
+      from: { element: id('x'), terminal: T2 },
+      to: { element: id('b'), terminal: T1 },
+      bends: [
+        { x: 30, y: 0 },
+        { x: 30, y: 60 },
+      ],
+    });
+    must(ctx.store, addWire, {
+      id: id('bc'),
+      from: { element: id('b'), terminal: T2 },
+      to: { element: id('c'), terminal: T1 },
+      props: { number: '7' },
+    });
+    return ctx;
+  }
+  const shown = (ctx: ReturnType<typeof wired>) =>
+    [...wiresShowingNumber(ctx.store.doc, ctx.sheet)].sort();
+
+  it('on every wire by default, once per sheet on the longest wire when chosen', () => {
+    const ctx = wired();
+    expect(shown(ctx)).toEqual(['ax', 'bc', 'xb']);
+    must(ctx.store, updateSettings, { set: { wireNumberMode: 'once' } });
+    expect(shown(ctx)).toEqual(['bc', 'xb']);
+  });
+
+  it('can be chosen per potential, and passes to wires joining it', () => {
+    const ctx = wired();
+    must(ctx.store, setPotentialStyle, { id: id('ax'), set: { numberMode: 'once' } });
+    expect(wire(ctx, 'xb').props.numberMode).toBe('once');
+    expect(shown(ctx)).toEqual(['bc', 'xb']);
+    // The project shows numbers once, this potential on every wire.
+    must(ctx.store, updateSettings, { set: { wireNumberMode: 'once' } });
+    must(ctx.store, setPotentialStyle, { id: id('ax'), set: { numberMode: 'each' } });
+    expect(shown(ctx)).toEqual(['ax', 'bc', 'xb']);
+    must(ctx.store, setPotentialStyle, { id: id('ax'), set: { numberMode: undefined } });
+    expect(numberModeOf(ctx.store.doc, wire(ctx, 'ax'))).toBe('once');
   });
 });
