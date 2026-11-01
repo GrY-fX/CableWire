@@ -295,3 +295,28 @@ describe('symbol clipboard', () => {
     ]);
   });
 });
+
+describe('title block checks', () => {
+  const block = (): SymbolDef => ({
+    ...newSymbol(),
+    name: 'Cartiglio',
+    category: 'Cartigli',
+    kind: 'titleblock',
+    titleBlock: { anchor: 'corner', width: 100, height: 20 },
+    graphics: [{ type: 'rect', x: 0, y: 0, width: 100, height: 20 }],
+  });
+
+  it('need no terminals and warn when something leaves the area', () => {
+    expect(checkSymbol(block())).toEqual({ errors: [], warnings: [] });
+    const outside = {
+      ...block(),
+      graphics: [{ type: 'line' as const, x1: 0, y1: 0, x2: 120, y2: 0 }],
+    };
+    expect(checkSymbol(outside).warnings).toEqual(['Qualcosa esce dal riquadro del cartiglio.']);
+    const withTerminal = {
+      ...block(),
+      terminals: [{ id: T1, name: '1', x: 0, y: 0, dir: 'n' as const }],
+    };
+    expect(checkSymbol(withTerminal).errors).toContain('Un cartiglio non ha terminali: toglili.');
+  });
+});

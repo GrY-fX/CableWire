@@ -89,7 +89,10 @@
   export function fit() {
     if (size.width === 0) return;
     const around = { minX: -10, minY: -10, maxX: 10, maxY: 10 };
-    const bounds = unionBounds(symbolBounds(editor.symbol), around)!;
+    // A title block is shown whole, with its area.
+    const block = editor.symbol.kind === 'titleblock' ? editor.symbol.titleBlock : undefined;
+    const area = block ? { minX: 0, minY: 0, maxX: block.width, maxY: block.height } : around;
+    const bounds = unionBounds(unionBounds(symbolBounds(editor.symbol), around), area)!;
     const view = fitBounds(bounds, size, 60);
     vp = { ...view, scale: Math.min(view.scale, 25) };
   }

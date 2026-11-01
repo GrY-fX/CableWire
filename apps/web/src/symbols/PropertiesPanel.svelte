@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { DEFAULT_TITLE_BLOCK_LAYOUT, TITLE_FIELDS, TITLE_PLACEHOLDERS } from '@cablewire/core';
   import type {
     ContactType,
     MasterType,
@@ -59,6 +60,13 @@
     text: 'Testo',
   };
   const PLACEHOLDERS = ['{label}', '{function}', '{location}', '{plc_address}'];
+  /** Title blocks: sheet and project values, then the project's fields. */
+  const TITLE_BLOCK_PLACEHOLDERS = [...TITLE_PLACEHOLDERS, ...TITLE_FIELDS];
+  /** Adds a placeholder to a title block text (the default text is replaced). */
+  function appendPlaceholder(current: string, key: string): string {
+    const value = `{${key}}`;
+    return !current.trim() || current === 'Testo' ? value : `${current} ${value}`;
+  }
 
   const set = (next: SymbolDef) => editor.update(next);
   const setShape = (patch: Partial<Primitive>) => {
@@ -84,6 +92,8 @@
     else delete next.contact;
     if (kind === 'master') next.master = s.master ?? 'coil';
     else delete next.master;
+    if (kind === 'titleblock') next.titleBlock = s.titleBlock ?? DEFAULT_TITLE_BLOCK_LAYOUT;
+    else delete next.titleBlock;
     return next;
   }
   const num = (e: Event) => Number((e.currentTarget as HTMLInputElement).value);
@@ -234,13 +244,23 @@
           /></label
         >
         <div class="wide chips">
-          {#each PLACEHOLDERS as p (p)}
-            <button
-              class="chip"
-              onclick={() => setShape({ text: p })}
-              title="Sostituito con il valore dell'elemento nello schema">{p}</button
-            >
-          {/each}
+          {#if symbol.kind === 'titleblock'}
+            {#each TITLE_BLOCK_PLACEHOLDERS as p (p.key)}
+              <button
+                class="chip"
+                onclick={() => setShape({ text: appendPlaceholder(shape.text, p.key) })}
+                title={p.label}>{`{${p.key}}`}</button
+              >
+            {/each}
+          {:else}
+            {#each PLACEHOLDERS as p (p)}
+              <button
+                class="chip"
+                onclick={() => setShape({ text: p })}
+                title="Sostituito con il valore dell'elemento nello schema">{p}</button
+              >
+            {/each}
+          {/if}
         </div>
         <label
           >X <input
@@ -401,6 +421,52 @@
         <span class="wide hint"
           >Nelle proprietà del progetto si sceglie come mostrare i contatti per bobine e dispositivi
           di comando (tabellina o contatti disegnati).</span
+        >
+      {/if}
+      {#if symbol.kind === 'titleblock'}
+        {@const layout = symbol.titleBlock ?? DEFAULT_TITLE_BLOCK_LAYOUT}
+        <label class="wide"
+          >Posizione sul foglio
+          <select
+            value={layout.anchor}
+            onchange={(e) =>
+              set({
+                ...symbol,
+                titleBlock: { ...layout, anchor: text(e) as 'corner' | 'band' },
+              })}
+          >
+            <option value="corner">Angolo in basso a destra</option>
+            <option value="band">Fascia in basso, su tutta la larghezza</option>
+          </select>
+        </label>
+        <label
+          >{layout.anchor === 'band' ? 'Larghezza di riferimento (mm)' : 'Larghezza (mm)'}
+          <input
+            type="number"
+            min="10"
+            step="5"
+            value={layout.width}
+            onchange={(e) =>
+              set({ ...symbol, titleBlock: { ...layout, width: Math.max(10, num(e)) } })}
+          /></label
+        >
+        <label
+          >Altezza (mm)
+          <input
+            type="number"
+            min="5"
+            step="1"
+            value={layout.height}
+            onchange={(e) =>
+              set({ ...symbol, titleBlock: { ...layout, height: Math.max(5, num(e)) } })}
+          /></label
+        >
+        <span class="wide hint"
+          >Il riquadro tratteggiato è il cartiglio: l'angolo in alto a sinistra è il punto 0,0.
+          {layout.anchor === 'band'
+            ? 'Una fascia si allarga alla larghezza del foglio: linee e posizioni si adattano, i caratteri restano della loro misura.'
+            : "Va nell'angolo in basso a destra della cornice."} Nei testi usa i segnaposto (es. {'{titolo}'},
+          {'{cliente}'}, {'{foglio}'}).</span
         >
       {/if}
       {#if symbol.kind === 'slave'}

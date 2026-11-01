@@ -59,6 +59,21 @@ export function buildSymbolScene(symbol: SymbolDef, options: SymbolSceneOptions)
     },
   });
 
+  // A title block's area, from its top-left corner (the origin).
+  if (symbol.kind === 'titleblock' && symbol.titleBlock) {
+    const { width, height } = symbol.titleBlock;
+    items.push({
+      key: 'title-block-area',
+      layer: 'frame',
+      node: {
+        kind: 'path',
+        d: `M0 0H${width}V${height}H0Z`,
+        classes: ['preview'],
+        screenOnly: true,
+      },
+    });
+  }
+
   symbol.graphics.forEach((p, i) => {
     items.push({ key: `shape:${i}`, layer: 'elements', node: shapeNode(p) });
   });

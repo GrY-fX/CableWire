@@ -1,6 +1,6 @@
 import { defineCommand, fail, ok } from './command.ts';
 import type { SymbolId } from './ids.ts';
-import type { ProjectDoc, Sheet, SymbolDef } from './model.ts';
+import type { ProjectDoc, Sheet, SymbolDef, TitleBlockLayout } from './model.ts';
 import { meta, put } from './ops.ts';
 import { sheetLayout } from './sheet.ts';
 
@@ -30,6 +30,13 @@ export const TITLE_PLACEHOLDERS: readonly { key: string; label: string }[] = [
   { key: 'foglio', label: 'Numero del foglio' },
   { key: 'fogli', label: 'Numero di fogli' },
 ];
+
+/** Size and place of a new title block (as the simple one). */
+export const DEFAULT_TITLE_BLOCK_LAYOUT: TitleBlockLayout = {
+  anchor: 'corner',
+  width: 120,
+  height: 20,
+};
 
 const text = (x: number, y: number, value: string, size: number) =>
   ({ type: 'text', x, y, text: value, size }) as const;

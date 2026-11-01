@@ -1,4 +1,4 @@
-import { symbolBounds } from '@cablewire/core';
+import { drawingBounds, symbolBounds } from '@cablewire/core';
 import type { SymbolDef } from '@cablewire/core';
 import { TERMINAL_GRID } from './document.ts';
 
@@ -29,15 +29,35 @@ export function checkSymbol(symbol: SymbolDef): SymbolChecks {
     errors.push('Un collegamento interno usa un terminale inesistente.');
   }
 
-  if (symbol.terminals.length === 0) warnings.push('Il simbolo non ha terminali.');
+  if (symbol.kind === 'titleblock') {
+    if (symbol.terminals.length > 0) errors.push('Un cartiglio non ha terminali: toglili.');
+    const block = symbol.titleBlock;
+    // Shapes only: texts are measured with their placeholders, not the values shown.
+    const b = drawingBounds(symbol);
+    if (!block) errors.push('Mancano posizione e misura del cartiglio.');
+    else if (
+      b &&
+      (b.minX < -0.01 ||
+        b.minY < -0.01 ||
+        b.maxX > block.width + 0.01 ||
+        b.maxY > block.height + 0.01)
+    ) {
+      warnings.push('Qualcosa esce dal riquadro del cartiglio.');
+    }
+  } else if (symbol.terminals.length === 0) warnings.push('Il simbolo non ha terminali.');
   const names = symbol.terminals.map((t) => t.name);
   if (new Set(names).size !== names.length) warnings.push('Alcuni terminali hanno lo stesso nome.');
-  if (!symbol.graphics.some((p) => p.type === 'text' && p.text.includes('{label}'))) {
-    warnings.push('Nessun testo {label}: la sigla non comparirà nello schema.');
-  }
-  const b = symbolBounds(symbol);
-  if (b && Math.max(Math.abs(b.minX), Math.abs(b.maxX), Math.abs(b.minY), Math.abs(b.maxY)) > 50) {
-    warnings.push("Il disegno è lontano dall'origine (punto di inserimento).");
+  // A title block has no label and is drawn from its corner, often far from it.
+  if (symbol.kind !== 'titleblock') {
+    if (!symbol.graphics.some((p) => p.type === 'text' && p.text.includes('{label}'))) {
+      warnings.push('Nessun testo {label}: la sigla non comparirà nello schema.');
+    }
+    const b = symbolBounds(symbol);
+    const far =
+      b && Math.max(Math.abs(b.minX), Math.abs(b.maxX), Math.abs(b.minY), Math.abs(b.maxY));
+    if (far !== undefined && far > 50) {
+      warnings.push("Il disegno è lontano dall'origine (punto di inserimento).");
+    }
   }
   if (!symbol.category.trim()) warnings.push('Nessuna categoria: sarà difficile ritrovarlo.');
   return { errors, warnings };

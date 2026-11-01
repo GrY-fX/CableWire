@@ -368,8 +368,10 @@
 
   <aside class="side">
     <PropertiesPanel {editor} {version} />
-    <h3 class="preview-title">Anteprima nelle rotazioni</h3>
-    <RotationPreview symbol={view.symbol} />
+    {#if view.symbol.kind !== 'titleblock'}
+      <h3 class="preview-title">Anteprima nelle rotazioni</h3>
+      <RotationPreview symbol={view.symbol} />
+    {/if}
   </aside>
 </div>
 

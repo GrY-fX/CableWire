@@ -1,6 +1,6 @@
 # Cartigli — design
 
-> Stato: **approvato; C1 realizzato** (`packages/core/src/titleblock.ts`,
+> Stato: **approvato; C1 e C2 realizzati** (`packages/core/src/titleblock.ts`,
 > disegno in `render/src/sheet.ts`, cartigli base generati in
 > `apps/web/src/library/base`). Due passi: **C1** modelli di cartiglio,
 > campi del progetto, quattro cartigli predefiniti e scelta nel progetto;
