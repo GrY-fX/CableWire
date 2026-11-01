@@ -203,6 +203,12 @@ export interface TerminalStrip {
   sheetId?: SheetId;
 }
 
+export interface BindingMargin {
+  side: 'left' | 'right' | 'top' | 'bottom';
+  /** Width of the strip in mm. */
+  width: number;
+}
+
 export interface ProjectSettings {
   /** Snap grid step in millimetres. */
   gridStep: number;
@@ -218,6 +224,13 @@ export interface ProjectSettings {
    * see DEFAULT_MASTER_REF_PATTERN.
    */
   masterRefPattern?: string;
+  /** Small "made with CableWire" line under the frame; shown unless set to false. */
+  showCredit?: boolean;
+  /**
+   * PDF export: white strip on one side of every page (e.g. for ring binders); the
+   * sheet is scaled down to keep the paper size.
+   */
+  bindingMargin?: BindingMargin;
   /** Title block of the sheets: id of a `titleblock` symbol of the project. */
   titleBlock?: SymbolId;
   /** Contacts of masters (table or drawn); shown unless set to false. */

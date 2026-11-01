@@ -69,6 +69,7 @@
     updateSheet,
   } from '@cablewire/core';
   import type {
+    BindingMargin,
     SymbolDef,
     Command,
     ContactType,
@@ -900,6 +901,62 @@
         /></label
       >
     </div>
+    <h3>Stampa e PDF</h3>
+    <label class="check"
+      ><input
+        type="checkbox"
+        checked={view.doc.settings.showCredit !== false}
+        onchange={(e) =>
+          editor.store.run(updateSettings, { set: { showCredit: e.currentTarget.checked } })}
+      /> Dicitura «Schema realizzato con il software CableWire» sotto la cornice</label
+    >
+    <div class="grid">
+      <label
+        >Margine di rilegatura (PDF)
+        <select
+          value={view.doc.settings.bindingMargin?.side ?? ''}
+          onchange={(e) => {
+            const side = text(e) as BindingMargin['side'] | '';
+            const width = view.doc.settings.bindingMargin?.width ?? 20;
+            editor.store.run(updateSettings, {
+              set: { bindingMargin: side ? { side, width } : undefined },
+            });
+          }}
+        >
+          <option value="">Nessuno</option>
+          <option value="left">A sinistra</option>
+          <option value="right">A destra</option>
+          <option value="top">In alto</option>
+          <option value="bottom">In basso</option>
+        </select>
+      </label>
+      {#if view.doc.settings.bindingMargin}
+        <label
+          >Larghezza (mm)
+          <input
+            type="number"
+            min="0"
+            max="60"
+            step="1"
+            value={view.doc.settings.bindingMargin.width}
+            onchange={(e) =>
+              editor.store.run(updateSettings, {
+                set: {
+                  bindingMargin: {
+                    ...view.doc.settings.bindingMargin!,
+                    width: Math.min(60, Math.max(0, num(e))),
+                  },
+                },
+              })}
+          /></label
+        >
+      {/if}
+    </div>
+    <p class="hint">
+      Il margine lascia una striscia bianca sul lato scelto (es. per i fori di un raccoglitore): la
+      pagina resta del suo formato e lo schema si riduce un poco. Vale per l'export PDF.
+    </p>
+
     <h3>Cartiglio</h3>
     <label
       >Modello

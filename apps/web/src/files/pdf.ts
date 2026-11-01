@@ -5,7 +5,7 @@ import {
   sheetDimensions,
   xrefLayout,
 } from '@cablewire/core';
-import type { Bounds, Element, ProjectDoc, SheetId } from '@cablewire/core';
+import type { BindingMargin, Bounds, Element, ProjectDoc, SheetId } from '@cablewire/core';
 import { FONT_FAMILY } from '@cablewire/render';
 import fontUrl from '@cablewire/render/assets/osifont.woff?url';
 import { sheetSvg } from './export.ts';
@@ -30,6 +30,32 @@ export interface PdfPage {
   width: number;
   height: number;
   orientation: 'landscape' | 'portrait';
+  /** Where the sheet is drawn on the page: scaled down to leave a binding margin. */
+  drawing: PdfDrawing;
+}
+
+export interface PdfDrawing {
+  x: number;
+  y: number;
+  scale: number;
+}
+
+/**
+ * Place of a sheet on its page: the whole page, or scaled down (keeping its
+ * proportions) to leave a white strip on one side, centred along the other axis.
+ */
+export function pageDrawing(
+  width: number,
+  height: number,
+  binding: BindingMargin | undefined,
+): PdfDrawing {
+  const margin = binding?.width ?? 0;
+  if (!binding || margin <= 0) return { x: 0, y: 0, scale: 1 };
+  const across = binding.side === 'left' || binding.side === 'right';
+  const scale = across ? (width - margin) / width : (height - margin) / height;
+  const x = across ? (binding.side === 'left' ? margin : 0) : (width * (1 - scale)) / 2;
+  const y = across ? (height * (1 - scale)) / 2 : binding.side === 'top' ? margin : 0;
+  return { x, y, scale };
 }
 
 export interface PdfLink {
@@ -64,21 +90,25 @@ export function pdfPlan(doc: ProjectDoc, sheetIds: readonly SheetId[]): PdfPlan 
       width,
       height,
       orientation: sheet.orientation,
+      drawing: pageDrawing(width, height, doc.settings.bindingMargin),
     };
   });
   const links: PdfLink[] = [];
   const linkTo = (page: number, b: Bounds, margin: number, partner: Element) => {
     const target = pageOf.get(partner.sheetId);
     if (!target) return;
+    // Sheet millimetres to page millimetres (the sheet may be scaled for binding).
+    const from = pages[page - 1]!.drawing;
+    const to = pages[target - 1]!.drawing;
     links.push({
       page,
       rect: {
-        x: b.minX - margin,
-        y: b.minY - margin,
-        width: b.maxX - b.minX + 2 * margin,
-        height: b.maxY - b.minY + 2 * margin,
+        x: from.x + (b.minX - margin) * from.scale,
+        y: from.y + (b.minY - margin) * from.scale,
+        width: (b.maxX - b.minX + 2 * margin) * from.scale,
+        height: (b.maxY - b.minY + 2 * margin) * from.scale,
       },
-      target: { page: target, x: partner.x, y: partner.y },
+      target: { page: target, x: to.x + partner.x * to.scale, y: to.y + partner.y * to.scale },
     });
   };
   for (const element of Object.values(doc.elements)) {
@@ -230,7 +260,8 @@ export async function buildPdf(doc: ProjectDoc, sheetIds: readonly SheetId[]): P
       );
       const svg = document.importNode(parsed.documentElement, true);
       host.replaceChildren(svg);
-      await svg2pdf(svg, pdf, { x: 0, y: 0, width: page.width, height: page.height });
+      const { x, y, scale } = page.drawing;
+      await svg2pdf(svg, pdf, { x, y, width: page.width * scale, height: page.height * scale });
       pdf.outline.add(null, page.title, { pageNumber: i + 1 });
     }
   } finally {

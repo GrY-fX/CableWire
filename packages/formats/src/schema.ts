@@ -165,6 +165,13 @@ export const projectSchema = v.object({
     ),
     referencePattern: v.exactOptional(v.string()),
     masterRefPattern: v.exactOptional(v.string()),
+    showCredit: v.exactOptional(v.boolean()),
+    bindingMargin: v.exactOptional(
+      v.object({
+        side: v.picklist(['left', 'right', 'top', 'bottom']),
+        width: v.pipe(num, v.minValue(0)),
+      }),
+    ),
     titleBlock: v.exactOptional(id<SymbolId>()),
     showXref: v.exactOptional(v.boolean()),
     terminalStrips: v.exactOptional(

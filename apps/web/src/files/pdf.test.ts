@@ -9,11 +9,12 @@ import {
   importSymbol,
   linkReports,
   linkSlave,
+  updateSettings,
   placeElement,
   updateSheet,
 } from '@cablewire/core';
 import type { ElementId, SheetId, SymbolDef, SymbolId, TerminalId } from '@cablewire/core';
-import { addLinks, pdfPlan, woffToSfnt } from './pdf.ts';
+import { addLinks, pageDrawing, pdfPlan, woffToSfnt } from './pdf.ts';
 
 const report = (dir: 'in' | 'out'): SymbolDef => ({
   id: `report-${dir}` as SymbolId,
@@ -55,8 +56,22 @@ describe('PDF plan', () => {
     const { doc, s1, s2 } = project();
     const { pages } = pdfPlan(doc, [s1, s2]);
     expect(pages).toEqual([
-      { sheetId: s1, title: 'Foglio 1', width: 297, height: 210, orientation: 'landscape' },
-      { sheetId: s2, title: '2 – Motori', width: 297, height: 420, orientation: 'portrait' },
+      {
+        sheetId: s1,
+        title: 'Foglio 1',
+        width: 297,
+        height: 210,
+        orientation: 'landscape',
+        drawing: { x: 0, y: 0, scale: 1 },
+      },
+      {
+        sheetId: s2,
+        title: '2 – Motori',
+        width: 297,
+        height: 420,
+        orientation: 'portrait',
+        drawing: { x: 0, y: 0, scale: 1 },
+      },
     ]);
   });
 
@@ -102,6 +117,28 @@ describe('PDF plan', () => {
     // Row of the coil's table (page 1, under the coil) → contact (page 2).
     const row = links.find((l) => l.page === 1 && l.target.page === 2 && l.target.x === 100);
     expect(row?.rect.y).toBeGreaterThan(52);
+  });
+
+  it('leaves a binding margin by scaling the sheets down, links following them', () => {
+    expect(pageDrawing(297, 210, { side: 'left', width: 27 })).toEqual({
+      x: 27,
+      y: 105 * (1 - 270 / 297),
+      scale: 270 / 297,
+    });
+    expect(pageDrawing(297, 210, { side: 'top', width: 21 })).toMatchObject({ y: 21, scale: 0.9 });
+    expect(pageDrawing(297, 210, { side: 'bottom', width: 21 })).toMatchObject({
+      y: 0,
+      scale: 0.9,
+    });
+    expect(pageDrawing(297, 210, { side: 'left', width: 0 })).toEqual({ x: 0, y: 0, scale: 1 });
+
+    const { doc, s1, s2 } = project();
+    const store = createStore(doc);
+    store.run(updateSettings, { set: { bindingMargin: { side: 'left', width: 29.7 } } });
+    const { pages, links } = pdfPlan(store.doc, [s1, s2]);
+    // A4 landscape page, sheet scaled to 90% from x = 29.7: the link to o1 moves with it.
+    expect(pages[0]!.drawing).toMatchObject({ x: 29.7, scale: 0.9 });
+    expect(links[1]!.target).toEqual({ page: 1, x: 29.7 + 250 * 0.9, y: 10.5 + 100 * 0.9 });
   });
 
   it('leaves out links to sheets not exported', () => {

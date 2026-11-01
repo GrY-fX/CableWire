@@ -24,6 +24,7 @@ export const PAPER_CSS = `
 .cw-filled { fill: #000; }
 .cw-frame { stroke-width: 0.5; }
 .cw-text { fill: #000; font-family: ${FONT_FAMILY}, sans-serif; dominant-baseline: central; }
+.cw-credit { fill: #6b6b6b; }
 ${WIRE_CSS}
 `;
 

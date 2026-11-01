@@ -20,6 +20,9 @@ export type { Rect, SheetLayout } from '@cablewire/core';
 const rect = (r: Rect) => `M${r.x} ${r.y}h${r.width}v${r.height}h${-r.width}Z`;
 const line = (x1: number, y1: number, x2: number, y2: number) => `M${x1} ${y1}L${x2} ${y2}`;
 
+/** Line printed under the frame of every sheet. */
+export const CREDIT_TEXT = 'Schema realizzato con il software CableWire';
+
 /** Frame, reference bands and the project's title block. */
 export function buildFrame(doc: ProjectDoc, sheet: Sheet): SceneNode {
   // A title block spanning the width keeps the bottom of the frame: rows end above it.
@@ -44,6 +47,20 @@ export function buildFrame(doc: ProjectDoc, sheet: Sheet): SceneNode {
     const y = drawing.y + r * rowHeight;
     if (r > 0) parts.push(line(frame.x, y, drawing.x, y));
     text(frame.x + BAND / 2, y + rowHeight / 2, rowLabel(r), 2.5, 'middle');
+  }
+
+  // Credit line, small, in the paper margin under the frame (unless turned off).
+  if (doc.settings.showCredit !== false) {
+    const margin = frame.y;
+    texts.push({
+      kind: 'text',
+      x: frame.x,
+      y: round(frame.y + frame.height + margin / 2),
+      text: CREDIT_TEXT,
+      size: Math.min(1.8, margin * 0.4),
+      anchor: 'start',
+      classes: ['text', 'credit'],
+    });
   }
 
   // Title block from the project's template, placeholders filled for this sheet.
