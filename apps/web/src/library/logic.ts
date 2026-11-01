@@ -1,5 +1,5 @@
 import { newId } from '@cablewire/core';
-import type { SymbolDef, SymbolId } from '@cablewire/core';
+import type { ProjectDoc, SymbolDef, SymbolId } from '@cablewire/core';
 
 export type Source = 'base' | 'personal';
 
@@ -87,6 +87,36 @@ export function resolveImport(
     default:
       return undefined;
   }
+}
+
+/** A symbol used in a project for which the library has a newer version. */
+export interface OutdatedSymbol {
+  project: SymbolDef;
+  library: SymbolDef;
+  /** Elements of the project using it. */
+  uses: number;
+}
+
+/**
+ * Symbols placed in the project whose library version is newer (higher version,
+ * different content). A project copy newer than the library is left alone.
+ */
+export function outdatedSymbols(
+  doc: ProjectDoc,
+  find: (id: SymbolId) => SymbolDef | undefined,
+): OutdatedSymbol[] {
+  const uses = new Map<string, number>();
+  for (const e of Object.values(doc.elements))
+    uses.set(e.symbolId, (uses.get(e.symbolId) ?? 0) + 1);
+  // The project's title block counts as used.
+  const block = doc.settings.titleBlock;
+  if (block !== undefined) uses.set(block, (uses.get(block) ?? 0) + 1);
+  return Object.values(doc.symbols).flatMap((project) => {
+    const library = find(project.id);
+    const count = uses.get(project.id) ?? 0;
+    if (!library || count === 0 || library.version <= project.version) return [];
+    return sameSymbol(library, project) ? [] : [{ project, library, uses: count }];
+  });
 }
 
 /** File name for an exported symbol, e.g. `contatto-na.cwsym`. */

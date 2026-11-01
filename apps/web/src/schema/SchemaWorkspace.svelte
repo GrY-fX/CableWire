@@ -4,6 +4,8 @@
     countLocked,
     createEmptyProject,
     createStore,
+    importSymbol,
+    setTitleBlock,
     linkedReport,
     masterOf,
     numberingConflicts,
@@ -21,7 +23,7 @@
   import { ProjectFiles } from '../files/projectFiles.svelte.ts';
   import type { Library } from '../library/library.svelte.ts';
   import LibraryPanel from '../library/LibraryPanel.svelte';
-  import { sameSymbol } from '../library/logic.ts';
+  import { outdatedSymbols, sameSymbol } from '../library/logic.ts';
   import type { LibraryItem } from '../library/logic.ts';
   import { ProjectAutosave } from './autosave.ts';
   import ConflictsPanel from './ConflictsPanel.svelte';
@@ -155,12 +157,24 @@
     answerVersion = undefined;
   }
 
+  /** Title blocks of the library, offered in the project's properties. */
+  const titleBlocks = $derived(
+    library.items.filter((i) => i.symbol.kind === 'titleblock').map((i) => i.symbol),
+  );
+
   // Last 3 symbols chosen from the library, for this session only.
   let recentIds = $state.raw<SymbolId[]>([]);
   const recent = $derived(recentIds.flatMap((id) => library.find(id) ?? []));
 
   async function placeFromLibrary(item: LibraryItem) {
     const fromLibrary = item.symbol;
+    // A title block is not placed: it becomes the project's title block.
+    if (fromLibrary.kind === 'titleblock') {
+      if (confirm(`Usare «${fromLibrary.name}» come cartiglio del progetto?`)) {
+        store.run(setTitleBlock, { symbol: fromLibrary });
+      }
+      return;
+    }
     recentIds = [fromLibrary.id, ...recentIds.filter((id) => id !== fromLibrary.id)].slice(0, 3);
     const inProject: SymbolDef | undefined = editor.doc.symbols[fromLibrary.id];
     if (!inProject || sameSymbol(inProject, fromLibrary)) {
@@ -289,6 +303,46 @@
         'Le sigle scritte a mano, che non seguono il modello del simbolo, restano come sono.',
       ],
     };
+  }
+
+  // Symbols updated in the library (saved in the symbol editor, or newer than the
+  // copies of a project just opened): proposed for update, until dismissed.
+  let dismissed = $state.raw<ReadonlySet<string>>(new Set());
+  const updates = $derived.by(() => {
+    void version;
+    return outdatedSymbols(store.doc, (id) => library.find(id)?.symbol).filter(
+      (u) => !dismissed.has(`${u.project.id}@${u.library.version}`),
+    );
+  });
+
+  function dismissUpdates() {
+    dismissed = new Set([
+      ...dismissed,
+      ...updates.map((u) => `${u.project.id}@${u.library.version}`),
+    ]);
+  }
+
+  /** Replaces the project's copies with the library versions, as one undo step. */
+  function applyUpdates() {
+    const failed: string[] = [];
+    store.begin('Aggiorna simboli');
+    for (const u of updates) {
+      const result = store.run(importSymbol, { symbol: u.library });
+      if (!result.ok) failed.push(u.library.name);
+    }
+    store.commit();
+    if (failed.length) {
+      dismissUpdates();
+      notice = {
+        kind: 'error',
+        lines: [
+          `Non aggiornati: ${failed.join(', ')}.`,
+          'La nuova versione toglie un terminale a cui sono collegati dei fili: scollega quei fili e riprova dalla libreria.',
+        ],
+      };
+    } else {
+      notice = { kind: 'info', lines: ['Simboli aggiornati nello schema.'] };
+    }
   }
 
   // Project file on disk (open/save) and its "changed since saved" state.
@@ -531,6 +585,27 @@
     {#if showConflicts && conflicts.length}
       <ConflictsPanel {editor} {conflicts} onclose={() => (showConflicts = false)} />
     {/if}
+    {#if updates.length > 0}
+      <div class="notice update">
+        <ul>
+          <li>
+            {updates.length === 1
+              ? 'Un simbolo usato nello schema è stato aggiornato in libreria:'
+              : `${updates.length} simboli usati nello schema sono stati aggiornati in libreria:`}
+          </li>
+          {#each updates as u (u.project.id)}
+            <li>
+              {u.library.name} — versione {u.project.version} → {u.library.version}, {u.uses}
+              {u.uses === 1 ? 'elemento' : 'elementi'}
+            </li>
+          {/each}
+        </ul>
+        <div class="actions">
+          <button onclick={applyUpdates}>Aggiorna nello schema</button>
+          <button onclick={dismissUpdates}>Non ora</button>
+        </div>
+      </div>
+    {/if}
     {#if notice}
       <div class="notice {notice.kind}">
         <ul>
@@ -560,7 +635,7 @@
   </section>
 
   <aside class="side">
-    <SchemaProperties bind:this={properties} {editor} {version} />
+    <SchemaProperties bind:this={properties} {editor} {version} {titleBlocks} />
   </aside>
 </div>
 
@@ -748,6 +823,14 @@
     font-size: 0.85rem;
     border-bottom: 1px solid var(--border);
     background: #eef5ee;
+  }
+  .notice.update {
+    background: #eef3fd;
+  }
+  .notice .actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
   }
   .notice.error {
     background: #fdecea;

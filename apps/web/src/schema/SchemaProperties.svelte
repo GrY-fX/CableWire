@@ -11,6 +11,10 @@
     mastersWithLabel,
     setSlaveLabel,
     projectXrefStyle,
+    getTitleBlock,
+    setProjectField,
+    setTitleBlock,
+    TITLE_FIELDS,
     setXrefOffset,
     addStrip,
     DEFAULT_STRIP_PATTERN,
@@ -51,6 +55,11 @@
     setElementInfo,
     setPotentialLock,
     setPotentialNumber,
+    setPotentialStyle,
+    DEFAULT_WIRE_WIDTH,
+    WIRE_COLORS,
+    WIRE_WIDTHS,
+    wireColor,
     setWireProps,
     unlinkedReports,
     unlinkReport,
@@ -60,6 +69,7 @@
     updateSheet,
   } from '@cablewire/core';
   import type {
+    SymbolDef,
     Command,
     ContactType,
     Element,
@@ -78,7 +88,11 @@
   import LockIcon from './LockIcon.svelte';
   import { rememberSheetFormat } from './sheetFormat.ts';
 
-  let { editor, version }: { editor: SchematicEditor; version: number } = $props();
+  let {
+    editor,
+    version,
+    titleBlocks = [],
+  }: { editor: SchematicEditor; version: number; titleBlocks?: SymbolDef[] } = $props();
 
   const view = $derived.by(() => {
     void version;
@@ -247,6 +261,29 @@
     };
   });
   // Coils: their contacts, and the free contacts (linked to no coil) to add.
+  // Title block: the project's, and the ones of the library to choose from.
+  const currentTitleBlock = $derived.by(() => {
+    void version;
+    return getTitleBlock(view.doc);
+  });
+  const titleBlockChoices = $derived.by(() => {
+    // The project's copy is listed even when the library does not have it.
+    return titleBlocks.some((s) => s.id === currentTitleBlock.id)
+      ? titleBlocks
+      : [currentTitleBlock, ...titleBlocks];
+  });
+  const extraFields = $derived(
+    Object.entries(view.doc.meta.fields ?? {}).filter(
+      ([key]) => !TITLE_FIELDS.some((f) => f.key === key),
+    ),
+  );
+  function addProjectField() {
+    const name = prompt('Nome del nuovo campo (lettere, numeri e _ , es. quadro):')?.trim();
+    if (!name) return;
+    const result = editor.store.run(setProjectField, { key: name, value: '-' });
+    if (!result.ok) alert(result.error.message);
+  }
+
   // Terminal strips of the project, and the selected terminal's.
   const strips = $derived.by(() => {
     void version;
@@ -756,17 +793,43 @@
         /></label
       >
       <label
-        >Colore <input
-          type="text"
+        >Colore
+        <select
           value={view.wire.props.color ?? ''}
-          placeholder="es. BU"
           onchange={(e) =>
-            editor.store.run(setWireProps, {
+            editor.store.run(setPotentialStyle, {
               id: view.wire!.id,
               set: { color: text(e) || undefined },
             })}
-        /></label
-      >
+        >
+          <option value="">— (nero)</option>
+          {#each WIRE_COLORS as c (c.code)}<option value={c.code}>{c.code} · {c.name}</option
+            >{/each}
+          {#if view.wire.props.color && !wireColor(view.wire.props.color)}
+            <option value={view.wire.props.color}>{view.wire.props.color}</option>
+          {/if}
+        </select>
+      </label>
+      <label
+        >Spessore
+        <select
+          value={String(view.wire.props.width ?? DEFAULT_WIRE_WIDTH)}
+          onchange={(e) => {
+            const width = Number(text(e));
+            editor.store.run(setPotentialStyle, {
+              id: view.wire!.id,
+              set: { width: width === DEFAULT_WIRE_WIDTH ? undefined : width },
+            });
+          }}
+        >
+          {#each WIRE_WIDTHS as w (w.width)}
+            <option value={String(w.width)}
+              >{w.name} · {String(w.width).replace('.', ',')} mm</option
+            >
+          {/each}
+        </select>
+      </label>
+      <p class="wide hint">Colore e spessore valgono per tutto il potenziale, come il numero.</p>
     </div>
   {:else if view.count > 1}
     <h3>{view.count} oggetti selezionati</h3>
@@ -837,6 +900,51 @@
         /></label
       >
     </div>
+    <h3>Cartiglio</h3>
+    <label
+      >Modello
+      <select
+        value={currentTitleBlock.id}
+        onchange={(e) => {
+          const symbol = titleBlockChoices.find((s) => s.id === text(e));
+          if (symbol) editor.store.run(setTitleBlock, { symbol });
+        }}
+      >
+        {#each titleBlockChoices as s (s.id)}
+          <option value={s.id}
+            >{s.name} ({s.titleBlock?.anchor === 'band' ? 'fascia' : 'angolo'})</option
+          >
+        {/each}
+      </select>
+    </label>
+    <div class="grid">
+      {#each TITLE_FIELDS as f (f.key)}
+        <label
+          >{f.label}
+          <input
+            type="text"
+            value={view.doc.meta.fields?.[f.key] ?? ''}
+            onchange={(e) => editor.store.run(setProjectField, { key: f.key, value: text(e) })}
+          /></label
+        >
+      {/each}
+      {#each extraFields as [key, value] (key)}
+        <label
+          >{key}
+          <input
+            type="text"
+            {value}
+            onchange={(e) => editor.store.run(setProjectField, { key, value: text(e) })}
+          /></label
+        >
+      {/each}
+    </div>
+    <button class="link" onclick={addProjectField}>+ Aggiungi campo</button>
+    <p class="hint">
+      Nel cartiglio ogni campo si scrive tra graffe, es. {'{cliente}'}; un campo libero usa il suo
+      nome. Svuotando un campo libero lo si toglie.
+    </p>
+
     <h3>Rimandi di foglio</h3>
     <label
       >Testo del riferimento

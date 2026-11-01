@@ -37,7 +37,12 @@ export interface SheetLayout {
   titleBlock: Rect;
 }
 
-export function sheetLayout(sheet: Sheet): SheetLayout {
+/**
+ * Frame, drawing area and the default title block area of a sheet. `reserve` is the
+ * height kept free at the bottom of the frame (a title block spanning its width):
+ * the drawing area, and so the reference rows, end above it.
+ */
+export function sheetLayout(sheet: Sheet, reserve = 0): SheetLayout {
   const { width, height } = sheetDimensions(sheet);
   const margin = sheet.size === 'A4' ? 5 : 10;
   const frame = { x: margin, y: margin, width: width - 2 * margin, height: height - 2 * margin };
@@ -45,7 +50,7 @@ export function sheetLayout(sheet: Sheet): SheetLayout {
     x: frame.x + BAND,
     y: frame.y + BAND,
     width: frame.width - BAND,
-    height: frame.height - BAND,
+    height: frame.height - BAND - reserve,
   };
   const titleBlock = {
     x: frame.x + frame.width - TITLE_BLOCK.width,
@@ -68,8 +73,8 @@ export function rowLabel(index: number): string {
 }
 
 /** Row (0-based, clamped to the frame) of the reference grid containing `p`. */
-export function rowAt(sheet: Sheet, p: Point): number {
-  const { drawing } = sheetLayout(sheet);
+export function rowAt(sheet: Sheet, p: Point, reserve = 0): number {
+  const { drawing } = sheetLayout(sheet, reserve);
   const row = Math.floor(((p.y - drawing.y) / drawing.height) * sheet.rows);
   return Math.min(sheet.rows - 1, Math.max(0, row));
 }

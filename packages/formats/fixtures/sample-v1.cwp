@@ -154,7 +154,7 @@
       "bends": [],
       "from": { "junction": "j1" },
       "id": "w3",
-      "props": { "number": "101" },
+      "props": { "color": "BU", "number": "101" },
       "sheetId": "sheet-1",
       "to": { "element": "x3", "terminal": "t1" }
     }

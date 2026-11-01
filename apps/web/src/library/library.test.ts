@@ -1,11 +1,13 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
-import type { SymbolDef, SymbolId } from '@cablewire/core';
+import { createEmptyProject } from '@cablewire/core';
+import type { ProjectDoc, SymbolDef, SymbolId } from '@cablewire/core';
 import { newSymbol } from '@cablewire/editor';
 import {
   groupByCategory,
   matches,
   NO_CATEGORY,
+  outdatedSymbols,
   prepareSave,
   resolveImport,
   symbolFileName,
@@ -92,5 +94,30 @@ describe('SymbolStorage', () => {
     expect(await storage.get(a.id)).toBeUndefined();
     expect(await storage.favorites()).toEqual(new Set(['base:lamp']));
     storage.close();
+  });
+});
+
+describe('symbols updated in the library', () => {
+  it('lists the placed symbols with a newer library version', () => {
+    const v1 = sym('Bobina', 'Bobine', { version: 1 });
+    const v2 = { ...v1, name: 'Bobina relè', version: 2 };
+    const unused = sym('Lampada', 'Segnalazioni', { version: 1 });
+    const doc = {
+      ...createEmptyProject('t'),
+      symbols: { [v1.id]: v1, [unused.id]: unused },
+      elements: {
+        a: { id: 'a', symbolId: v1.id },
+        b: { id: 'b', symbolId: v1.id },
+      },
+    } as unknown as ProjectDoc;
+    const library = new Map<SymbolId, SymbolDef>([
+      [v1.id, v2],
+      [unused.id, { ...unused, version: 5, name: 'x' }],
+    ]);
+    const find = (id: SymbolId) => library.get(id);
+    expect(outdatedSymbols(doc, find)).toEqual([{ project: v1, library: v2, uses: 2 }]);
+    // A project copy newer than the library is left alone.
+    library.set(v1.id, { ...v1, version: 0, name: 'vecchia' });
+    expect(outdatedSymbols(doc, find)).toEqual([]);
   });
 });

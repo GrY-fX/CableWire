@@ -5,6 +5,7 @@ import {
   addWire,
   reconnectWire,
   setPotentialNumber,
+  setPotentialStyle,
   setWireProps,
   splitWire,
 } from './commands/wires.ts';
@@ -129,5 +130,28 @@ describe('wire numbers follow the potential', () => {
     const ctx = circuit();
     must(ctx.store, setWireProps, { id: id('ax'), set: { color: 'BU' } });
     expect(wire(ctx, 'ax').props).toEqual({ number: '5', section: '1.5', color: 'BU' });
+  });
+});
+
+describe('wire colour and width follow the potential', () => {
+  it('apply to every wire of the potential and pass to wires joining it', () => {
+    const ctx = circuit();
+    must(ctx.store, addWire, {
+      id: id('xb'),
+      from: { element: id('x'), terminal: T2 },
+      to: { element: id('b'), terminal: T1 },
+    });
+    must(ctx.store, setPotentialStyle, { id: id('ax'), set: { color: 'bu', width: 0.5 } });
+    expect(wire(ctx, 'xb').props).toMatchObject({ color: 'bu', width: 0.5 });
+    // A branch drawn later takes them too, with the number.
+    must(ctx.store, addWire, {
+      id: id('bc'),
+      from: { element: id('b'), terminal: T1 },
+      to: { element: id('c'), terminal: T1 },
+    });
+    expect(wire(ctx, 'bc').props).toMatchObject({ number: '5', color: 'bu', width: 0.5 });
+    // Undefined removes them everywhere, keeping the other properties.
+    must(ctx.store, setPotentialStyle, { id: id('bc'), set: { width: undefined } });
+    expect(wire(ctx, 'ax').props).toEqual({ number: '5', section: '1.5', color: 'bu' });
   });
 });

@@ -1,0 +1,293 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Cartigli",
+    "defaultInfo": {},
+    "graphics": [
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 160,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "size": 1.6,
+        "text": "Titolo",
+        "type": "text",
+        "x": 1,
+        "y": 1.8
+      },
+      {
+        "size": 3,
+        "text": "{titolo}",
+        "type": "text",
+        "x": 1.5,
+        "y": 5.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 100,
+        "x": 160,
+        "y": 0
+      },
+      {
+        "size": 1.6,
+        "text": "Foglio",
+        "type": "text",
+        "x": 161,
+        "y": 1.8
+      },
+      {
+        "size": 3,
+        "text": "{titolo_foglio}",
+        "type": "text",
+        "x": 161.5,
+        "y": 5.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 80,
+        "x": 260,
+        "y": 0
+      },
+      {
+        "size": 1.6,
+        "text": "Cliente",
+        "type": "text",
+        "x": 261,
+        "y": 1.8
+      },
+      {
+        "size": 2.5,
+        "text": "{cliente}",
+        "type": "text",
+        "x": 261.5,
+        "y": 5.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 60,
+        "x": 340,
+        "y": 0
+      },
+      {
+        "size": 1.6,
+        "text": "Commessa",
+        "type": "text",
+        "x": 341,
+        "y": 1.8
+      },
+      {
+        "size": 2.5,
+        "text": "{commessa}",
+        "type": "text",
+        "x": 341.5,
+        "y": 5.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 90,
+        "x": 0,
+        "y": 8
+      },
+      {
+        "size": 1.6,
+        "text": "Impianto",
+        "type": "text",
+        "x": 1,
+        "y": 9.8
+      },
+      {
+        "size": 2.5,
+        "text": "{impianto}",
+        "type": "text",
+        "x": 1.5,
+        "y": 13.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 30,
+        "x": 90,
+        "y": 8
+      },
+      {
+        "size": 1.6,
+        "text": "Revisione",
+        "type": "text",
+        "x": 91,
+        "y": 9.8
+      },
+      {
+        "size": 2.5,
+        "text": "{revisione}",
+        "type": "text",
+        "x": 91.5,
+        "y": 13.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 40,
+        "x": 120,
+        "y": 8
+      },
+      {
+        "size": 1.6,
+        "text": "Data revisione",
+        "type": "text",
+        "x": 121,
+        "y": 9.8
+      },
+      {
+        "size": 2.5,
+        "text": "{data_revisione}",
+        "type": "text",
+        "x": 121.5,
+        "y": 13.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 50,
+        "x": 160,
+        "y": 8
+      },
+      {
+        "size": 1.6,
+        "text": "Disegnato",
+        "type": "text",
+        "x": 161,
+        "y": 9.8
+      },
+      {
+        "size": 2.5,
+        "text": "{disegnato}",
+        "type": "text",
+        "x": 161.5,
+        "y": 13.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 50,
+        "x": 210,
+        "y": 8
+      },
+      {
+        "size": 1.6,
+        "text": "Verificato",
+        "type": "text",
+        "x": 211,
+        "y": 9.8
+      },
+      {
+        "size": 2.5,
+        "text": "{verificato}",
+        "type": "text",
+        "x": 211.5,
+        "y": 13.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 50,
+        "x": 260,
+        "y": 8
+      },
+      {
+        "size": 1.6,
+        "text": "Approvato",
+        "type": "text",
+        "x": 261,
+        "y": 9.8
+      },
+      {
+        "size": 2.5,
+        "text": "{approvato}",
+        "type": "text",
+        "x": 261.5,
+        "y": 13.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 40,
+        "x": 310,
+        "y": 8
+      },
+      {
+        "size": 1.6,
+        "text": "Autore",
+        "type": "text",
+        "x": 311,
+        "y": 9.8
+      },
+      {
+        "size": 2.5,
+        "text": "{autore}",
+        "type": "text",
+        "x": 311.5,
+        "y": 13.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 25,
+        "x": 350,
+        "y": 8
+      },
+      {
+        "size": 1.6,
+        "text": "Data",
+        "type": "text",
+        "x": 351,
+        "y": 9.8
+      },
+      {
+        "size": 2.5,
+        "text": "{data}",
+        "type": "text",
+        "x": 351.5,
+        "y": 13.2
+      },
+      {
+        "height": 8,
+        "type": "rect",
+        "width": 25,
+        "x": 375,
+        "y": 8
+      },
+      {
+        "size": 1.6,
+        "text": "Foglio n.",
+        "type": "text",
+        "x": 376,
+        "y": 9.8
+      },
+      {
+        "size": 2.5,
+        "text": "{foglio} / {fogli}",
+        "type": "text",
+        "x": 376.5,
+        "y": 13.2
+      }
+    ],
+    "id": "base-cartiglio-completo-fascia",
+    "kind": "titleblock",
+    "license": "CC0-1.0",
+    "name": "Cartiglio completo a fascia",
+    "terminals": [],
+    "titleBlock": { "anchor": "band", "height": 16, "width": 400 },
+    "version": 1
+  }
+}

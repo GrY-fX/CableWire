@@ -54,7 +54,8 @@ export interface SymbolTerminal {
   dir: Direction;
 }
 
-export type SymbolKind = 'simple' | 'master' | 'slave' | 'report' | 'terminal' | 'plc';
+export type SymbolKind =
+  'simple' | 'master' | 'slave' | 'report' | 'terminal' | 'plc' | 'titleblock';
 
 export interface SymbolDef {
   id: SymbolId;
@@ -76,6 +77,17 @@ export interface SymbolDef {
   contact?: ContactType;
   /** Masters: a coil or a command device (breaker, switch...); coil when missing. */
   master?: MasterType;
+  /**
+   * Title blocks (kind `titleblock`): where and how big. Graphics are relative to the
+   * block's top-left corner. A `band` spans the frame's width, drawn for `width`.
+   */
+  titleBlock?: TitleBlockLayout;
+}
+
+export interface TitleBlockLayout {
+  anchor: 'corner' | 'band';
+  width: number;
+  height: number;
 }
 
 export type ContactType = 'no' | 'nc' | 'changeover' | 'power';
@@ -123,7 +135,10 @@ export interface WireProps {
   number?: string;
   numberLocked?: boolean;
   section?: string;
+  /** Colour code (IEC 60757, e.g. BU); known codes also colour the drawing. */
   color?: string;
+  /** Line width in mm; 0.25 when missing. */
+  width?: number;
 }
 
 export interface Wire {
@@ -141,6 +156,8 @@ export interface ProjectMeta {
   author: string;
   createdAt: string;
   updatedAt: string;
+  /** Fields shown in the title block: client, job, revision… and free ones. */
+  fields?: Record<string, string>;
 }
 
 /** Where a potential's number can come from, before falling back to the pattern. */
@@ -201,6 +218,8 @@ export interface ProjectSettings {
    * see DEFAULT_MASTER_REF_PATTERN.
    */
   masterRefPattern?: string;
+  /** Title block of the sheets: id of a `titleblock` symbol of the project. */
+  titleBlock?: SymbolId;
   /** Contacts of masters (table or drawn); shown unless set to false. */
   showXref?: boolean;
   /** Style of the contacts per kind of master; see DEFAULT_XREF_STYLES. */

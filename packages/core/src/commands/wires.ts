@@ -5,7 +5,7 @@ import { newId } from '../ids.ts';
 import { distanceToSegment, endPosition } from '../geometry.ts';
 import type { Point, ProjectDoc, Wire, WireEnd, WireProps } from '../model.ts';
 import { isJunctionEnd } from '../model.ts';
-import { inheritNumberOps, potentialNumberOps } from '../numbering.ts';
+import { inheritNumberOps, potentialNumberOps, potentialStyleOps } from '../numbering.ts';
 import type { Patch } from '../ops.ts';
 import { applyOps, patch, put } from '../ops.ts';
 import { sameEnd } from '../validate.ts';
@@ -73,6 +73,15 @@ export const setPotentialNumber = defineCommand<{ id: WireId; number: string; lo
     return ok(potentialNumberOps(doc, id, number, locked));
   },
 );
+
+/** Colour code and/or width of every wire of a potential; undefined removes them. */
+export const setPotentialStyle = defineCommand<{
+  id: WireId;
+  set: { color?: string | undefined; width?: number | undefined };
+}>('Aspetto filo', (doc, { id, set }) => {
+  if (!doc.wires[id]) return fail('not-found', 'Wire not found');
+  return ok(potentialStyleOps(doc, id, set));
+});
 
 /** Locks or unlocks the number of a potential (no effect without a number). */
 export const setPotentialLock = defineCommand<{ id: WireId; locked: boolean }>(

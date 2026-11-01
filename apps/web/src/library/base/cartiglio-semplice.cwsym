@@ -1,0 +1,83 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Cartigli",
+    "defaultInfo": {},
+    "graphics": [
+      {
+        "height": 20,
+        "type": "rect",
+        "width": 120,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 120,
+        "y1": 10,
+        "y2": 10
+      },
+      {
+        "type": "line",
+        "x1": 70,
+        "x2": 70,
+        "y1": 0,
+        "y2": 20
+      },
+      {
+        "type": "line",
+        "x1": 95,
+        "x2": 95,
+        "y1": 10,
+        "y2": 20
+      },
+      {
+        "size": 3.5,
+        "text": "{titolo}",
+        "type": "text",
+        "x": 2,
+        "y": 5
+      },
+      {
+        "size": 3.5,
+        "text": "{titolo_foglio}",
+        "type": "text",
+        "x": 72,
+        "y": 5
+      },
+      {
+        "size": 2.5,
+        "text": "{autore}",
+        "type": "text",
+        "x": 2,
+        "y": 15
+      },
+      {
+        "size": 2.5,
+        "text": "{data}",
+        "type": "text",
+        "x": 72,
+        "y": 15
+      },
+      {
+        "size": 2.5,
+        "text": "Foglio {foglio} / {fogli}",
+        "type": "text",
+        "x": 97,
+        "y": 15
+      }
+    ],
+    "id": "base-cartiglio-semplice",
+    "kind": "titleblock",
+    "license": "CC0-1.0",
+    "name": "Cartiglio semplice",
+    "terminals": [],
+    "titleBlock": { "anchor": "corner", "height": 20, "width": 120 },
+    "version": 1
+  }
+}

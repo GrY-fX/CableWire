@@ -48,6 +48,7 @@
     { value: 'terminal', label: 'Morsetto' },
     { value: 'report', label: 'Rimando di foglio' },
     { value: 'plc', label: 'PLC' },
+    { value: 'titleblock', label: 'Cartiglio' },
   ];
   const SHAPE_NAMES: Record<Primitive['type'], string> = {
     line: 'Linea',

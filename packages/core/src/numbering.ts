@@ -35,19 +35,51 @@ const sameNumbering = (props: WireProps, number: string | undefined, locked: boo
   props.number === number && !!props.numberLocked === (!!number && locked);
 
 /**
- * Ops giving unnumbered wires of `wireId`'s potential the potential's number and lock
- * (the wire's own number first, else the first numbered wire). `doc` must already
- * contain the change that connected the wire.
+ * Ops giving the wires of `wireId`'s potential what the potential has and they lack:
+ * number and lock, colour and width (the wire's own first, else the first wire that
+ * has one). `doc` must already contain the change that connected the wire.
  */
 export function inheritNumberOps(doc: ProjectDoc, wireId: WireId): Op[] {
   const wires = potentialWires(doc, wireId);
   const self = doc.wires[wireId];
-  const source = self?.props.number ? self : wires.find((w) => w.props.number);
-  if (!source) return [];
-  const { number, numberLocked } = source.props;
-  return wires
-    .filter((w) => !w.props.number)
-    .map((w) => patch('wires', w.id, { props: withNumber(w.props, number, !!numberLocked) }));
+  const from = <K extends keyof WireProps>(key: K) =>
+    self?.props[key] !== undefined ? self : wires.find((w) => w.props[key] !== undefined);
+  const numbered = self?.props.number ? self : wires.find((w) => w.props.number);
+  const coloured = from('color');
+  const wide = from('width');
+  const ops: Op[] = [];
+  for (const w of wires) {
+    let props = w.props;
+    if (numbered && !props.number) {
+      props = withNumber(props, numbered.props.number, !!numbered.props.numberLocked);
+    }
+    if (coloured && props.color === undefined) props = { ...props, color: coloured.props.color! };
+    if (wide && props.width === undefined) props = { ...props, width: wide.props.width! };
+    if (props !== w.props) ops.push(patch('wires', w.id, { props }));
+  }
+  return ops;
+}
+
+/** Ops setting (or removing, when undefined) colour and width on every wire of a potential. */
+export function potentialStyleOps(
+  doc: ProjectDoc,
+  wireId: WireId,
+  set: { color?: string | undefined; width?: number | undefined },
+): Op[] {
+  return potentialWires(doc, wireId).flatMap((w) => {
+    const props: WireProps = { ...w.props };
+    if ('color' in set) {
+      if (set.color?.trim()) props.color = set.color.trim();
+      else delete props.color;
+    }
+    if ('width' in set) {
+      if (set.width) props.width = set.width;
+      else delete props.width;
+    }
+    return props.color === w.props.color && props.width === w.props.width
+      ? []
+      : [patch('wires', w.id, { props })];
+  });
 }
 
 /** Ops setting (or clearing, when empty) the number and lock of every wire in a potential. */

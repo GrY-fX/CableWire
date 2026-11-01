@@ -7,6 +7,7 @@ import {
   textRotation,
   terminalLabel,
   transformPoint,
+  wireColor,
   drawingBounds,
   XREF_TEXT_SIZE,
   xrefLayout,
@@ -24,6 +25,7 @@ import type {
 } from '@cablewire/core';
 import type { Scene, SceneItem, SceneNode } from './scene.ts';
 import { buildFrame, sheetLayout } from './sheet.ts';
+import { wireColorClass, wireWidthClass } from './style.ts';
 import { fillPlaceholders, readableText } from './text.ts';
 
 export const JUNCTION_RADIUS = 0.5;
@@ -259,7 +261,19 @@ function buildWire(doc: ProjectDoc, wire: Wire): SceneNode | undefined {
   if (!start || !end) return undefined;
   const points = [start, ...wire.bends, end];
   const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${round(p.x)} ${round(p.y)}`).join('');
-  const children: SceneNode[] = [{ kind: 'path', d, classes: ['stroke', 'wire'] }];
+  // Colour from the colour code, width from the wire; the green-yellow conductor gets
+  // yellow stripes over its green.
+  const color = wireColor(wire.props.color);
+  const width = wire.props.width;
+  const look = [
+    ...(color ? [wireColorClass(color.code)] : []),
+    ...(width ? [wireWidthClass(width)] : []),
+  ];
+  const children: SceneNode[] = [{ kind: 'path', d, classes: ['stroke', 'wire', ...look] }];
+  if (color?.code === 'GNYE') {
+    const stripe = width ? [wireWidthClass(width)] : [];
+    children.push({ kind: 'path', d, classes: ['stroke', 'gnye-stripe', ...stripe] });
+  }
   if (wire.props.number) children.push(wireNumber(points, wire.props.number));
   // Wider invisible stroke so thin wires are easy to click.
   children.push({ kind: 'path', d, classes: ['hit'], screenOnly: true });

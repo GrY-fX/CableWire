@@ -70,7 +70,7 @@ export const symbolSchema = v.object({
   id: id<SymbolId>(),
   name: v.string(),
   category: v.string(),
-  kind: v.picklist(['simple', 'master', 'slave', 'report', 'terminal', 'plc']),
+  kind: v.picklist(['simple', 'master', 'slave', 'report', 'terminal', 'plc', 'titleblock']),
   graphics: v.array(primitive),
   terminals: v.array(
     v.object({ id: id<TerminalId>(), name: v.string(), x: num, y: num, dir: direction }),
@@ -83,6 +83,13 @@ export const symbolSchema = v.object({
   report: v.exactOptional(v.picklist(['in', 'out'])),
   contact: v.exactOptional(v.picklist(['no', 'nc', 'changeover', 'power'])),
   master: v.exactOptional(v.picklist(['coil', 'device'])),
+  titleBlock: v.exactOptional(
+    v.object({
+      anchor: v.picklist(['corner', 'band']),
+      width: v.pipe(num, v.minValue(1)),
+      height: v.pipe(num, v.minValue(1)),
+    }),
+  ),
 });
 
 const xrefStyle = v.picklist(['table', 'contacts']);
@@ -131,6 +138,7 @@ const wire = v.object({
     numberLocked: v.exactOptional(v.boolean()),
     section: v.exactOptional(v.string()),
     color: v.exactOptional(v.string()),
+    width: v.exactOptional(v.pipe(num, v.minValue(0.05))),
   }),
 });
 
@@ -141,6 +149,7 @@ export const projectSchema = v.object({
     author: v.string(),
     createdAt: v.string(),
     updatedAt: v.string(),
+    fields: v.exactOptional(strings),
   }),
   settings: v.object({
     gridStep: v.pipe(num, v.minValue(0.1)),
@@ -156,6 +165,7 @@ export const projectSchema = v.object({
     ),
     referencePattern: v.exactOptional(v.string()),
     masterRefPattern: v.exactOptional(v.string()),
+    titleBlock: v.exactOptional(id<SymbolId>()),
     showXref: v.exactOptional(v.boolean()),
     terminalStrips: v.exactOptional(
       v.array(

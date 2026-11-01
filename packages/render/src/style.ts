@@ -1,7 +1,22 @@
+import { GNYE_STRIPE, WIRE_COLORS, WIRE_WIDTHS } from '@cablewire/core';
 /** Class prefix used in the SVG, so styles do not leak into or from the host page. */
 export const CLASS_PREFIX = 'cw-';
 
 export const FONT_FAMILY = 'osifont';
+
+/** Class of a wire colour code (`wc-BU`) and of a line width (`ww-35` for 0.35 mm). */
+export const wireColorClass = (code: string) => `wc-${code}`;
+export const wireWidthClass = (width: number) => `ww-${Math.round(width * 100)}`;
+
+// One rule per colour and width, after the base stroke so they win over it, while
+// selection and highlighting (more specific) still show above them.
+const WIRE_CSS = [
+  ...WIRE_COLORS.map((c) => `.${CLASS_PREFIX}${wireColorClass(c.code)} { stroke: ${c.css}; }`),
+  `.${CLASS_PREFIX}gnye-stripe { fill: none; stroke: ${GNYE_STRIPE}; stroke-dasharray: 1.5 1.5; }`,
+  ...WIRE_WIDTHS.map(
+    (w) => `.${CLASS_PREFIX}${wireWidthClass(w.width)} { stroke-width: ${w.width}; }`,
+  ),
+].join('\n');
 
 /** Paper style: always black on white, also when the UI uses a dark theme. */
 export const PAPER_CSS = `
@@ -9,6 +24,7 @@ export const PAPER_CSS = `
 .cw-filled { fill: #000; }
 .cw-frame { stroke-width: 0.5; }
 .cw-text { fill: #000; font-family: ${FONT_FAMILY}, sans-serif; dominant-baseline: central; }
+${WIRE_CSS}
 `;
 
 /** On-screen only: editing aids and interaction states. */

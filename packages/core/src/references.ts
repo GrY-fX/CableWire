@@ -2,6 +2,7 @@ import type { WireId } from './ids.ts';
 import type { Element, ProjectDoc } from './model.ts';
 import { getPotentials, terminalKey } from './potentials.ts';
 import { columnAt, rowAt, rowLabel } from './sheet.ts';
+import { titleBlockReserve } from './titleblock.ts';
 
 // Sheet references (symbols of kind `report`) continue a wire on another sheet. An
 // outgoing reference is linked to one incoming reference (1:1, `link` on both sides);
@@ -96,7 +97,7 @@ export function referenceValues(doc: ProjectDoc, element: Element): Record<strin
   return {
     foglio: String(doc.sheetOrder.indexOf(sheet.id) + 1),
     colonna: String(columnAt(sheet, element)),
-    riga: rowLabel(rowAt(sheet, element)),
+    riga: rowLabel(rowAt(sheet, element, titleBlockReserve(doc))),
     titolo: sheet.title,
   };
 }

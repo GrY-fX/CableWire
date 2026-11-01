@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { setProjectField, setTitleBlock, setWireProps } from '@cablewire/core';
 import type { Element, ProjectDoc, Sheet, SymbolDef } from '@cablewire/core';
 import { buildElementNode, buildScene, primitivePath, wireNumber } from './build.ts';
 import type { SceneNode } from './scene.ts';
 import { rowLabel, sheetLayout } from './sheet.ts';
 import { fillPlaceholders, readableText } from './text.ts';
-import { fixture, J1, K1, K2, W1 } from './fixture.test-utils.ts';
+import { fixture, J1, K1, K2, must, W1 } from './fixture.test-utils.ts';
 
 function texts(node: SceneNode): Extract<SceneNode, { kind: 'text' }>[] {
   if (node.kind === 'text') return [node];
@@ -225,5 +226,54 @@ describe('rotated symbol texts', () => {
     // 90° of its own plus 90° of the element: horizontal again, anchored on the other side.
     expect(at(90).angle).toBeUndefined();
     expect(at(90).anchor).toBe('end');
+  });
+});
+
+describe('wire look', () => {
+  it('draws the colour code and the width as classes; green-yellow gets stripes', () => {
+    const { store, sheet } = fixture();
+    must(store, setWireProps, { id: W1, set: { color: 'GNYE', width: 0.5 } });
+    const wireItem = buildScene(store.doc, sheet).items.find((i) => i.key === `wire:${W1}`)!;
+    const paths = (wireItem.node as Extract<SceneNode, { kind: 'group' }>).children.filter(
+      (c) => c.kind === 'path' && !c.classes?.includes('hit'),
+    );
+    expect(paths.map((p) => p.kind === 'path' && p.classes)).toEqual([
+      ['stroke', 'wire', 'wc-GNYE', 'ww-50'],
+      ['stroke', 'gnye-stripe', 'ww-50'],
+    ]);
+  });
+});
+
+describe('title block from the template', () => {
+  it('stretches a band across the frame, keeping the text size', () => {
+    const { store, sheet } = fixture();
+    const band = {
+      id: 'band',
+      name: 'Fascia',
+      category: 'Cartigli',
+      kind: 'titleblock',
+      titleBlock: { anchor: 'band', width: 200, height: 10 },
+      graphics: [
+        { type: 'line', x1: 100, y1: 0, x2: 100, y2: 10 },
+        { type: 'text', x: 102, y: 5, text: '{cliente} · {foglio}/{fogli}', size: 2.5 },
+      ],
+      terminals: [],
+      bridges: [],
+      defaultInfo: {},
+      version: 1,
+    } as unknown as SymbolDef;
+    must(store, setTitleBlock, { symbol: band });
+    must(store, setProjectField, { key: 'cliente', value: 'ACME' });
+    const frame = buildScene(store.doc, sheet).items.find((i) => i.key === 'frame')!.node;
+    // A3: frame 400 mm wide from x = 10, so the template is stretched twice.
+    const t = texts(frame).find((n) => n.text.startsWith('ACME'))!;
+    expect(t).toMatchObject({ x: 214, y: 282, size: 2.5, text: 'ACME · 1/1' });
+    const path = frame.kind === 'group' && frame.children[0]!;
+    expect(path && path.kind === 'path' && path.d).toContain('M210 277L210 287');
+    // Reference rows end above the band: the left band's line stops at y = 277 and the
+    // last row label (F) sits in the space left.
+    expect(path && path.kind === 'path' && path.d).toContain('M15 10L15 277');
+    const rowF = texts(frame).find((n) => n.text === 'F')!;
+    expect(rowF.y).toBeLessThan(277);
   });
 });

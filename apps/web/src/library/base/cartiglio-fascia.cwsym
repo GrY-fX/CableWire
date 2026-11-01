@@ -1,0 +1,125 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Cartigli",
+    "defaultInfo": {},
+    "graphics": [
+      {
+        "height": 10,
+        "type": "rect",
+        "width": 140,
+        "x": 0,
+        "y": 0
+      },
+      {
+        "size": 1.6,
+        "text": "Titolo",
+        "type": "text",
+        "x": 1,
+        "y": 1.8
+      },
+      {
+        "size": 3,
+        "text": "{titolo}",
+        "type": "text",
+        "x": 1.5,
+        "y": 6.2
+      },
+      {
+        "height": 10,
+        "type": "rect",
+        "width": 100,
+        "x": 140,
+        "y": 0
+      },
+      {
+        "size": 1.6,
+        "text": "Foglio",
+        "type": "text",
+        "x": 141,
+        "y": 1.8
+      },
+      {
+        "size": 3,
+        "text": "{titolo_foglio}",
+        "type": "text",
+        "x": 141.5,
+        "y": 6.2
+      },
+      {
+        "height": 10,
+        "type": "rect",
+        "width": 60,
+        "x": 240,
+        "y": 0
+      },
+      {
+        "size": 1.6,
+        "text": "Autore",
+        "type": "text",
+        "x": 241,
+        "y": 1.8
+      },
+      {
+        "size": 2.5,
+        "text": "{autore}",
+        "type": "text",
+        "x": 241.5,
+        "y": 6.2
+      },
+      {
+        "height": 10,
+        "type": "rect",
+        "width": 50,
+        "x": 300,
+        "y": 0
+      },
+      {
+        "size": 1.6,
+        "text": "Data",
+        "type": "text",
+        "x": 301,
+        "y": 1.8
+      },
+      {
+        "size": 2.5,
+        "text": "{data}",
+        "type": "text",
+        "x": 301.5,
+        "y": 6.2
+      },
+      {
+        "height": 10,
+        "type": "rect",
+        "width": 50,
+        "x": 350,
+        "y": 0
+      },
+      {
+        "size": 1.6,
+        "text": "Foglio n.",
+        "type": "text",
+        "x": 351,
+        "y": 1.8
+      },
+      {
+        "size": 2.5,
+        "text": "{foglio} / {fogli}",
+        "type": "text",
+        "x": 351.5,
+        "y": 6.2
+      }
+    ],
+    "id": "base-cartiglio-fascia",
+    "kind": "titleblock",
+    "license": "CC0-1.0",
+    "name": "Cartiglio a fascia",
+    "terminals": [],
+    "titleBlock": { "anchor": "band", "height": 10, "width": 400 },
+    "version": 1
+  }
+}
