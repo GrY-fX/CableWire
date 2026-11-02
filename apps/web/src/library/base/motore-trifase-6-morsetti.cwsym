@@ -1,0 +1,137 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Potenza",
+    "defaultInfo": { "label": "{foglio}M{n}" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": -7.5,
+        "y2": -4.33
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": 7.5,
+        "y2": 4.33
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 7.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": -7.5,
+        "y2": -4.33
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": 7.5,
+        "y2": 4.33
+      },
+      { "cx": 0, "cy": 0, "r": 5, "type": "circle" },
+      {
+        "anchor": "middle",
+        "size": 4,
+        "text": "M",
+        "type": "text",
+        "x": 0,
+        "y": -1
+      },
+      {
+        "anchor": "middle",
+        "size": 2.5,
+        "text": "3~",
+        "type": "text",
+        "x": 0,
+        "y": 2.5
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -6,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -6,
+        "y": 3.5
+      }
+    ],
+    "id": "base-motore-trifase-6-morsetti",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Motore trifase 6 morsetti (stella-triangolo)",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "U1",
+        "x": -2.5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "t2",
+        "name": "V1",
+        "x": 0,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "t3",
+        "name": "W1",
+        "x": 2.5,
+        "y": -7.5
+      },
+      {
+        "dir": "s",
+        "id": "t4",
+        "name": "W2",
+        "x": -2.5,
+        "y": 7.5
+      },
+      {
+        "dir": "s",
+        "id": "t5",
+        "name": "U2",
+        "x": 0,
+        "y": 7.5
+      },
+      {
+        "dir": "s",
+        "id": "t6",
+        "name": "V2",
+        "x": 2.5,
+        "y": 7.5
+      }
+    ],
+    "version": 1
+  }
+}

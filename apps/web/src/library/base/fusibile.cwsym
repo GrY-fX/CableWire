@@ -6,7 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Protezioni",
-    "defaultInfo": { "label": "F" },
+    "defaultInfo": { "label": "{foglio}F{n}" },
     "graphics": [
       {
         "type": "line",
@@ -23,11 +23,20 @@
         "y": -3.5
       },
       {
-        "size": 2.5,
+        "anchor": "end",
+        "size": 4,
         "text": "{label}",
         "type": "text",
-        "x": 3,
-        "y": 0
+        "x": -2.5,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -2.5,
+        "y": 3.5
       }
     ],
     "id": "base-fusibile",
@@ -50,6 +59,6 @@
         "y": 5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

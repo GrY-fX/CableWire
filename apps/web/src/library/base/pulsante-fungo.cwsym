@@ -1,0 +1,118 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Comandi",
+    "defaultInfo": { "label": "{foglio}S{n}" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 2.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 2.5,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 3,
+        "y1": -2.5,
+        "y2": -2.5
+      },
+      {
+        "dash": "dashed",
+        "type": "line",
+        "x1": 1.136,
+        "x2": -1.6,
+        "y1": 0,
+        "y2": 0
+      },
+      {
+        "closed": false,
+        "points": [
+          { "x": -1.6, "y": 0 },
+          { "x": -2.1, "y": 0.8 },
+          { "x": -2.6, "y": 0 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "dash": "dashed",
+        "type": "line",
+        "x1": -2.6,
+        "x2": -3.5,
+        "y1": 0,
+        "y2": 0
+      },
+      {
+        "type": "line",
+        "x1": -3.5,
+        "x2": -3.5,
+        "y1": -1.5,
+        "y2": 1.5
+      },
+      {
+        "cx": -3.5,
+        "cy": 0,
+        "r": 1.5,
+        "start": 90,
+        "sweep": 180,
+        "type": "arc"
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -6,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -6,
+        "y": 3.5
+      }
+    ],
+    "id": "base-pulsante-fungo",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Pulsante a fungo (emergenza)",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "11",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "12",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

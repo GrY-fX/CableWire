@@ -1,0 +1,202 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Protezioni",
+    "defaultInfo": { "label": "{foglio}Q{n}" },
+    "graphics": [
+      {
+        "dash": "dashed",
+        "type": "line",
+        "x1": -3.75,
+        "x2": 1.25,
+        "y1": -0.25,
+        "y2": -0.25
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -5,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "type": "line",
+        "x1": -3.3,
+        "x2": -1.7,
+        "y1": -3.3,
+        "y2": -1.7
+      },
+      {
+        "type": "line",
+        "x1": -3.3,
+        "x2": -1.7,
+        "y1": -1.7,
+        "y2": -3.3
+      },
+      {
+        "closed": true,
+        "filled": true,
+        "points": [
+          { "x": -4.05, "y": -0.91 },
+          { "x": -4.65, "y": -2.23 },
+          { "x": -5.469, "y": -1.858 },
+          { "x": -4.869, "y": -0.538 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": 2.5,
+        "y2": 4
+      },
+      {
+        "height": 6,
+        "type": "rect",
+        "width": 5,
+        "x": -5,
+        "y": 4
+      },
+      {
+        "type": "line",
+        "x1": -5,
+        "x2": 0,
+        "y1": 7,
+        "y2": 7
+      },
+      {
+        "closed": false,
+        "points": [
+          { "x": -2.5, "y": 4 },
+          { "x": -2.5, "y": 4.8 },
+          { "x": -1.3, "y": 4.8 },
+          { "x": -1.3, "y": 6.2 },
+          { "x": -2.5, "y": 6.2 },
+          { "x": -2.5, "y": 7 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": 7,
+        "y2": 7.6
+      },
+      {
+        "cx": -2.5,
+        "cy": 8.5,
+        "r": 0.9,
+        "start": 270,
+        "sweep": 180,
+        "type": "arc"
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": 9.4,
+        "y2": 10
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 0,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": 2.5,
+        "y2": 10
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": 10,
+        "y2": 12.5
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": 10,
+        "y2": 12.5
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -6.469,
+        "y": 4.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -6.469,
+        "y": 7.5
+      }
+    ],
+    "id": "base-magnetotermico-1p-n",
+    "kind": "master",
+    "license": "CC0-1.0",
+    "master": "device",
+    "name": "Magnetotermico 1P+N",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "1",
+        "x": -2.5,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "2",
+        "x": -2.5,
+        "y": 12.5
+      },
+      {
+        "dir": "n",
+        "id": "t3",
+        "name": "3",
+        "x": 2.5,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t4",
+        "name": "4",
+        "x": 2.5,
+        "y": 12.5
+      }
+    ],
+    "version": 1
+  }
+}

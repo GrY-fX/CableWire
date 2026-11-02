@@ -1,0 +1,150 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Potenza",
+    "defaultInfo": { "label": "{foglio}U{n}" },
+    "graphics": [
+      {
+        "height": 10,
+        "type": "rect",
+        "width": 15,
+        "x": -7.5,
+        "y": -5
+      },
+      {
+        "type": "line",
+        "x1": -7.5,
+        "x2": 7.5,
+        "y1": 5,
+        "y2": -5
+      },
+      {
+        "anchor": "middle",
+        "size": 3,
+        "text": "~",
+        "type": "text",
+        "x": -4,
+        "y": -2
+      },
+      {
+        "anchor": "middle",
+        "size": 3,
+        "text": "~",
+        "type": "text",
+        "x": 4,
+        "y": 2.5
+      },
+      {
+        "type": "line",
+        "x1": -5,
+        "x2": -5,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": -5,
+        "x2": -5,
+        "y1": 5,
+        "y2": 7.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 5,
+        "y2": 7.5
+      },
+      {
+        "type": "line",
+        "x1": 5,
+        "x2": 5,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": 5,
+        "x2": 5,
+        "y1": 5,
+        "y2": 7.5
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -8.5,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -8.5,
+        "y": 3.5
+      }
+    ],
+    "id": "base-inverter",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Inverter (variatore di frequenza)",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "L1",
+        "x": -5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "t2",
+        "name": "L2",
+        "x": 0,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "t3",
+        "name": "L3",
+        "x": 5,
+        "y": -7.5
+      },
+      {
+        "dir": "s",
+        "id": "t4",
+        "name": "U",
+        "x": -5,
+        "y": 7.5
+      },
+      {
+        "dir": "s",
+        "id": "t5",
+        "name": "V",
+        "x": 0,
+        "y": 7.5
+      },
+      {
+        "dir": "s",
+        "id": "t6",
+        "name": "W",
+        "x": 5,
+        "y": 7.5
+      }
+    ],
+    "version": 1
+  }
+}

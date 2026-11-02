@@ -1,0 +1,88 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Protezioni",
+    "defaultInfo": { "label": "{foglio}F{n}" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": -2.5,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 2.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": -1,
+        "x2": 1,
+        "y1": -2.5,
+        "y2": -2.5
+      },
+      {
+        "closed": true,
+        "points": [
+          { "x": -1.349, "y": -2.402 },
+          { "x": -2.806, "y": -1.74 },
+          { "x": -1.151, "y": 1.902 },
+          { "x": 0.306, "y": 1.24 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -3.806,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -3.806,
+        "y": 3.5
+      }
+    ],
+    "id": "base-sezionatore-portafusibili",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Sezionatore portafusibili",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "1",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "2",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

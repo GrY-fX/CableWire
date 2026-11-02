@@ -1,0 +1,102 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Sensori",
+    "defaultInfo": { "label": "{foglio}B{n}" },
+    "graphics": [
+      {
+        "height": 10,
+        "type": "rect",
+        "width": 10,
+        "x": -5,
+        "y": -5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": 5,
+        "y2": 7.5
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": 5,
+        "y2": 7.5
+      },
+      {
+        "closed": true,
+        "points": [
+          { "x": 0, "y": -3 },
+          { "x": 3, "y": 0 },
+          { "x": 0, "y": 3 },
+          { "x": -3, "y": 0 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -1.8,
+        "y2": 1.8
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -6,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -6,
+        "y": 3.5
+      }
+    ],
+    "id": "base-sensore-induttivo",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Sensore induttivo 3 fili",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "BN",
+        "x": 0,
+        "y": -7.5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "BU",
+        "x": -2.5,
+        "y": 7.5
+      },
+      {
+        "dir": "s",
+        "id": "t3",
+        "name": "BK",
+        "x": 2.5,
+        "y": 7.5
+      }
+    ],
+    "version": 1
+  }
+}

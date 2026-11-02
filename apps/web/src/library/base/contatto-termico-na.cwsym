@@ -1,0 +1,97 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Contatti",
+    "contact": "no",
+    "defaultInfo": { "label": "F" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 2.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": -2.5,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "dash": "dashed",
+        "type": "line",
+        "x1": -1.136,
+        "x2": -3.5,
+        "y1": 0,
+        "y2": 0
+      },
+      {
+        "closed": false,
+        "points": [
+          { "x": -4.9, "y": -1 },
+          { "x": -3.5, "y": -1 },
+          { "x": -3.5, "y": 1 },
+          { "x": -4.9, "y": 1 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -5.9,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -5.9,
+        "y": 3.5
+      },
+      {
+        "size": 2,
+        "text": "{master_ref}",
+        "type": "text",
+        "x": 1,
+        "y": 0.5
+      }
+    ],
+    "id": "base-contatto-termico-na",
+    "kind": "slave",
+    "license": "CC0-1.0",
+    "name": "Contatto NA del relè termico",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "97",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "98",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

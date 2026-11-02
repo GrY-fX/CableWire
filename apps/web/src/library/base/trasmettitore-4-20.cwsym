@@ -1,0 +1,73 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Sensori",
+    "defaultInfo": { "label": "{foglio}B{n}" },
+    "graphics": [
+      { "cx": 0, "cy": 0, "r": 5, "type": "circle" },
+      {
+        "anchor": "middle",
+        "size": 1.8,
+        "text": "4-20 mA",
+        "type": "text",
+        "x": 0,
+        "y": 0
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 5,
+        "y2": 7.5
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -6,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -6,
+        "y": 3.5
+      }
+    ],
+    "id": "base-trasmettitore-4-20",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Trasmettitore 4-20 mA",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "+",
+        "x": 0,
+        "y": -7.5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "-",
+        "x": 0,
+        "y": 7.5
+      }
+    ],
+    "version": 1
+  }
+}

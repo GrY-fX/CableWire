@@ -1,0 +1,164 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Potenza",
+    "defaultInfo": { "label": "{foglio}F{n}" },
+    "graphics": [
+      {
+        "height": 5,
+        "type": "rect",
+        "width": 15,
+        "x": -7.5,
+        "y": -2.5
+      },
+      {
+        "type": "line",
+        "x1": -5,
+        "x2": -5,
+        "y1": -5,
+        "y2": -1.5
+      },
+      {
+        "closed": false,
+        "points": [
+          { "x": -5, "y": -1.5 },
+          { "x": -5, "y": -0.7 },
+          { "x": -3.8, "y": -0.7 },
+          { "x": -3.8, "y": 0.7 },
+          { "x": -5, "y": 0.7 },
+          { "x": -5, "y": 1.5 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "type": "line",
+        "x1": -5,
+        "x2": -5,
+        "y1": 1.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -1.5
+      },
+      {
+        "closed": false,
+        "points": [
+          { "x": 0, "y": -1.5 },
+          { "x": 0, "y": -0.7 },
+          { "x": 1.2, "y": -0.7 },
+          { "x": 1.2, "y": 0.7 },
+          { "x": 0, "y": 0.7 },
+          { "x": 0, "y": 1.5 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 1.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": 5,
+        "x2": 5,
+        "y1": -5,
+        "y2": -1.5
+      },
+      {
+        "closed": false,
+        "points": [
+          { "x": 5, "y": -1.5 },
+          { "x": 5, "y": -0.7 },
+          { "x": 6.2, "y": -0.7 },
+          { "x": 6.2, "y": 0.7 },
+          { "x": 5, "y": 0.7 },
+          { "x": 5, "y": 1.5 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "type": "line",
+        "x1": 5,
+        "x2": 5,
+        "y1": 1.5,
+        "y2": 5
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -8.5,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -8.5,
+        "y": 3.5
+      }
+    ],
+    "id": "base-rele-termico",
+    "kind": "master",
+    "license": "CC0-1.0",
+    "master": "device",
+    "name": "Relè termico tripolare",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "1",
+        "x": -5,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "2",
+        "x": -5,
+        "y": 5
+      },
+      {
+        "dir": "n",
+        "id": "t3",
+        "name": "3",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t4",
+        "name": "4",
+        "x": 0,
+        "y": 5
+      },
+      {
+        "dir": "n",
+        "id": "t5",
+        "name": "5",
+        "x": 5,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t6",
+        "name": "6",
+        "x": 5,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

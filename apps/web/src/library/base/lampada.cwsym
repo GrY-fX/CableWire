@@ -6,7 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Segnalazioni",
-    "defaultInfo": { "label": "H" },
+    "defaultInfo": { "label": "{foglio}H{n}" },
     "graphics": [
       {
         "type": "line",
@@ -38,11 +38,20 @@
         "y2": -2.121
       },
       {
-        "size": 2.5,
+        "anchor": "end",
+        "size": 4,
         "text": "{label}",
         "type": "text",
-        "x": 4,
-        "y": 0
+        "x": -4,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -4,
+        "y": 3.5
       }
     ],
     "id": "base-lampada",
@@ -65,6 +74,6 @@
         "y": 5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

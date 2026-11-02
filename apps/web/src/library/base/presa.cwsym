@@ -1,0 +1,93 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Distribuzione",
+    "defaultInfo": { "label": "{foglio}XS{n}" },
+    "graphics": [
+      {
+        "cx": 0,
+        "cy": 0,
+        "r": 4,
+        "start": 180,
+        "sweep": 180,
+        "type": "arc"
+      },
+      {
+        "type": "line",
+        "x1": -4,
+        "x2": 4,
+        "y1": 0,
+        "y2": 0
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": -7.5,
+        "y2": -3.122
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -7.5,
+        "y2": -4
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": -7.5,
+        "y2": -3.122
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -5,
+        "y": -3
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -5,
+        "y": 0
+      }
+    ],
+    "id": "base-presa",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Presa 2P+T",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "L",
+        "x": -2.5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "t2",
+        "name": "PE",
+        "x": 0,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "t3",
+        "name": "N",
+        "x": 2.5,
+        "y": -7.5
+      }
+    ],
+    "version": 1
+  }
+}

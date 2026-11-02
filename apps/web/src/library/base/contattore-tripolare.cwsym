@@ -32,9 +32,9 @@
       },
       {
         "cx": -5,
-        "cy": -2.5,
-        "r": 1,
-        "start": 180,
+        "cy": -3.1,
+        "r": 0.6,
+        "start": 270,
         "sweep": 180,
         "type": "arc"
       },
@@ -61,9 +61,9 @@
       },
       {
         "cx": 0,
-        "cy": -2.5,
-        "r": 1,
-        "start": 180,
+        "cy": -3.1,
+        "r": 0.6,
+        "start": 270,
         "sweep": 180,
         "type": "arc"
       },
@@ -90,13 +90,14 @@
       },
       {
         "cx": 5,
-        "cy": -2.5,
-        "r": 1,
-        "start": 180,
+        "cy": -3.1,
+        "r": 0.6,
+        "start": 270,
         "sweep": 180,
         "type": "arc"
       },
       {
+        "dash": "dashed",
         "type": "line",
         "x1": -6.25,
         "x2": 3.75,
@@ -104,18 +105,27 @@
         "y2": -0.25
       },
       {
-        "size": 2.5,
+        "anchor": "end",
+        "size": 4,
         "text": "{label}",
         "type": "text",
-        "x": 6,
-        "y": 0
+        "x": -8.5,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -8.5,
+        "y": 3.5
       },
       {
         "size": 2,
         "text": "{master_ref}",
         "type": "text",
-        "x": 6,
-        "y": 2.8
+        "x": 6.6,
+        "y": 0.5
       }
     ],
     "id": "base-contattore-tripolare",
@@ -166,6 +176,6 @@
         "y": 5
       }
     ],
-    "version": 2
+    "version": 3
   }
 }

@@ -7,8 +7,8 @@ describe('base symbol set', () => {
     const error = vi.spyOn(console, 'error');
     const symbols = loadBaseSymbols();
     expect(error).not.toHaveBeenCalled();
-    expect(symbols).toHaveLength(26);
-    expect(new Set(symbols.map((s) => s.id)).size).toBe(26);
+    expect(symbols).toHaveLength(69);
+    expect(new Set(symbols.map((s) => s.id)).size).toBe(69);
     for (const s of symbols) {
       expect(s.id.startsWith('base-')).toBe(true);
       expect(s.license).toBe('CC0-1.0');

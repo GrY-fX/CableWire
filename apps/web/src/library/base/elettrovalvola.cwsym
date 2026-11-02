@@ -1,0 +1,78 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Attuatori",
+    "defaultInfo": { "label": "{foglio}Y{n}" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 2.5,
+        "y2": 5
+      },
+      {
+        "height": 5,
+        "type": "rect",
+        "width": 10,
+        "x": -5,
+        "y": -2.5
+      },
+      {
+        "type": "line",
+        "x1": -5,
+        "x2": 5,
+        "y1": 2.5,
+        "y2": -2.5
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -6,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -6,
+        "y": 3.5
+      }
+    ],
+    "id": "base-elettrovalvola",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Elettrovalvola (bobina)",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "A1",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "A2",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

@@ -6,7 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Potenza",
-    "defaultInfo": { "label": "M" },
+    "defaultInfo": { "label": "{foglio}M{n}" },
     "graphics": [
       {
         "type": "line",
@@ -47,11 +47,20 @@
         "y": 5.5
       },
       {
-        "size": 2.5,
+        "anchor": "end",
+        "size": 4,
         "text": "{label}",
         "type": "text",
-        "x": 6,
-        "y": 3
+        "x": -6,
+        "y": 2
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -6,
+        "y": 5
       }
     ],
     "id": "base-motore-trifase",
@@ -81,6 +90,6 @@
         "y": -5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

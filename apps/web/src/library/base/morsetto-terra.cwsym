@@ -1,0 +1,95 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [
+      ["t1", "t2"]
+    ],
+    "category": "Morsetti",
+    "defaultInfo": { "label": "X" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -1
+      },
+      { "cx": 0, "cy": 0, "r": 1, "type": "circle" },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 1,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": 1,
+        "x2": 3,
+        "y1": 0,
+        "y2": 0
+      },
+      {
+        "type": "line",
+        "x1": 3,
+        "x2": 3,
+        "y1": -1.5,
+        "y2": 1.5
+      },
+      {
+        "type": "line",
+        "x1": 3.7,
+        "x2": 3.7,
+        "y1": -1,
+        "y2": 1
+      },
+      {
+        "type": "line",
+        "x1": 4.4,
+        "x2": 4.4,
+        "y1": -0.5,
+        "y2": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -2,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -2,
+        "y": 3.5
+      }
+    ],
+    "id": "base-morsetto-terra",
+    "kind": "terminal",
+    "license": "CC0-1.0",
+    "name": "Morsetto di terra (PE)",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "1",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "2",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

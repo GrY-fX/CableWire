@@ -39,7 +39,7 @@
       },
       {
         "anchor": "end",
-        "size": 2,
+        "size": 2.5,
         "text": "{function}",
         "type": "text",
         "x": -6,
@@ -67,6 +67,6 @@
         "y": 5
       }
     ],
-    "version": 2
+    "version": 3
   }
 }

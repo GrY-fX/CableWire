@@ -6,7 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Comandi",
-    "defaultInfo": { "label": "S" },
+    "defaultInfo": { "label": "{foglio}S{n}" },
     "graphics": [
       {
         "type": "line",
@@ -30,8 +30,9 @@
         "y2": -3
       },
       {
+        "dash": "dashed",
         "type": "line",
-        "x1": -1.5,
+        "x1": -1.136,
         "x2": -4,
         "y1": 0,
         "y2": 0
@@ -47,11 +48,27 @@
         "type": "polyline"
       },
       {
-        "size": 2.5,
+        "type": "line",
+        "x1": -5,
+        "x2": -4,
+        "y1": 0,
+        "y2": 0
+      },
+      {
+        "anchor": "end",
+        "size": 4,
         "text": "{label}",
         "type": "text",
-        "x": 2,
-        "y": 0
+        "x": -7,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -7,
+        "y": 3.5
       }
     ],
     "id": "base-selettore",
@@ -74,6 +91,6 @@
         "y": 5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

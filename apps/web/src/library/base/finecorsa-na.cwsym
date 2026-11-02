@@ -1,0 +1,80 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Comandi",
+    "defaultInfo": { "label": "{foglio}SQ{n}" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 2.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": -2.5,
+        "y1": 2.5,
+        "y2": -3
+      },
+      {
+        "closed": false,
+        "points": [
+          { "x": -1.591, "y": -1 },
+          { "x": -3.091, "y": 0 },
+          { "x": -0.682, "y": 1 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -4.091,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -4.091,
+        "y": 3.5
+      }
+    ],
+    "id": "base-finecorsa-na",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Finecorsa NA",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "13",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "14",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

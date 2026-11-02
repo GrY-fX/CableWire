@@ -6,7 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Protezioni",
-    "defaultInfo": { "label": "Q" },
+    "defaultInfo": { "label": "{foglio}Q{n}" },
     "graphics": [
       {
         "type": "line",
@@ -18,44 +18,119 @@
       {
         "type": "line",
         "x1": 0,
-        "x2": 0,
-        "y1": 2.5,
-        "y2": 5
-      },
-      {
-        "type": "line",
-        "x1": 0,
         "x2": -2.5,
         "y1": 2.5,
         "y2": -3
       },
       {
         "type": "line",
-        "x1": -1,
-        "x2": 1,
-        "y1": -3.5,
-        "y2": -1.5
+        "x1": -0.8,
+        "x2": 0.8,
+        "y1": -3.3,
+        "y2": -1.7
       },
       {
         "type": "line",
-        "x1": -1,
-        "x2": 1,
-        "y1": -1.5,
-        "y2": -3.5
+        "x1": -0.8,
+        "x2": 0.8,
+        "y1": -1.7,
+        "y2": -3.3
       },
       {
-        "size": 2.5,
+        "closed": true,
+        "filled": true,
+        "points": [
+          { "x": -1.55, "y": -0.91 },
+          { "x": -2.15, "y": -2.23 },
+          { "x": -2.969, "y": -1.858 },
+          { "x": -2.369, "y": -0.538 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 2.5,
+        "y2": 4
+      },
+      {
+        "height": 6,
+        "type": "rect",
+        "width": 5,
+        "x": -2.5,
+        "y": 4
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": 2.5,
+        "y1": 7,
+        "y2": 7
+      },
+      {
+        "closed": false,
+        "points": [
+          { "x": 0, "y": 4 },
+          { "x": 0, "y": 4.8 },
+          { "x": 1.2, "y": 4.8 },
+          { "x": 1.2, "y": 6.2 },
+          { "x": 0, "y": 6.2 },
+          { "x": 0, "y": 7 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 7,
+        "y2": 7.6
+      },
+      {
+        "cx": 0,
+        "cy": 8.5,
+        "r": 0.9,
+        "start": 270,
+        "sweep": 180,
+        "type": "arc"
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 9.4,
+        "y2": 10
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 10,
+        "y2": 12.5
+      },
+      {
+        "anchor": "end",
+        "size": 4,
         "text": "{label}",
         "type": "text",
-        "x": 2,
-        "y": 0
+        "x": -3.969,
+        "y": 4.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -3.969,
+        "y": 7.5
       }
     ],
     "id": "base-magnetotermico",
     "kind": "master",
     "license": "CC0-1.0",
     "master": "device",
-    "name": "Interruttore magnetotermico",
+    "name": "Magnetotermico 1P",
     "terminals": [
       {
         "dir": "n",
@@ -69,9 +144,9 @@
         "id": "t2",
         "name": "2",
         "x": 0,
-        "y": 5
+        "y": 12.5
       }
     ],
-    "version": 2
+    "version": 3
   }
 }

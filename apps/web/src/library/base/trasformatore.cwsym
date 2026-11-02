@@ -1,0 +1,94 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Potenza",
+    "defaultInfo": { "label": "{foglio}T{n}" },
+    "graphics": [
+      { "cx": 0, "cy": -2.5, "r": 3.5, "type": "circle" },
+      { "cx": 0, "cy": 2.5, "r": 3.5, "type": "circle" },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": -7.5,
+        "y2": -4.95
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": -7.5,
+        "y2": -4.95
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": 7.5,
+        "y2": 4.95
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": 7.5,
+        "y2": 4.95
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -4.5,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -4.5,
+        "y": 3.5
+      }
+    ],
+    "id": "base-trasformatore",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Trasformatore monofase",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "1U1",
+        "x": -2.5,
+        "y": -7.5
+      },
+      {
+        "dir": "n",
+        "id": "t2",
+        "name": "1U2",
+        "x": 2.5,
+        "y": -7.5
+      },
+      {
+        "dir": "s",
+        "id": "t3",
+        "name": "2U1",
+        "x": -2.5,
+        "y": 7.5
+      },
+      {
+        "dir": "s",
+        "id": "t4",
+        "name": "2U2",
+        "x": 2.5,
+        "y": 7.5
+      }
+    ],
+    "version": 1
+  }
+}

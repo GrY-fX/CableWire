@@ -1,0 +1,79 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Segnalazioni",
+    "defaultInfo": { "label": "{foglio}H{n}" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -2.5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 0.5,
+        "y2": 5
+      },
+      {
+        "type": "line",
+        "x1": -3,
+        "x2": 3,
+        "y1": -2.5,
+        "y2": -2.5
+      },
+      {
+        "cx": 0,
+        "cy": -2.5,
+        "r": 3,
+        "start": 0,
+        "sweep": 180,
+        "type": "arc"
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -4,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -4,
+        "y": 3.5
+      }
+    ],
+    "id": "base-cicalino",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Cicalino",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "X1",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "X2",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

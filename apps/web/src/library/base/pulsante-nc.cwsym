@@ -6,7 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Comandi",
-    "defaultInfo": { "label": "S" },
+    "defaultInfo": { "label": "{foglio}S{n}" },
     "graphics": [
       {
         "type": "line",
@@ -37,39 +37,49 @@
         "y2": -2.5
       },
       {
+        "dash": "dashed",
         "type": "line",
-        "x1": 1,
-        "x2": -3,
+        "x1": 1.136,
+        "x2": -2.5,
         "y1": 0,
         "y2": 0
       },
       {
         "type": "line",
-        "x1": -3,
-        "x2": -3,
+        "x1": -2.5,
+        "x2": -2.5,
         "y1": -1.5,
         "y2": 1.5
       },
       {
         "type": "line",
-        "x1": -3,
-        "x2": -4,
+        "x1": -2.5,
+        "x2": -1.5,
         "y1": -1.5,
         "y2": -1.5
       },
       {
         "type": "line",
-        "x1": -3,
-        "x2": -4,
+        "x1": -2.5,
+        "x2": -1.5,
         "y1": 1.5,
         "y2": 1.5
       },
       {
-        "size": 2.5,
+        "anchor": "end",
+        "size": 4,
         "text": "{label}",
         "type": "text",
-        "x": 4,
-        "y": 0
+        "x": -3.5,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -3.5,
+        "y": 3.5
       }
     ],
     "id": "base-pulsante-nc",
@@ -92,6 +102,6 @@
         "y": 5
       }
     ],
-    "version": 1
+    "version": 2
   }
 }

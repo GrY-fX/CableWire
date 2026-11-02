@@ -1,0 +1,88 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Protezioni",
+    "defaultInfo": { "label": "{foglio}F{n}" },
+    "graphics": [
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -5,
+        "y2": -3
+      },
+      {
+        "height": 6,
+        "type": "rect",
+        "width": 3,
+        "x": -1.5,
+        "y": -3
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -3,
+        "y2": 0.6
+      },
+      {
+        "closed": true,
+        "filled": true,
+        "points": [
+          { "x": 0, "y": 1.8 },
+          { "x": -0.6, "y": 0.4 },
+          { "x": 0.6, "y": 0.4 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": 3,
+        "y2": 5
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -2.5,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -2.5,
+        "y": 3.5
+      }
+    ],
+    "id": "base-scaricatore",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Scaricatore di sovratensione",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "L",
+        "x": 0,
+        "y": -5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "PE",
+        "x": 0,
+        "y": 5
+      }
+    ],
+    "version": 1
+  }
+}

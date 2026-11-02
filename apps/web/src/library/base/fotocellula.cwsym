@@ -1,0 +1,119 @@
+{
+  "format": "cablewire-symbol",
+  "formatVersion": 1,
+  "app": "CableWire",
+  "symbol": {
+    "author": "CableWire",
+    "bridges": [],
+    "category": "Sensori",
+    "defaultInfo": { "label": "{foglio}B{n}" },
+    "graphics": [
+      {
+        "height": 10,
+        "type": "rect",
+        "width": 10,
+        "x": -5,
+        "y": -5
+      },
+      {
+        "type": "line",
+        "x1": 0,
+        "x2": 0,
+        "y1": -7.5,
+        "y2": -5
+      },
+      {
+        "type": "line",
+        "x1": -2.5,
+        "x2": -2.5,
+        "y1": 5,
+        "y2": 7.5
+      },
+      {
+        "type": "line",
+        "x1": 2.5,
+        "x2": 2.5,
+        "y1": 5,
+        "y2": 7.5
+      },
+      {
+        "type": "line",
+        "x1": -9,
+        "x2": -5.866,
+        "y1": -6.5,
+        "y2": -3.366
+      },
+      {
+        "closed": true,
+        "filled": true,
+        "points": [
+          { "x": -5.3, "y": -2.8 },
+          { "x": -5.795, "y": -4.002 },
+          { "x": -6.502, "y": -3.295 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "type": "line",
+        "x1": -7,
+        "x2": -3.905,
+        "y1": -8.5,
+        "y2": -5.823
+      },
+      {
+        "closed": true,
+        "filled": true,
+        "points": [
+          { "x": -3.3, "y": -5.3 },
+          { "x": -3.881, "y": -6.463 },
+          { "x": -4.535, "y": -5.707 }
+        ],
+        "type": "polyline"
+      },
+      {
+        "anchor": "end",
+        "size": 4,
+        "text": "{label}",
+        "type": "text",
+        "x": -10,
+        "y": 0
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -10,
+        "y": 3
+      }
+    ],
+    "id": "base-fotocellula",
+    "kind": "simple",
+    "license": "CC0-1.0",
+    "name": "Fotocellula 3 fili",
+    "terminals": [
+      {
+        "dir": "n",
+        "id": "t1",
+        "name": "BN",
+        "x": 0,
+        "y": -7.5
+      },
+      {
+        "dir": "s",
+        "id": "t2",
+        "name": "BU",
+        "x": -2.5,
+        "y": 7.5
+      },
+      {
+        "dir": "s",
+        "id": "t3",
+        "name": "BK",
+        "x": 2.5,
+        "y": 7.5
+      }
+    ],
+    "version": 1
+  }
+}

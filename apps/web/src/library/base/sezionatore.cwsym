@@ -6,7 +6,7 @@
     "author": "CableWire",
     "bridges": [],
     "category": "Protezioni",
-    "defaultInfo": { "label": "Q" },
+    "defaultInfo": { "label": "{foglio}Q{n}" },
     "graphics": [
       {
         "type": "line",
@@ -37,11 +37,20 @@
         "y2": -2.5
       },
       {
-        "size": 2.5,
+        "anchor": "end",
+        "size": 4,
         "text": "{label}",
         "type": "text",
-        "x": 2,
-        "y": 0
+        "x": -3.5,
+        "y": 0.5
+      },
+      {
+        "anchor": "end",
+        "size": 2.5,
+        "text": "{function}",
+        "type": "text",
+        "x": -3.5,
+        "y": 3.5
       }
     ],
     "id": "base-sezionatore",
@@ -65,6 +74,6 @@
         "y": 5
       }
     ],
-    "version": 2
+    "version": 3
   }
 }
