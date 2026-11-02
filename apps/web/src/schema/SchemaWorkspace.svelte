@@ -90,7 +90,6 @@
     const closeMenus = (e: MouseEvent) => {
       if (!(e.target as HTMLElement).closest('.menu')) {
         menu = undefined;
-        renumberMenu = false;
       }
     };
     window.addEventListener('click', closeMenus);
@@ -208,7 +207,6 @@
     }
   }
 
-  let renumberMenu = $state(false);
   let showConflicts = $state(false);
   const conflicts = $derived.by(() => {
     void version;
@@ -237,7 +235,7 @@
   }
 
   function recalc(sheetId: SheetId | undefined) {
-    renumberMenu = false;
+    menu = undefined;
     const before = store.undoLabel;
     const result = store.run(renumber, sheetId === undefined ? {} : { sheetId });
     if (!result.ok) {
@@ -271,7 +269,7 @@
 
   /** Renumbers terminals 1, 2, 3… in reading order; text numbers (PE) are kept. */
   function recalcTerminals(strip: string | undefined) {
-    renumberMenu = false;
+    menu = undefined;
     const before = store.undoLabel;
     const result = store.run(renumberTerminals, strip === undefined ? {} : { strip });
     if (!result.ok) {
@@ -291,7 +289,7 @@
 
   /** Renumbers automatic labels; labels written by hand are kept. */
   function recalcLabels(sheetId: SheetId | undefined) {
-    renumberMenu = false;
+    menu = undefined;
     const before = store.undoLabel;
     const result = store.run(renumberLabels, sheetId === undefined ? {} : { sheetId });
     if (!result.ok) {
@@ -355,7 +353,14 @@
     void version;
     return files.dirty(store.doc);
   });
-  let menu = $state<'file' | 'export' | undefined>();
+  let menu = $state<'file' | 'sheet' | 'project' | undefined>();
+  const RECALC_WIRES_HINT =
+    'Rifà i numeri dei fili in ordine di lettura, chiudendo i buchi (i numeri bloccati restano)';
+
+  function showPanel(tab: 'sheet' | 'project') {
+    menu = undefined;
+    properties?.showTab(tab);
+  }
 
   /** Asks before throwing away changes not saved to disk (the browser copy is replaced too). */
   function confirmDiscard(): boolean {
@@ -510,31 +515,6 @@
         title="Inserendo o spostando un simbolo, i suoi terminali liberi si collegano ai terminali allineati e rivolti verso di lui"
         ><input type="checkbox" bind:checked={autoConnect} /> Collegamenti automatici</label
       >
-      <span class="sep"></span>
-      <div class="menu">
-        <button
-          title="Rifà i numeri dei fili in ordine di lettura, chiudendo i buchi (i numeri bloccati restano)"
-          onclick={() => (renumberMenu = !renumberMenu)}>Ricalcola numerazione ▾</button
-        >
-        {#if renumberMenu}
-          <div class="menu-items">
-            <div class="menu-label">Numeri dei fili</div>
-            <button onclick={() => recalc(editor.sheetId)}>Foglio corrente</button>
-            <button onclick={() => recalc(undefined)}>Tutto il progetto</button>
-            <div class="menu-label">Morsetti</div>
-            <button
-              disabled={!selectedStrip}
-              onclick={() => recalcTerminals(selectedStrip)}
-              title="Seleziona un morsetto per scegliere la morsettiera"
-              >Morsettiera del morsetto selezionato</button
-            >
-            <button onclick={() => recalcTerminals(undefined)}>Tutte le morsettiere</button>
-            <div class="menu-label">Sigle automatiche (es. {'{foglio}'}K{'{n}'})</div>
-            <button onclick={() => recalcLabels(editor.sheetId)}>Foglio corrente</button>
-            <button onclick={() => recalcLabels(undefined)}>Tutto il progetto</button>
-          </div>
-        {/if}
-      </div>
       {#if conflicts.length}
         <button
           class="warn"
@@ -571,22 +551,56 @@
         {/if}
       </div>
       <div class="menu">
-        <button onclick={() => (menu = menu === 'export' ? undefined : 'export')}>Esporta ▾</button>
-        {#if menu === 'export'}
+        <button onclick={() => (menu = menu === 'sheet' ? undefined : 'sheet')}>Foglio ▾</button>
+        {#if menu === 'sheet'}
           <div class="menu-items right">
-            <button onclick={() => exportSheet('svg')}>Foglio corrente in SVG</button>
-            <button onclick={() => exportSheet('png', 150)}>Foglio corrente in PNG (150 dpi)</button
+            <div class="menu-label">Ricalcola nel foglio corrente</div>
+            <button title={RECALC_WIRES_HINT} onclick={() => recalc(editor.sheetId)}
+              >Numeri dei fili</button
             >
-            <button onclick={() => exportSheet('png', 300)}>Foglio corrente in PNG (300 dpi)</button
+            <button onclick={() => recalcLabels(editor.sheetId)}
+              >Sigle automatiche (es. {'{foglio}'}K{'{n}'})</button
             >
-            <div class="menu-label">PDF</div>
+            <div class="menu-label">Esporta</div>
+            <button onclick={() => exportSheet('svg')}>SVG</button>
+            <button onclick={() => exportSheet('png', 150)}>PNG (150 dpi)</button>
+            <button onclick={() => exportSheet('png', 300)}>PNG (300 dpi)</button>
+            <button onclick={() => exportPdf(false)}>PDF</button>
+            <div class="menu-sep"></div>
+            <button onclick={() => print(false)}>Stampa…</button>
+            <button onclick={() => showPanel('sheet')}>Impostazioni del foglio</button>
+          </div>
+        {/if}
+      </div>
+      <div class="menu">
+        <button onclick={() => (menu = menu === 'project' ? undefined : 'project')}
+          >Progetto ▾</button
+        >
+        {#if menu === 'project'}
+          <div class="menu-items right">
+            <div class="menu-label">Ricalcola in tutto il progetto</div>
+            <button title={RECALC_WIRES_HINT} onclick={() => recalc(undefined)}
+              >Numeri dei fili</button
+            >
+            <button onclick={() => recalcLabels(undefined)}
+              >Sigle automatiche (es. {'{foglio}'}K{'{n}'})</button
+            >
+            <button onclick={() => recalcTerminals(undefined)}
+              >Morsetti di tutte le morsettiere</button
+            >
+            <button
+              disabled={!selectedStrip}
+              onclick={() => recalcTerminals(selectedStrip)}
+              title="Seleziona un morsetto per scegliere la morsettiera"
+              >Morsetti della morsettiera selezionata</button
+            >
+            <div class="menu-label">Esporta</div>
             <button onclick={() => exportPdf(true)}
               >PDF di tutti i fogli (con i rimandi cliccabili)</button
             >
-            <button onclick={() => exportPdf(false)}>PDF del foglio corrente</button>
-            <div class="menu-label">Stampa</div>
-            <button onclick={() => print(false)}>Stampa il foglio corrente…</button>
+            <div class="menu-sep"></div>
             <button onclick={() => print(true)}>Stampa tutti i fogli… <kbd>Ctrl+P</kbd></button>
+            <button onclick={() => showPanel('project')}>Impostazioni del progetto</button>
           </div>
         {/if}
       </div>
@@ -778,6 +792,10 @@
     padding: 0.35rem 0.6rem 0.15rem;
     font-size: 0.75rem;
     color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+  .menu-sep {
+    margin-top: 0.2rem;
     border-top: 1px solid var(--border);
   }
   kbd {
