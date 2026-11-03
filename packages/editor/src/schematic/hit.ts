@@ -1,5 +1,7 @@
 import {
   boundsOfPoints,
+  cableMarkLayout,
+  cableSheets,
   distanceToSegment,
   elementBounds,
   endPosition,
@@ -16,13 +18,20 @@ export const elementKey = (id: string) => `element:${id}`;
 export const wireKey = (id: string) => `wire:${id}`;
 export const junctionKey = (id: string) => `junction:${id}`;
 export const textKey = (id: string) => `text:${id}`;
+export const cableKey = (id: string) => `cable:${id}`;
 
-export type ParsedKey = { kind: 'element' | 'wire' | 'junction' | 'text'; id: string };
+export type ParsedKey = { kind: 'element' | 'wire' | 'junction' | 'text' | 'cable'; id: string };
 
 export function parseItemKey(key: string): ParsedKey | undefined {
   const i = key.indexOf(':');
   const kind = key.slice(0, i);
-  if (kind === 'element' || kind === 'wire' || kind === 'junction' || kind === 'text')
+  if (
+    kind === 'element' ||
+    kind === 'wire' ||
+    kind === 'junction' ||
+    kind === 'text' ||
+    kind === 'cable'
+  )
     return { kind, id: key.slice(i + 1) };
   return undefined;
 }
@@ -66,6 +75,8 @@ export function hitSheet(
     const path = wirePath(doc, w);
     if (path && distanceToPath(p, path) <= tolerance) return wireKey(w.id);
   }
+  const cable = hitCableMark(doc, sheetId, p, tolerance);
+  if (cable) return cableKey(cable);
   for (const t of Object.values(doc.texts)) {
     if (t.sheetId === sheetId && inside(p, textLayout(doc, t).bounds, tolerance)) {
       return textKey(t.id);
@@ -79,6 +90,34 @@ export function hitSheet(
   }
   return undefined;
 }
+
+/** The cable whose mark (line or label) is under `p`; on a wire, the wire wins. */
+export function hitCableMark(
+  doc: ProjectDoc,
+  sheetId: SheetId,
+  p: Point,
+  tolerance: number,
+): string | undefined {
+  for (const cable of Object.values(doc.cables)) {
+    if (!cableSheets(doc, cable).includes(sheetId)) continue;
+    const layout = cableMarkLayout(doc, cable, sheetId);
+    if (!layout) continue;
+    const { line, label } = layout;
+    if (distanceToSegment(p, { x: line.x1, y: line.y1 }, { x: line.x2, y: line.y2 }) <= tolerance) {
+      return cable.id;
+    }
+    // Label: about 0.6 of the height per character, centred on its line.
+    const box = {
+      minX: label.x,
+      maxX: label.x + label.text.length * CABLE_LABEL_SIZE * 0.6,
+      minY: label.y - CABLE_LABEL_SIZE / 2,
+      maxY: label.y + CABLE_LABEL_SIZE / 2,
+    };
+    if (inside(p, box, tolerance)) return cable.id;
+  }
+  return undefined;
+}
+const CABLE_LABEL_SIZE = 2.5;
 
 /** The coil whose contact table is under `p`, if any (tables lie over the drawing). */
 export function hitXref(

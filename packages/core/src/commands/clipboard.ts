@@ -1,7 +1,8 @@
 import { defineCommand, fail, ok } from '../command.ts';
-import type { ElementId, JunctionId, SheetId, TextId, WireId } from '../ids.ts';
+import type { CableId, ElementId, JunctionId, SheetId, TextId, WireId } from '../ids.ts';
 import { newId } from '../ids.ts';
 import type {
+  Cable,
   Element,
   Junction,
   ProjectDoc,
@@ -17,6 +18,7 @@ import { put } from '../ops.ts';
 import { followsPattern, labelPatterns, nextLabel } from '../labels.ts';
 import { findStrip, nextTerminalNo } from '../strips.ts';
 import { nextReferenceId } from '../references.ts';
+import { nextCableLabel } from '../cables.ts';
 
 /** A self-contained piece of a sheet, as copied to the clipboard. */
 export interface Fragment {
@@ -25,6 +27,8 @@ export interface Fragment {
   wires: Wire[];
   junctions: Junction[];
   texts: SheetText[];
+  /** Cables whose wires are all in the fragment. */
+  cables?: Cable[];
 }
 
 /**
@@ -49,7 +53,12 @@ export function copyFragment(
   const symbolIds = new Set(elements.map((e) => e.symbolId));
   const symbols = [...symbolIds].flatMap((id) => doc.symbols[id] ?? []);
   const texts = (selection.texts ?? []).flatMap((id) => doc.texts[id] ?? []);
-  return { symbols, elements, wires, junctions, texts };
+  const wireIds = new Set<string>(wires.map((w) => w.id));
+  const cables = Object.values(doc.cables).filter((c) => {
+    const carried = c.conductors.flatMap((k) => k.wire ?? []);
+    return carried.length > 0 && carried.every((w) => wireIds.has(w));
+  });
+  return { symbols, elements, wires, junctions, texts, cables };
 }
 
 export function isEmptyFragment(f: Fragment): boolean {
@@ -64,6 +73,7 @@ export function freshIds(fragment: Fragment): Record<string, string> {
     ...fragment.wires,
     ...fragment.junctions,
     ...fragment.texts,
+    ...(fragment.cables ?? []),
   ]) {
     ids[item.id] = newId();
   }
@@ -166,6 +176,19 @@ export const pasteFragment = defineCommand<{
         props: withNumber(w.props, undefined, false),
       }),
     );
+  }
+  // Copied cables are new cables, with the next labels and the pasted wires.
+  const cableLabels: string[] = [];
+  for (const c of fragment.cables ?? []) {
+    const label = nextCableLabel(doc, sheetId, cableLabels);
+    cableLabels.push(label);
+    const conductors = c.conductors.map((k) => {
+      const { wire, ...rest } = k;
+      return wire && ids[wire]
+        ? { ...rest, id: newId(), wire: map<WireId>(wire) }
+        : { ...rest, id: newId() };
+    });
+    ops.push(put('cables', { ...c, id: map<CableId>(c.id), label, conductors, marks: {} }));
   }
   return ok(ops);
 });

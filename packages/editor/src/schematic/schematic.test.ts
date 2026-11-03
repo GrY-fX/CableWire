@@ -389,3 +389,46 @@ describe('free texts in the editor', () => {
     expect(Object.keys(editor.doc.texts)).toHaveLength(2);
   });
 });
+
+describe('cables in the editor', () => {
+  it('gather the selected wires; the mark is selected, moved along them and removed', () => {
+    const { editor, store } = setup();
+    editor.autoConnect = false;
+    editor.startPlacing(COIL);
+    for (const [x, y] of [
+      [50, 50],
+      [60, 50],
+      [50, 90],
+      [60, 90],
+    ] as const)
+      click(editor, x, y);
+    editor.key('Escape');
+    const [a, b, c, d] = elementIds(editor);
+    store.run(addWire, {
+      id: 'w1' as never,
+      from: { element: a!, terminal: T2 },
+      to: { element: c!, terminal: T1 },
+    });
+    store.run(addWire, {
+      id: 'w2' as never,
+      from: { element: b!, terminal: T2 },
+      to: { element: d!, terminal: T1 },
+    });
+    editor.select(['wire:w1', 'wire:w2']);
+    expect(editor.groupSelectedWires()).toBe(true);
+    const [id] = Object.keys(editor.doc.cables);
+    expect([...editor.selection]).toEqual([`cable:${id}`]);
+    // Wires from y=55 to y=85: the mark is at y=62.5; a click on its line (between the
+    // wires) selects it, dragging moves it up and down only.
+    editor.select([]);
+    editor.pointerDown({ x: 55, y: 62.5 });
+    editor.pointerMove({ x: 58, y: 71.2 });
+    editor.pointerUp({ x: 58, y: 71.2 });
+    expect([...editor.selection]).toEqual([`cable:${id}`]);
+    expect(Object.values(editor.doc.cables)[0]!.marks[editor.sheetId]).toEqual({ at: 70 });
+    expect(store.undoLabel).toBe('Sposta segno del cavo');
+    editor.key('Delete');
+    expect(editor.doc.cables).toEqual({});
+    expect(Object.keys(editor.doc.wires)).toHaveLength(2);
+  });
+});

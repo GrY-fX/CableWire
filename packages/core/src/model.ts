@@ -1,5 +1,6 @@
 import { newId } from './ids.ts';
 import type {
+  CableId,
   ElementId,
   JunctionId,
   SheetId,
@@ -195,6 +196,38 @@ export interface Wire {
   props: WireProps;
 }
 
+/** A conductor of a cable: its colour code or number, and the wire it carries. */
+export interface Conductor {
+  id: string;
+  /** Colour code (IEC 60757, e.g. BN, GNYE) or number ("1", "2"...). */
+  code: string;
+  /** The wire in this conductor; missing for a spare conductor. */
+  wire?: WireId;
+}
+
+/** Where a cable's mark crosses its wires on a sheet: y for vertical wires, x for horizontal. */
+export interface CableMark {
+  at: number;
+}
+
+/** Several wires gathered in one cable, each in a conductor. */
+export interface Cable {
+  id: CableId;
+  /** E.g. W1; automatic from DEFAULT_CABLE_PATTERN. */
+  label: string;
+  /** Commercial type, e.g. FG16OR16. */
+  type?: string;
+  /** Cross-section of the conductors in mm², as written (e.g. "2,5"). */
+  section?: string;
+  /** Length in metres. */
+  length?: number;
+  /** Numbered conductors instead of coloured ones. */
+  numbered?: boolean;
+  conductors: Conductor[];
+  /** The mark on each sheet where the cable has wires; placed automatically when missing. */
+  marks: Partial<Record<SheetId, CableMark>>;
+}
+
 export interface ProjectMeta {
   title: string;
   author: string;
@@ -287,6 +320,8 @@ export interface ProjectSettings {
   terminalStrips?: TerminalStrip[];
   /** Name of strips that belong to a sheet, e.g. `{foglio}X{n}`; see DEFAULT_STRIP_PATTERN. */
   stripPattern?: string;
+  /** Label of new cables, e.g. `{foglio}W{n}`; see DEFAULT_CABLE_PATTERN. */
+  cablePattern?: string;
 }
 
 export function getNumbering(doc: ProjectDoc): NumberingSettings {
@@ -304,6 +339,7 @@ export interface ProjectDoc {
   wires: Record<WireId, Wire>;
   junctions: Record<JunctionId, Junction>;
   texts: Record<TextId, SheetText>;
+  cables: Record<CableId, Cable>;
 }
 
 export const DEFAULT_GRID_STEP = 2.5;
@@ -345,6 +381,7 @@ export function createEmptyProject(
     wires: {},
     junctions: {},
     texts: {},
+    cables: {},
   };
 }
 

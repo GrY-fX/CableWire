@@ -1,4 +1,13 @@
-import type { Element, Junction, ProjectDoc, Sheet, SheetText, SymbolDef, Wire } from './model.ts';
+import type {
+  Cable,
+  Element,
+  Junction,
+  ProjectDoc,
+  Sheet,
+  SheetText,
+  SymbolDef,
+  Wire,
+} from './model.ts';
 
 export interface TableTypes {
   sheets: Sheet;
@@ -7,6 +16,7 @@ export interface TableTypes {
   wires: Wire;
   junctions: Junction;
   texts: SheetText;
+  cables: Cable;
 }
 
 export type Table = keyof TableTypes;
@@ -17,6 +27,7 @@ export const TABLES: readonly Table[] = [
   'wires',
   'junctions',
   'texts',
+  'cables',
 ];
 
 /** Field updates; a field set to `undefined` is removed. */

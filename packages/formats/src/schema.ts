@@ -1,5 +1,7 @@
 import * as v from 'valibot';
 import type {
+  CableId,
+  CableMark,
   ElementId,
   JunctionId,
   ProjectDoc,
@@ -173,6 +175,22 @@ const wire = v.object({
   }),
 });
 
+const cable = v.object({
+  id: id<CableId>(),
+  label: v.string(),
+  type: v.exactOptional(v.string()),
+  section: v.exactOptional(v.string()),
+  length: v.exactOptional(v.pipe(num, v.minValue(0))),
+  numbered: v.exactOptional(v.boolean()),
+  conductors: v.array(
+    v.object({ id: v.string(), code: v.string(), wire: v.exactOptional(id<WireId>()) }),
+  ),
+  marks: v.pipe(
+    v.record(v.string(), v.object({ at: num })),
+    v.transform((r) => r as Partial<Record<SheetId, CableMark>>),
+  ),
+});
+
 export const projectSchema = v.object({
   formatVersion: v.literal(1),
   meta: v.object({
@@ -217,6 +235,7 @@ export const projectSchema = v.object({
       ),
     ),
     stripPattern: v.exactOptional(v.string()),
+    cablePattern: v.exactOptional(v.string()),
     xrefStyles: v.exactOptional(
       v.object({ coil: v.exactOptional(xrefStyle), device: v.exactOptional(xrefStyle) }),
     ),
@@ -229,6 +248,8 @@ export const projectSchema = v.object({
   junctions: table<JunctionId, typeof junction>(junction),
   // Missing in files written before free texts existed.
   texts: v.optional(table<TextId, typeof sheetText>(sheetText), {}),
+  // Missing in files written before cables existed.
+  cables: v.optional(table<CableId, typeof cable>(cable), {}),
 });
 
 // Compile-time guarantee that the schemas produce exactly core's types.

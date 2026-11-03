@@ -1,7 +1,8 @@
 import { defineCommand, ok } from '../command.ts';
-import type { ElementId, JunctionId, TextId, WireId } from '../ids.ts';
+import type { CableId, ElementId, JunctionId, TextId, WireId } from '../ids.ts';
 import type { ProjectDoc } from '../model.ts';
 import { isJunctionEnd } from '../model.ts';
+import { spareConductor } from '../cables.ts';
 import type { Op } from '../ops.ts';
 import { del, patch } from '../ops.ts';
 
@@ -10,6 +11,7 @@ export interface RemoveArgs {
   wires?: readonly WireId[];
   junctions?: readonly JunctionId[];
   texts?: readonly TextId[];
+  cables?: readonly CableId[];
 }
 
 /**
@@ -51,6 +53,17 @@ export function removeOps(doc: ProjectDoc, args: RemoveArgs): Op[] {
   for (const id of junctions) ops.push(del('junctions', id));
   for (const id of elements) ops.push(del('elements', id));
   for (const id of args.texts ?? []) if (doc.texts[id]) ops.push(del('texts', id));
+  // Cables: removed when asked; otherwise the conductors of removed wires become spare.
+  const cables = new Set(args.cables?.filter((id) => doc.cables[id]));
+  for (const id of cables) ops.push(del('cables', id));
+  for (const cable of Object.values(doc.cables)) {
+    if (cables.has(cable.id) || !cable.conductors.some((c) => c.wire && wires.has(c.wire)))
+      continue;
+    const conductors = cable.conductors.map((c) =>
+      c.wire && wires.has(c.wire) ? spareConductor(c) : c,
+    );
+    ops.push(patch('cables', cable.id, { conductors }));
+  }
   return ops;
 }
 

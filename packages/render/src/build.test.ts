@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { setProjectField, setTitleBlock, setWireProps } from '@cablewire/core';
-import type { Element, ProjectDoc, Sheet, SymbolDef } from '@cablewire/core';
+import {
+  createCable,
+  setProjectField,
+  setTitleBlock,
+  setWireProps,
+  updateCable,
+} from '@cablewire/core';
+import type { CableId, Element, ProjectDoc, Sheet, SymbolDef } from '@cablewire/core';
 import { buildElementNode, buildScene, primitivePath, wireNumber } from './build.ts';
 import type { SceneNode } from './scene.ts';
 import { rowLabel, sheetLayout } from './sheet.ts';
@@ -85,6 +91,18 @@ describe('buildScene', () => {
       kind: 'group',
       transform: 'translate(80 80) rotate(180)',
     });
+  });
+
+  it('marks cables across their wires, coloured by conductor', () => {
+    const { store, sheet } = fixture();
+    must(store, createCable, { id: 'c' as CableId, wires: [W1] });
+    must(store, updateCable, { id: 'c' as CableId, set: { section: '1,5' } });
+    const scene = buildScene(store.doc, sheet);
+    const mark = scene.items.find((i) => i.key === 'cable:c')!.node;
+    // One conductor (BN) on the horizontal run y=75 from x=50 to 80: mark a quarter along, x=57.5.
+    expect(texts(mark)).toEqual([expect.objectContaining({ text: '1W1 1x1,5', x: 58.5 })]);
+    const wire = scene.items.find((i) => i.key === `wire:${W1}`)!.node;
+    expect(wire.kind === 'group' && wire.children[0]?.classes).toContain('wc-BN');
   });
 
   it('draws wires through their bends with the number on the longest segment', () => {

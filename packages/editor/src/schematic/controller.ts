@@ -1,5 +1,9 @@
 import {
   addStrip,
+  cableMarkLayout,
+  cableSheets,
+  createCable,
+  moveCableMark,
   addText,
   addWire,
   autoConnections,
@@ -35,6 +39,7 @@ import {
   xrefStyleOf,
 } from '@cablewire/core';
 import type {
+  CableId,
   Bounds,
   Command,
   Direction,
@@ -59,6 +64,7 @@ import {
   itemsInside,
   junctionKey,
   parseItemKey,
+  cableKey,
   textKey,
   wireKey,
   wirePath,
@@ -105,7 +111,8 @@ type Drag =
   | { kind: 'marquee'; origin: Point; additive: boolean }
   | { kind: 'segment'; wire: WireId; index: number; base: Point[] }
   | { kind: 'wire-end'; wire: WireId; end: 'from' | 'to' }
-  | { kind: 'xref'; master: ElementId; origin: Point; base: { dx: number; dy: number } };
+  | { kind: 'xref'; master: ElementId; origin: Point; base: { dx: number; dy: number } }
+  | { kind: 'cable'; cable: CableId; axis: 'x' | 'y'; origin: Point; base: number };
 
 const same = (a: Point, b: Point) => a.x === b.x && a.y === b.y;
 
@@ -384,6 +391,25 @@ export class SchematicEditor {
       return;
     }
     const hit = hitSheet(this.doc, this.sheet, raw, this.tolerance);
+    // A cable's mark: selected, and dragged only along its wires.
+    const cable = !mods.shift && hit ? parseItemKey(hit) : undefined;
+    if (cable?.kind === 'cable') {
+      const row = this.doc.cables[cable.id as CableId];
+      const layout = row && cableMarkLayout(this.doc, row, this.sheet);
+      this.selected = new Set([hit!]);
+      if (layout) {
+        this.store.begin('Sposta segno del cavo');
+        this.drag = {
+          kind: 'cable',
+          cable: row.id,
+          axis: layout.axis,
+          origin: raw,
+          base: layout.at,
+        };
+      }
+      this.emit();
+      return;
+    }
     if (!hit) {
       if (!mods.shift) this.selected = new Set();
       this.drag = { kind: 'marquee', origin: raw, additive: !!mods.shift };
@@ -417,6 +443,13 @@ export class SchematicEditor {
       }
     } else if (drag?.kind === 'marquee') {
       this.marqueeRect = rectFromPoints(drag.origin, raw);
+    } else if (drag?.kind === 'cable') {
+      const delta = snapPoint({ x: raw.x - drag.origin.x, y: raw.y - drag.origin.y }, this.grid);
+      const at = drag.base + (drag.axis === 'y' ? delta.y : delta.x);
+      const row = this.doc.cables[drag.cable];
+      if (row && row.marks[this.sheet]?.at !== at) {
+        this.run(moveCableMark, { id: drag.cable, sheetId: this.sheet, at });
+      }
     } else if (drag?.kind === 'xref') {
       const delta = snapPoint({ x: raw.x - drag.origin.x, y: raw.y - drag.origin.y }, this.grid);
       const master = this.doc.elements[drag.master];
@@ -436,7 +469,7 @@ export class SchematicEditor {
       this.store.commit();
     } else if (drag?.kind === 'segment') {
       this.store.commit();
-    } else if (drag?.kind === 'xref') {
+    } else if (drag?.kind === 'xref' || drag?.kind === 'cable') {
       this.store.commit();
     } else if (drag?.kind === 'wire-end') {
       this.reconnect(drag, anchorAt(this.doc, this.sheet, raw, this.tolerance));
@@ -728,6 +761,17 @@ export class SchematicEditor {
     this.clipboard = previous;
   }
 
+  /** Gathers the selected wires in a new cable and selects its mark; true if created. */
+  groupSelectedWires(): boolean {
+    const { wires } = this.split(this.selected);
+    if (wires.length === 0) return false;
+    const id = newId<'cable'>() as CableId;
+    if (!this.run(createCable, { id, wires })) return false;
+    this.selected = new Set([cableKey(id)]);
+    this.emit();
+    return true;
+  }
+
   selectAll(): void {
     const onSheet = <T extends { sheetId: SheetId; id: string }>(rows: Record<string, T>) =>
       Object.values(rows).filter((r) => r.sheetId === this.sheet);
@@ -834,18 +878,21 @@ export class SchematicEditor {
     const wires: WireId[] = [];
     const junctions: JunctionId[] = [];
     const texts: TextId[] = [];
+    const cables: CableId[] = [];
     for (const key of keys) {
       const k = parseItemKey(key);
       if (k?.kind === 'element') elements.push(k.id as ElementId);
       else if (k?.kind === 'wire') wires.push(k.id as WireId);
       else if (k?.kind === 'junction') junctions.push(k.id as JunctionId);
       else if (k?.kind === 'text') texts.push(k.id as TextId);
+      else if (k?.kind === 'cable') cables.push(k.id as CableId);
     }
-    return { elements, wires, junctions, texts };
+    return { elements, wires, junctions, texts, cables };
   }
 
   private cancelDrag(): void {
-    const moving = this.drag?.kind === 'move' || this.drag?.kind === 'xref';
+    const moving =
+      this.drag?.kind === 'move' || this.drag?.kind === 'xref' || this.drag?.kind === 'cable';
     if (moving && this.store.inTransaction) this.store.rollback();
     this.drag = undefined;
     this.marqueeRect = undefined;
@@ -856,6 +903,10 @@ export class SchematicEditor {
     const doc = this.doc;
     const keep = [...this.selected].filter((key) => {
       const k = parseItemKey(key);
+      if (k?.kind === 'cable') {
+        const cable = doc.cables[k.id as CableId];
+        return !!cable && cableSheets(doc, cable).includes(this.sheet);
+      }
       const row =
         k?.kind === 'element'
           ? doc.elements[k.id as ElementId]

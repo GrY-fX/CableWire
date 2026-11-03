@@ -5,6 +5,7 @@
   "meta": { "author": "Giuseppe", "createdAt": "2026-10-29T10:00:00.000Z", "title": "Quadro pompa", "updatedAt": "2026-10-29T10:00:00.000Z" },
   "settings": { "gridStep": 2.5 },
   "sheetOrder": ["sheet-1", "sheet-2"],
+  "cables": {},
   "elements": {
     "x1": {
       "id": "x1",

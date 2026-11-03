@@ -42,8 +42,17 @@ export const removeSheet = defineCommand<{ id: SheetId }>('Elimina foglio', (doc
   });
   const changedStrips =
     strips.length !== getStrips(doc).length || strips.some((s, i) => s !== getStrips(doc)[i]);
+  // Cables keep their wires elsewhere; their mark on this sheet goes.
+  const marks = Object.values(doc.cables)
+    .filter((c) => c.marks[id])
+    .map((c) => {
+      const marks = { ...c.marks };
+      delete marks[id];
+      return patch('cables', c.id, { marks });
+    });
   return ok([
     ...contents,
+    ...marks,
     del('sheets', id),
     meta({ sheetOrder: doc.sheetOrder.filter((s) => s !== id) }),
     ...(changedStrips ? [meta({ settings: { ...doc.settings, terminalStrips: strips } })] : []),

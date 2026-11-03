@@ -1,4 +1,7 @@
 import {
+  cableMarkLayout,
+  cableOfWire,
+  cableSheets,
   endPosition,
   masterRef,
   referenceTarget,
@@ -15,6 +18,7 @@ import {
   xrefLayout,
 } from '@cablewire/core';
 import type {
+  CableMarkLayout,
   Element,
   Junction,
   Point,
@@ -36,6 +40,7 @@ export const TERMINAL_MARK = 0.75;
 export const WIRE_NUMBER_SIZE = 2.5;
 /** Clear space between a wire and the digits of its number. */
 const WIRE_NUMBER_GAP = 1.2;
+export const CABLE_TEXT_SIZE = 2.5;
 
 const cache = new WeakMap<ProjectDoc, Map<SheetId, Scene>>();
 
@@ -89,6 +94,12 @@ function computeScene(doc: ProjectDoc, sheetId: SheetId): Scene {
   for (const t of Object.values(doc.texts)) {
     if (t.sheetId !== sheetId) continue;
     items.push({ key: `text:${t.id}`, layer: 'elements', node: buildText(doc, t) });
+  }
+  for (const cable of Object.values(doc.cables)) {
+    if (!cableSheets(doc, cable).includes(sheetId)) continue;
+    const layout = cableMarkLayout(doc, cable, sheetId);
+    if (layout)
+      items.push({ key: `cable:${cable.id}`, layer: 'elements', node: buildCableMark(layout) });
   }
   for (const junction of Object.values(doc.junctions)) {
     if (junction.sheetId !== sheetId) continue;
@@ -149,6 +160,32 @@ export function buildText(doc: ProjectDoc, t: SheetText): SceneNode {
         classes: ['hit'],
         screenOnly: true,
       },
+    ],
+  };
+}
+
+/** Mark of a cable: a thin line across its wires, a slash on each, label and formation. */
+export function buildCableMark(layout: CableMarkLayout): SceneNode {
+  const { line: l, label } = layout;
+  const slashes = layout.crossings
+    .map((c) => `M${round(c.x - 0.8)} ${round(c.y + 0.8)}L${round(c.x + 0.8)} ${round(c.y - 0.8)}`)
+    .join('');
+  const along = `M${round(l.x1)} ${round(l.y1)}L${round(l.x2)} ${round(l.y2)}`;
+  return {
+    kind: 'group',
+    children: [
+      { kind: 'path', d: along, classes: ['stroke', 'cable-line'] },
+      { kind: 'path', d: slashes, classes: ['stroke'] },
+      {
+        kind: 'text',
+        x: round(label.x),
+        y: round(label.y),
+        text: label.text,
+        size: CABLE_TEXT_SIZE,
+        anchor: 'start',
+        classes: ['text'],
+      },
+      { kind: 'path', d: along, classes: ['hit'], screenOnly: true },
     ],
   };
 }
@@ -311,7 +348,9 @@ function buildWire(doc: ProjectDoc, wire: Wire, showNumber: boolean): SceneNode 
   const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${round(p.x)} ${round(p.y)}`).join('');
   // Colour from the colour code, width from the wire; the green-yellow conductor gets
   // yellow stripes over its green.
-  const color = wireColor(wire.props.color);
+  // A wire in a cable takes the colour of its conductor, when that is a colour.
+  const conductor = cableOfWire(doc, wire.id)?.conductor.code;
+  const color = (conductor && wireColor(conductor)) || wireColor(wire.props.color);
   const width = wire.props.width;
   const look = [
     ...(color ? [wireColorClass(color.code)] : []),

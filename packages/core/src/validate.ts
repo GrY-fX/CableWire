@@ -97,6 +97,7 @@ export function validate(doc: ProjectDoc): Problem[] {
     }
   }
 
+  const carried = new Set<string>();
   for (const wire of Object.values(doc.wires)) {
     if (!doc.sheets[wire.sheetId]) {
       report('missing-sheet', `wire ${wire.id} is on a missing sheet`, 'wires', wire.id);
@@ -107,6 +108,18 @@ export function validate(doc: ProjectDoc): Problem[] {
     }
     if (sameEnd(wire.from, wire.to)) {
       report('wire-loop', `wire ${wire.id} starts and ends on the same point`, 'wires', wire.id);
+    }
+  }
+
+  for (const cable of Object.values(doc.cables)) {
+    for (const c of cable.conductors) {
+      if (c.wire === undefined) continue;
+      if (!doc.wires[c.wire]) {
+        report('cable-wire', `cable ${cable.label} carries a missing wire`, 'cables', cable.id);
+      } else if (carried.has(c.wire)) {
+        report('cable-wire', `wire ${c.wire} is in two conductors`, 'cables', cable.id);
+      }
+      carried.add(c.wire);
     }
   }
 

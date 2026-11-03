@@ -2,6 +2,15 @@
   import { tick } from 'svelte';
   import { SvelteSet } from 'svelte/reactivity';
   import {
+    addWiresToCable,
+    cableFormation,
+    cableOfWire,
+    cableSheets,
+    DEFAULT_CABLE_PATTERN,
+    getCablePattern,
+    releaseWire,
+    renumberCables,
+    setConductor,
     allMasters,
     availablePartners,
     contactType,
@@ -72,6 +81,7 @@
     updateSheet,
   } from '@cablewire/core';
   import type {
+    CableId,
     BindingMargin,
     Patch,
     Rotation,
@@ -94,6 +104,7 @@
   } from '@cablewire/core';
   import { parseItemKey } from '@cablewire/editor';
   import type { SchematicEditor } from '@cablewire/editor';
+  import CablePanel from './CablePanel.svelte';
   import LockIcon from './LockIcon.svelte';
   import { loadOpenSections, saveOpenSections } from './preferences.ts';
   import { rememberSheetFormat } from './sheetFormat.ts';
@@ -112,7 +123,15 @@
     const element = single?.kind === 'element' ? doc.elements[single.id as ElementId] : undefined;
     const wire = single?.kind === 'wire' ? doc.wires[single.id as WireId] : undefined;
     const freeText = single?.kind === 'text' ? doc.texts[single.id as TextId] : undefined;
+    const cable = single?.kind === 'cable' ? doc.cables[single.id as CableId] : undefined;
+    const selectedWires = keys.flatMap((k) => {
+      const p = parseItemKey(k);
+      return p?.kind === 'wire' ? [p.id as WireId] : [];
+    });
     return {
+      cable,
+      wireCable: wire ? cableOfWire(doc, wire.id) : undefined,
+      selectedWires,
       freeText,
       doc,
       count: keys.length,
@@ -125,6 +144,8 @@
       sheet: doc.sheets[editor.sheetId]!,
     };
   });
+
+  const projectCables = $derived(Object.values(view.doc.cables));
 
   const NUMBER_MODES: Record<WireNumberMode, string> = {
     each: 'Su ogni tratto',
@@ -891,8 +912,60 @@
         {'{fogli}'}, {'{titolo_foglio}'}, {'{cliente}'}… R ruota, Canc elimina, doppio clic per
         modificarlo.
       </p>
+    {:else if view.cable}
+      <CablePanel {editor} cable={view.cable} />
     {:else if view.wire}
       <h3>Filo</h3>
+      {#if view.wireCable}
+        {@const { cable, conductor } = view.wireCable}
+        <div class="cable-row">
+          <span
+            >Nel cavo <button
+              class="link"
+              title="Mostra il cavo"
+              onclick={() => editor.select([`cable:${cable.id}`])}>{cable.label}</button
+            ></span
+          >
+          <select
+            value={conductor.id}
+            aria-label="Conduttore"
+            onchange={(e) =>
+              editor.store.run(setConductor, {
+                cable: cable.id,
+                conductor: text(e),
+                wire: view.wire!.id,
+              })}
+          >
+            {#each cable.conductors as c (c.id)}
+              <option value={c.id} disabled={!!c.wire && c.wire !== view.wire.id}
+                >{c.code}{c.wire && c.wire !== view.wire.id ? ' (occupato)' : ''}</option
+              >
+            {/each}
+          </select>
+          <button
+            class="icon"
+            title="Togli il filo dal cavo"
+            onclick={() => editor.store.run(releaseWire, { wire: view.wire!.id })}>×</button
+          >
+        </div>
+      {:else}
+        <div class="cable-row">
+          <button onclick={() => editor.groupSelectedWires()}>Nuovo cavo</button>
+          {#if projectCables.length}
+            <select
+              aria-label="Aggiungi a un cavo esistente"
+              value=""
+              onchange={(e) => {
+                const id = text(e) as CableId;
+                if (id) editor.store.run(addWiresToCable, { cable: id, wires: [view.wire!.id] });
+              }}
+            >
+              <option value="">Aggiungi a un cavo…</option>
+              {#each projectCables as c (c.id)}<option value={c.id}>{c.label}</option>{/each}
+            </select>
+          {/if}
+        </div>
+      {/if}
       {#if view.highlight}
         <p class="hint">
           Potenziale evidenziato: {view.highlight.wires} fili su {view.highlight.sheets}
@@ -1003,6 +1076,28 @@
     {:else if view.count > 1}
       <h3>{view.count} oggetti selezionati</h3>
       <p class="hint">R ruota, M specchia, Canc elimina, Ctrl+C copia.</p>
+      {#if view.selectedWires.length}
+        {@const cables = Object.values(view.doc.cables)}
+        <h4>{view.selectedWires.length} {view.selectedWires.length === 1 ? 'filo' : 'fili'}</h4>
+        <div class="actions">
+          <button onclick={() => editor.groupSelectedWires()}>Raggruppa in cavo</button>
+          {#if cables.length}
+            <select
+              aria-label="Aggiungi a un cavo esistente"
+              value=""
+              onchange={(e) => {
+                const id = text(e) as CableId;
+                if (!id) return;
+                editor.store.run(addWiresToCable, { cable: id, wires: view.selectedWires });
+                editor.select([`cable:${id}`]);
+              }}
+            >
+              <option value="">Aggiungi a un cavo…</option>
+              {#each cables as c (c.id)}<option value={c.id}>{c.label}</option>{/each}
+            </select>
+          {/if}
+        </div>
+      {/if}
     {:else}
       <h3>Giunzione</h3>
       <p class="hint">Nessuna proprietà. Canc la elimina.</p>
@@ -1292,6 +1387,65 @@
       </p>
     </details>
     <details
+      open={openSections.has('Cavi')}
+      ontoggle={(e) => toggleSection('Cavi', e.currentTarget.open)}
+    >
+      <summary>Cavi</summary>
+      {#if projectCables.length === 0}
+        <p class="hint">
+          Nessun cavo: seleziona più fili e scegli «Raggruppa in cavo» nella scheda Selezione.
+        </p>
+      {:else}
+        <ul class="strips">
+          {#each projectCables as c (c.id)}
+            {@const on = cableSheets(view.doc, c)}
+            <li>
+              <button
+                class="link"
+                disabled={!on.length}
+                title={on.length ? 'Mostra il cavo' : 'Il cavo non ha fili'}
+                onclick={() => {
+                  editor.setSheet(on[0]!);
+                  editor.select([`cable:${c.id}`]);
+                }}>{c.label}</button
+              >
+              <span class="count">{cableFormation(c) || '—'}</span>
+              <span class="count"
+                >{on.length
+                  ? `f. ${on.map((s) => view.doc.sheetOrder.indexOf(s) + 1).join(', ')}`
+                  : 'senza fili'}</span
+              >
+            </li>
+          {/each}
+        </ul>
+      {/if}
+      <label
+        >Sigla dei cavi nuovi
+        <input
+          type="text"
+          value={getCablePattern(view.doc)}
+          placeholder={DEFAULT_CABLE_PATTERN}
+          onchange={(e) => {
+            const pattern = text(e) || DEFAULT_CABLE_PATTERN;
+            if (parsePattern(pattern).ok)
+              editor.store.run(updateSettings, {
+                set: { cablePattern: pattern === DEFAULT_CABLE_PATTERN ? undefined : pattern },
+              });
+          }}
+        />
+      </label>
+      <div class="actions">
+        <button
+          disabled={projectCables.length === 0}
+          onclick={() => editor.store.run(renumberCables, {})}>Ricalcola sigle dei cavi</button
+        >
+      </div>
+      <p class="hint">
+        {'{foglio}'} = foglio del primo filo del cavo, {'{n}'} = contatore. Il ricalcolo segue l'ordine
+        di lettura e lascia le sigle scritte a mano.
+      </p>
+    </details>
+    <details
       open={openSections.has('Bobine e contatti')}
       ontoggle={(e) => toggleSection('Bobine e contatti', e.currentTarget.open)}
     >
@@ -1544,6 +1698,16 @@
   }
   .icon:disabled {
     opacity: 0.3;
+  }
+  .cable-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+  }
+  .cable-row select {
+    width: auto;
   }
   .number-row {
     display: flex;
