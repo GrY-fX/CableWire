@@ -23,8 +23,15 @@ const line = (x1: number, y1: number, x2: number, y2: number) => `M${x1} ${y1}L$
 /** Line printed under the frame of every sheet. */
 export const CREDIT_TEXT = 'Schema realizzato con il software CableWire';
 
-/** Frame, reference bands and the project's title block. */
-export function buildFrame(doc: ProjectDoc, sheet: Sheet): SceneNode {
+/**
+ * Frame, reference bands and the project's title block. `page` overrides the sheet
+ * number and count in the title block (pages of tables after the sheets).
+ */
+export function buildFrame(
+  doc: ProjectDoc,
+  sheet: Sheet,
+  page?: { number: number; total: number },
+): SceneNode {
   // A title block spanning the width keeps the bottom of the frame: rows end above it.
   const reserve = titleBlockReserve(doc);
   const { frame, drawing } = sheetLayout(sheet, reserve);
@@ -66,7 +73,7 @@ export function buildFrame(doc: ProjectDoc, sheet: Sheet): SceneNode {
   // Title block from the project's template, placeholders filled for this sheet.
   const block = getTitleBlock(doc);
   const place = titleBlockPlacement(sheet, block);
-  const values = titleBlockValues(doc, sheet);
+  const values = titleBlockValues(doc, sheet, page);
   const shapes: SceneNode[] = [];
   for (const p of block.graphics) {
     const q = placePrimitive(p, place);

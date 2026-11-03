@@ -26,9 +26,12 @@ export function fontCss(): Promise<string> {
   return fontCssCache;
 }
 
-/** Standalone SVG of a sheet at real size, without on-screen aids. */
-export function sheetSvg(doc: ProjectDoc, sheetId: SheetId, css: string): string {
-  return toSvgString(buildScene(doc, sheetId), { css });
+/**
+ * Standalone SVG of a sheet at real size, without on-screen aids; `pages` is the
+ * sheet count shown in the title block when pages of tables follow.
+ */
+export function sheetSvg(doc: ProjectDoc, sheetId: SheetId, css: string, pages?: number): string {
+  return toSvgString(buildScene(doc, sheetId, pages), { css });
 }
 
 /** Pixel size of a sheet rendered at `dpi`. */

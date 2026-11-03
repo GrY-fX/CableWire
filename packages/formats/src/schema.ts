@@ -236,6 +236,15 @@ export const projectSchema = v.object({
     ),
     stripPattern: v.exactOptional(v.string()),
     cablePattern: v.exactOptional(v.string()),
+    deviceFields: v.exactOptional(
+      v.array(
+        v.object({
+          key: v.string(),
+          label: v.string(),
+          inTables: v.exactOptional(v.boolean()),
+        }),
+      ),
+    ),
     xrefStyles: v.exactOptional(
       v.object({ coil: v.exactOptional(xrefStyle), device: v.exactOptional(xrefStyle) }),
     ),

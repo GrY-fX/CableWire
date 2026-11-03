@@ -3,6 +3,9 @@
   import { SvelteSet } from 'svelte/reactivity';
   import {
     addWiresToCable,
+    DEVICE_INFO_FIELDS,
+    deviceFieldKey,
+    getDeviceFields,
     cableFormation,
     cableOfWire,
     cableSheets,
@@ -82,6 +85,7 @@
   } from '@cablewire/core';
   import type {
     CableId,
+    DeviceField,
     BindingMargin,
     Patch,
     Rotation,
@@ -152,22 +156,24 @@
     once: 'Uno per potenziale in ogni foglio',
   };
 
-  /** Common fields first, in this order, then any other field of the element. */
-  const FIELDS: [string, string][] = [
-    ['label', 'Sigla'],
-    ['function', 'Funzione'],
-    ['location', 'Posizione (+)'],
-    ['plc_address', 'Indirizzo PLC'],
-  ];
+  /**
+   * Common fields first, in this order, then the project's properties, then any other
+   * field of the element.
+   */
+  const FIELDS: [string, string][] = DEVICE_INFO_FIELDS.map((f) => [f.key, f.label]);
   /** Sheet references show their id instead of the usual fields (the name is computed). */
   const REPORT_FIELDS: [string, string][] = [['ref_id', 'Nome']];
   const fields = $derived.by(() => {
     const info = view.element?.info ?? {};
     const report = view.symbol?.kind === 'report';
     const own = report ? REPORT_FIELDS : FIELDS;
-    const known = new Set([...FIELDS, ...REPORT_FIELDS].map(([k]) => k));
+    const project: [string, string][] = report
+      ? []
+      : getDeviceFields(view.doc).map((f) => [f.key, f.label]);
+    const known = new Set([...FIELDS, ...REPORT_FIELDS, ...project].map(([k]) => k));
     return [
       ...own,
+      ...project,
       ...Object.keys(info)
         .filter((k) => !known.has(k))
         .map((k): [string, string] => [k, k]),
@@ -182,6 +188,20 @@
     const element = view.element;
     if (!element) return;
     editor.store.run(setElementInfo, { id: element.id, set: { [key]: value || undefined } });
+  }
+
+  // Project properties of the devices: name and whether they go in the tables.
+  const deviceFields = $derived(getDeviceFields(view.doc));
+  function setDeviceFields(next: DeviceField[]) {
+    editor.store.run(updateSettings, { set: { deviceFields: next.length ? next : undefined } });
+  }
+  function addDeviceField() {
+    const label = prompt('Nome della proprietà (es. Tensione, Potenza, Fornitore):')?.trim();
+    if (!label) return;
+    setDeviceFields([
+      ...deviceFields,
+      { key: deviceFieldKey(view.doc, label), label, inTables: true },
+    ]);
   }
 
   function addField() {
@@ -1385,6 +1405,61 @@
         {'{foglio}'} = numero del foglio, {'{n}'} = prima, seconda… morsettiera di quel foglio. Una morsettiera
         personalizzata ha un nome suo e si usa su tutti i fogli.
       </p>
+    </details>
+    <details
+      open={openSections.has('Proprietà dei dispositivi')}
+      ontoggle={(e) => toggleSection('Proprietà dei dispositivi', e.currentTarget.open)}
+    >
+      <summary>Proprietà dei dispositivi</summary>
+      <p class="hint">
+        Sigla, funzione, posizione, costruttore e codice prodotto ci sono sempre. Qui aggiungi altre
+        proprietà per tutti i dispositivi del progetto; quelle spuntate diventano colonne della
+        lista dispositivi.
+      </p>
+      {#if deviceFields.length}
+        <ul class="strips">
+          {#each deviceFields as f, i (f.key)}
+            <li>
+              <input
+                type="text"
+                value={f.label}
+                aria-label="Nome della proprietà"
+                onchange={(e) => {
+                  const label = text(e).trim();
+                  if (label)
+                    setDeviceFields(deviceFields.map((x, j) => (j === i ? { ...x, label } : x)));
+                }}
+              />
+              <label class="check" title="Colonna nella lista dispositivi"
+                ><input
+                  type="checkbox"
+                  checked={!!f.inTables}
+                  onchange={(e) => {
+                    const inTables = e.currentTarget.checked;
+                    setDeviceFields(
+                      deviceFields.map((x, j) => {
+                        if (j !== i) return x;
+                        const next = { ...x };
+                        if (inTables) next.inTables = true;
+                        else delete next.inTables;
+                        return next;
+                      }),
+                    );
+                  }}
+                /> Tabelle</label
+              >
+              <button
+                class="icon"
+                title="Elimina la proprietà (i valori già scritti restano come campi del dispositivo)"
+                onclick={() => setDeviceFields(deviceFields.filter((_, j) => j !== i))}>×</button
+              >
+            </li>
+          {/each}
+        </ul>
+      {/if}
+      <div class="actions">
+        <button onclick={addDeviceField}>+ Nuova proprietà</button>
+      </div>
     </details>
     <details
       open={openSections.has('Cavi')}

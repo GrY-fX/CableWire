@@ -5,6 +5,9 @@
     createEmptyProject,
     createStore,
     importSymbol,
+    getDeviceFields,
+    LIST_NAMES,
+    projectLists,
     setTitleBlock,
     linkedReport,
     masterOf,
@@ -14,11 +17,12 @@
     renumberTerminals,
     stripOf,
   } from '@cablewire/core';
-  import type { ElementId, SheetId, SymbolDef, SymbolId } from '@cablewire/core';
+  import type { ElementId, ListKind, SheetId, SymbolDef, SymbolId } from '@cablewire/core';
   import { parseItemKey, SchematicEditor } from '@cablewire/editor';
   import { fontCss, pngSize, safeFileName, sheetSvg, svgToPng } from '../files/export.ts';
   import { download } from '../files/fileAccess.ts';
   import { buildPdf } from '../files/pdf.ts';
+  import { openProject } from './openProject.svelte.ts';
   import { printSheets } from '../files/print.ts';
   import { ProjectFiles } from '../files/projectFiles.svelte.ts';
   import type { Library } from '../library/library.svelte.ts';
@@ -110,6 +114,12 @@
     return () => clearTimeout(t);
   });
 
+  // The symbol editor offers the project's device properties as text placeholders.
+  $effect(() => {
+    void version;
+    openProject.deviceFields = getDeviceFields(store.doc);
+  });
+
   const view = $derived.by(() => {
     void version;
     return {
@@ -140,6 +150,37 @@
   );
 
   // Symbol changed in the library while the project has another version (E4).
+  // Lists to print: chosen in a dialog, alone or after the sheets.
+  let tablesDialog: HTMLDialogElement;
+  let tablesWithSheets = $state(false);
+  let tableKinds = $state<ListKind[]>(['wires', 'devices', 'cables', 'strips']);
+  const LIST_KINDS = Object.keys(LIST_NAMES) as ListKind[];
+
+  function openTables(withSheets: boolean) {
+    menu = undefined;
+    tablesWithSheets = withSheets;
+    tablesDialog.showModal();
+  }
+
+  async function exportTables() {
+    tablesDialog.close();
+    const doc = store.doc;
+    const lists = projectLists(doc, tableKinds);
+    const sheets = tablesWithSheets ? doc.sheetOrder : [];
+    const name = safeFileName(
+      tablesWithSheets ? doc.meta.title : `${doc.meta.title} - tabelle`,
+      '.pdf',
+      'tabelle',
+    );
+    notice = { kind: 'info', lines: ['Creazione del PDF…'] };
+    try {
+      download(name, await buildPdf(doc, sheets, lists));
+      notice = undefined;
+    } catch (e) {
+      notice = { kind: 'error', lines: ['PDF non creato.', String((e as Error).message ?? e)] };
+    }
+  }
+
   let versionDialog: HTMLDialogElement;
   let versionName = $state('');
   let answerVersion: ((choice: 'update' | 'keep' | 'cancel') => void) | undefined;
@@ -598,6 +639,10 @@
             <button onclick={() => exportPdf(true)}
               >PDF di tutti i fogli (con i rimandi cliccabili)</button
             >
+            <button onclick={() => openTables(true)}>PDF di tutti i fogli e tabelle…</button>
+            <button onclick={() => openTables(false)}
+              >Tabelle in PDF (fili, dispositivi, cavi, morsettiere)…</button
+            >
             <div class="menu-sep"></div>
             <button onclick={() => print(true)}>Stampa tutti i fogli… <kbd>Ctrl+P</kbd></button>
             <button onclick={() => showPanel('project')}>Impostazioni del progetto</button>
@@ -661,6 +706,36 @@
     <SchemaProperties bind:this={properties} {editor} {version} {titleBlocks} />
   </aside>
 </div>
+
+<dialog bind:this={tablesDialog}>
+  <p>
+    {tablesWithSheets
+      ? 'PDF di tutti i fogli seguiti dalle tabelle:'
+      : 'PDF delle tabelle del progetto:'}
+  </p>
+  <div class="kinds">
+    {#each LIST_KINDS as kind (kind)}
+      <label
+        ><input
+          type="checkbox"
+          checked={tableKinds.includes(kind)}
+          onchange={(e) =>
+            (tableKinds = e.currentTarget.checked
+              ? LIST_KINDS.filter((k) => k === kind || tableKinds.includes(k))
+              : tableKinds.filter((k) => k !== kind))}
+        />
+        {LIST_NAMES[kind]}</label
+      >
+    {/each}
+  </div>
+  <p class="dialog-hint">
+    Le pagine hanno formato, cornice e cartiglio dei fogli e sono numerate dopo l'ultimo foglio.
+  </p>
+  <div class="dialog-actions">
+    <button disabled={tableKinds.length === 0} onclick={exportTables}>Crea il PDF</button>
+    <button onclick={() => tablesDialog.close()}>Annulla</button>
+  </div>
+</dialog>
 
 <dialog bind:this={versionDialog} oncancel={() => chooseVersion('cancel')}>
   <p>
@@ -890,6 +965,16 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     max-width: 30rem;
+  }
+  .kinds {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin: 0.5rem 0;
+  }
+  .dialog-hint {
+    font-size: 0.8rem;
+    color: var(--muted);
   }
   .dialog-actions {
     display: flex;

@@ -44,8 +44,12 @@ export const CABLE_TEXT_SIZE = 2.5;
 
 const cache = new WeakMap<ProjectDoc, Map<SheetId, Scene>>();
 
-/** Scene of one sheet; memoized per document version. */
-export function buildScene(doc: ProjectDoc, sheetId: SheetId): Scene {
+/**
+ * Scene of one sheet; memoized per document version. With `pages`, the title block
+ * counts that many sheets (the sheets plus pages of tables), not memoized.
+ */
+export function buildScene(doc: ProjectDoc, sheetId: SheetId, pages?: number): Scene {
+  if (pages !== undefined) return computeScene(doc, sheetId, pages);
   let perSheet = cache.get(doc);
   if (!perSheet) cache.set(doc, (perSheet = new Map()));
   let scene = perSheet.get(sheetId);
@@ -53,11 +57,13 @@ export function buildScene(doc: ProjectDoc, sheetId: SheetId): Scene {
   return scene;
 }
 
-function computeScene(doc: ProjectDoc, sheetId: SheetId): Scene {
+function computeScene(doc: ProjectDoc, sheetId: SheetId, pages?: number): Scene {
   const sheet = doc.sheets[sheetId];
   if (!sheet) throw new Error(`Sheet ${sheetId} not found`);
   const { width, height } = sheetLayout(sheet);
-  const items: SceneItem[] = [{ key: 'frame', layer: 'frame', node: buildFrame(doc, sheet) }];
+  const page =
+    pages === undefined ? undefined : { number: doc.sheetOrder.indexOf(sheetId) + 1, total: pages };
+  const items: SceneItem[] = [{ key: 'frame', layer: 'frame', node: buildFrame(doc, sheet, page) }];
 
   const numbered = wiresShowingNumber(doc, sheetId);
   for (const wire of Object.values(doc.wires)) {

@@ -4,6 +4,7 @@
     DEFAULT_WIRE_WIDTH,
     TITLE_FIELDS,
     TITLE_PLACEHOLDERS,
+    DEVICE_INFO_FIELDS,
     WIRE_WIDTHS,
   } from '@cablewire/core';
   import type {
@@ -16,6 +17,7 @@
     SymbolKind,
     TerminalId,
   } from '@cablewire/core';
+  import { openProject } from '../schema/openProject.svelte.ts';
   import {
     checkSymbol,
     parseKey,
@@ -66,7 +68,11 @@
     arc: 'Arco',
     text: 'Testo',
   };
-  const PLACEHOLDERS = ['{label}', '{function}', '{location}', '{plc_address}'];
+  /** The device fields as placeholders: standard ones, then the open project's properties. */
+  const PLACEHOLDERS = DEVICE_INFO_FIELDS.map((f) => ({ key: f.key, label: f.label }));
+  const projectPlaceholders = $derived(
+    openProject.deviceFields.map((f) => ({ key: f.key, label: f.label })),
+  );
   /** Title blocks: sheet and project values, then the project's fields. */
   const TITLE_BLOCK_PLACEHOLDERS = [...TITLE_PLACEHOLDERS, ...TITLE_FIELDS];
   /** Adds a placeholder to a title block text (the default text is replaced). */
@@ -268,13 +274,25 @@
               >
             {/each}
           {:else}
-            {#each PLACEHOLDERS as p (p)}
+            {#each PLACEHOLDERS as p (p.key)}
               <button
                 class="chip"
-                onclick={() => setShape({ text: p })}
-                title="Sostituito con il valore dell'elemento nello schema">{p}</button
+                onclick={() => setShape({ text: `{${p.key}}` })}
+                title="{p.label}: sostituito con il valore dell'elemento nello schema"
+                >{`{${p.key}}`}</button
               >
             {/each}
+            {#if projectPlaceholders.length}
+              <span class="chips-label">Proprietà del progetto aperto:</span>
+              {#each projectPlaceholders as p (p.key)}
+                <button
+                  class="chip project"
+                  onclick={() => setShape({ text: `{${p.key}}` })}
+                  title="{p.label}: proprietà del progetto aperto nello schema"
+                  >{`{${p.key}}`}</button
+                >
+              {/each}
+            {/if}
           {/if}
         </div>
         <label
@@ -699,6 +717,15 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.25rem;
+  }
+  .chips-label {
+    flex-basis: 100%;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+  .chip.project {
+    border-style: dashed;
   }
   .chip {
     font-size: 0.75rem;

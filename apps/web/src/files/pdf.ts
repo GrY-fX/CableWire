@@ -5,8 +5,21 @@ import {
   sheetDimensions,
   xrefLayout,
 } from '@cablewire/core';
-import type { BindingMargin, Bounds, Element, ProjectDoc, SheetId } from '@cablewire/core';
-import { FONT_FAMILY } from '@cablewire/render';
+import type {
+  BindingMargin,
+  Bounds,
+  Element,
+  ListTable,
+  ProjectDoc,
+  SheetId,
+} from '@cablewire/core';
+import {
+  FONT_FAMILY,
+  paginateLists,
+  tablePageScene,
+  tableSheet,
+  toSvgString,
+} from '@cablewire/render';
 import fontUrl from '@cablewire/render/assets/osifont.woff?url';
 import { sheetSvg } from './export.ts';
 
@@ -227,15 +240,43 @@ function fontBase64(): Promise<string> {
   return fontCache;
 }
 
-/** Builds the PDF of the given sheets, with links between linked references. */
-export async function buildPdf(doc: ProjectDoc, sheetIds: readonly SheetId[]): Promise<Blob> {
+/**
+ * Builds the PDF of the given sheets, with links between linked references, followed
+ * by pages of the given lists (numbered after the project's sheets).
+ */
+export async function buildPdf(
+  doc: ProjectDoc,
+  sheetIds: readonly SheetId[],
+  lists: readonly ListTable[] = [],
+): Promise<Blob> {
   const [{ jsPDF }, { svg2pdf }, font] = await Promise.all([
     import('jspdf'),
     import('svg2pdf.js'),
     fontBase64(),
   ]);
   const plan = pdfPlan(doc, sheetIds);
-  const first = plan.pages[0];
+  // Pages of tables come after the sheets, numbered after all the project's sheets.
+  const tables = paginateLists(doc, lists);
+  const total = tables.length ? doc.sheetOrder.length + tables.length : undefined;
+  const { width: tw, height: th } = sheetDimensions(tableSheet(doc, ''));
+  const pages = [
+    ...plan.pages.map((page) => ({
+      ...page,
+      bookmark: page.title as string | undefined,
+      svg: () => sheetSvg(doc, page.sheetId, '', total),
+    })),
+    ...tables.map((t, i) => ({
+      title: t.title,
+      // One bookmark per list, on its first page.
+      bookmark: tables.findIndex((x) => x.list === t.list) === i ? t.list.title : undefined,
+      width: tw,
+      height: th,
+      orientation: tableSheet(doc, '').orientation,
+      drawing: pageDrawing(tw, th, doc.settings.bindingMargin),
+      svg: () => toSvgString(tablePageScene(doc, t, doc.sheetOrder.length + i + 1, total!)),
+    })),
+  ];
+  const first = pages[0];
   if (!first) throw new Error('Nessun foglio da esportare');
   const pdf = new jsPDF({
     unit: 'mm',
@@ -252,17 +293,14 @@ export async function buildPdf(doc: ProjectDoc, sheetIds: readonly SheetId[]): P
   host.style.cssText = 'position:fixed;left:-10000px;top:0;width:0;height:0;overflow:hidden';
   document.body.append(host);
   try {
-    for (const [i, page] of plan.pages.entries()) {
+    for (const [i, page] of pages.entries()) {
       if (i > 0) pdf.addPage([page.width, page.height], page.orientation);
-      const parsed = new DOMParser().parseFromString(
-        sheetSvg(doc, page.sheetId, ''),
-        'image/svg+xml',
-      );
+      const parsed = new DOMParser().parseFromString(page.svg(), 'image/svg+xml');
       const svg = document.importNode(parsed.documentElement, true);
       host.replaceChildren(svg);
       const { x, y, scale } = page.drawing;
       await svg2pdf(svg, pdf, { x, y, width: page.width * scale, height: page.height * scale });
-      pdf.outline.add(null, page.title, { pageNumber: i + 1 });
+      if (page.bookmark) pdf.outline.add(null, page.bookmark, { pageNumber: i + 1 });
     }
   } finally {
     host.remove();

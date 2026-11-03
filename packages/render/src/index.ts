@@ -7,3 +7,4 @@ export * from './schematic.ts';
 export * from './style.ts';
 export * from './svg-string.ts';
 export * from './dom.ts';
+export * from './tables.ts';

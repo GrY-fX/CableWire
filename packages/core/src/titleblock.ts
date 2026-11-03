@@ -80,16 +80,23 @@ export function titleBlockReserve(doc: ProjectDoc): number {
   return layout?.anchor === 'band' ? layout.height : 0;
 }
 
-/** Values of the placeholders on a sheet: project fields plus the fixed ones. */
-export function titleBlockValues(doc: ProjectDoc, sheet: Sheet): Record<string, string> {
+/**
+ * Values of the placeholders on a sheet: project fields plus the fixed ones. `page`
+ * overrides the sheet number and count (pages of tables after the sheets).
+ */
+export function titleBlockValues(
+  doc: ProjectDoc,
+  sheet: Sheet,
+  page?: { number: number; total: number },
+): Record<string, string> {
   return {
     ...doc.meta.fields,
     titolo: doc.meta.title,
     autore: doc.meta.author,
     data: doc.meta.updatedAt.slice(0, 10),
     titolo_foglio: sheet.title,
-    foglio: String(doc.sheetOrder.indexOf(sheet.id) + 1),
-    fogli: String(doc.sheetOrder.length),
+    foglio: String(page?.number ?? doc.sheetOrder.indexOf(sheet.id) + 1),
+    fogli: String(page?.total ?? doc.sheetOrder.length),
   };
 }
 

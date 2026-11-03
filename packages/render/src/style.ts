@@ -34,6 +34,7 @@ export const PAPER_CSS = `
 .cw-text { fill: #000; font-family: ${FONT_FAMILY}, sans-serif; }
 .cw-credit { fill: #6b6b6b; }
 .cw-cable-line { stroke-width: 0.18; }
+.cw-table-shade { fill: #ececec; }
 .cw-dash-dashed { stroke-dasharray: 1.5 1; stroke-linecap: butt; }
 .cw-dash-dashdot { stroke-dasharray: 3 0.8 0.1 0.8; }
 ${WIRE_CSS}

@@ -322,6 +322,17 @@ export interface ProjectSettings {
   stripPattern?: string;
   /** Label of new cables, e.g. `{foglio}W{n}`; see DEFAULT_CABLE_PATTERN. */
   cablePattern?: string;
+  /** Properties every device of the project can have, besides the standard ones. */
+  deviceFields?: DeviceField[];
+}
+
+/** A property of the project's devices (e.g. "Tensione"), optionally in the tables. */
+export interface DeviceField {
+  /** Key in the elements' info, e.g. `tensione`. */
+  key: string;
+  label: string;
+  /** Shown as a column of the device list. */
+  inTables?: boolean;
 }
 
 export function getNumbering(doc: ProjectDoc): NumberingSettings {

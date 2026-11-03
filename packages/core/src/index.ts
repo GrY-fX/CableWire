@@ -19,6 +19,7 @@ export * from './wirestyle.ts';
 export * from './titleblock.ts';
 export * from './texts.ts';
 export * from './cables.ts';
+export * from './lists.ts';
 export * from './commands/project.ts';
 export * from './commands/sheets.ts';
 export * from './commands/symbols.ts';
